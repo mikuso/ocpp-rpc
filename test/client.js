@@ -1,0 +1,737 @@
+const assert = require('assert/strict');
+const http = require('http');
+const { once } = require('events');
+const RPCClient = require("../lib/client");
+const { TimeoutError } = require('../lib/errors');
+const RPCServer = require("../lib/server");
+const { setTimeout } = require('timers/promises');
+const {CLOSING, CLOSED, CONNECTING} = require('ws');
+
+describe('RPCClient', function(){
+    this.timeout(500);
+
+    async function createServer(options = {}, extra = {}) {
+        const server = new RPCServer(options);
+        const httpServer = await server.listen(0);
+        const port = httpServer.address().port;
+        const url = `ws://localhost:${port}`;
+        const close = (...args) => server.close(...args);
+        server.on('client', client => {
+            client.handle('Echo', async ({params}) => {
+                return params;
+            });
+            client.handle('Sleep', async ({params, signal}) => {
+                await setTimeout(params.ms, null, {signal});
+                return `Waited ${params.ms}ms`;
+            });
+            client.handle('Reject', async ({params}) => {
+                const err = Error("Rejecting");
+                Object.assign(err, params);
+                throw err;
+            });
+            if (extra.withClient) {
+                extra.withClient(client);
+            }
+        });
+        return {server, httpServer, port, url, close};
+    }
+
+    describe('#connect', function(){
+
+        it('should connect to an RPCServer', async () => {
+
+            const {url, close} = await createServer();
+            const cli = new RPCClient({
+                url,
+            });
+
+            await cli.connect();
+            await cli.close();
+            close();
+
+        });
+
+        it('should reject on non-websocket server', async () => {
+
+            const httpServer = http.createServer((req, res) => {
+                res.end();
+            });
+            const httpServerAbort = new AbortController();
+            await new Promise((resolve, reject) => {
+                httpServer.listen({
+                    port: 0,
+                    host: 'localhost',
+                    signal: httpServerAbort.signal,
+                }, err => err ? reject(err) : resolve());
+            });
+            const port = httpServer.address().port;
+            
+            const url = `ws://localhost:${port}`;
+            const cli = new RPCClient({url});
+
+            try {
+                await assert.rejects(cli.connect());
+            } finally {
+                await cli.close();
+                httpServerAbort.abort();
+            }
+
+        });
+
+        it('should reject on non-ws URL', async () => {
+
+            const {close, port} = await createServer();
+            const cli = new RPCClient({
+                url: `http://localhost:${port}`,
+            });
+
+            try {
+                await assert.rejects(cli.connect());
+            } finally {
+                await cli.close();
+                close();
+            }
+
+        });
+
+        it('should reject on malformed URL', async () => {
+
+            const {close} = await createServer();
+            const cli = new RPCClient({
+                url: 'x',
+            });
+
+            try {
+                await assert.rejects(cli.connect());
+            } finally {
+                await cli.close();
+                close();
+            }
+
+        });
+
+        it('should reject on unreachable address', async () => {
+
+            const {close} = await createServer();
+            const cli = new RPCClient({
+                url: 'ws://0.0.0.0:0',
+            });
+
+            try {
+                await assert.rejects(cli.connect());
+            } finally {
+                await cli.close();
+                close();
+            }
+
+        });
+
+        it('should reject when no subprotocols match', async () => {
+
+            const {url, close} = await createServer({protocols: ['one', 'two']});
+            const cli = new RPCClient({
+                url,
+                protocols: ['three', 'four']
+            });
+
+            try {
+                await assert.rejects(cli.connect());
+            } finally {
+                await cli.close();
+                close();
+            }
+
+        });
+
+        it('should select first matching subprotocol', async () => {
+
+            const {url, close} = await createServer({protocols: ['one', 'two', 'three', 'four', 'x']});
+            const cli = new RPCClient({
+                url,
+                protocols: ['test', 'three', 'four'],
+            });
+
+            try {
+                await cli.connect();
+                assert.equal(cli.protocol, 'three');
+            } finally {
+                await cli.close();
+                close();
+            }
+
+        });
+
+    });
+
+
+    describe('#close', function() {
+
+        it('should pass code and reason to server', async () => {
+
+            const {server, url, close} = await createServer();
+            const cli = new RPCClient({url});
+
+            try {
+                const serverClientPromise = once(server, 'client');
+                await cli.connect();
+                const [serverClient] = await serverClientPromise;
+                const serverClosePromise = once(serverClient, 'close');
+                await cli.close({code: 4001, reason: 'TEST'});
+                const [serverClose] = await serverClosePromise;
+                assert.equal(serverClose.code, 4001);
+                assert.equal(serverClose.reason, 'TEST');
+
+            } finally {
+                close();
+            }
+
+        });
+
+        it('should return the close code of the first close() call', async () => {
+
+            const {url, close} = await createServer();
+            const cli = new RPCClient({url});
+
+            try {
+                await cli.connect();
+                const p1 = cli.close({code: 4001, reason: 'FIRST'});
+                const p2 = cli.close({code: 4002, reason: 'SECOND'});
+                const [v1, v2] = await Promise.all([p1, p2]);
+                assert.equal(v1.code, 4001);
+                assert.equal(v1.reason, 'FIRST');
+                assert.equal(v2.code, 4001);
+                assert.equal(v2.reason, 'FIRST');
+                const v3 = await cli.close({code: 4003, reason: 'THIRD'});
+                assert.equal(v3.code, 4001);
+                assert.equal(v3.reason, 'FIRST');
+
+            } finally {
+                close();
+            }
+
+        });
+
+        it('should abort #connect if connection in progress, with code 1001', async () => {
+
+            const {url, close} = await createServer();
+            const cli = new RPCClient({url});
+
+            try {
+                const connPromise = cli.connect();
+                const closePromise = cli.close({code: 4001}); // 4001 should be ignored
+                const [connResult, closeResult] = await Promise.allSettled([connPromise, closePromise]);
+                assert.equal(connResult.status, 'rejected');
+                assert.equal(connResult.reason.name, 'AbortError');
+                assert.equal(closeResult.status, 'fulfilled');
+                assert.equal(closeResult.value?.code, 1001);
+            } finally {
+                close();
+            }
+
+        });
+
+        it('should not throw if already closed', async () => {
+
+            const {url, close} = await createServer();
+            const cli = new RPCClient({url});
+
+            try {
+                await cli.connect();
+                await cli.close();
+                await assert.doesNotReject(cli.close());
+            } finally {
+                close();
+            }
+
+        });
+
+        it('should abort all outbound calls when {awaitPending: false}', async () => {
+
+            const {url, close, server} = await createServer();
+            const cli = new RPCClient({url});
+
+            try {
+                await cli.connect();
+                const [callResult, closeResult] = await Promise.allSettled([
+                    cli.call('Sleep', {ms: 100}),
+                    cli.close({awaitPending: false})
+                ]);
+                assert.equal(callResult.status, 'rejected');
+                assert.equal(closeResult.status, 'fulfilled');
+
+            } finally {
+                close();
+            }
+
+        });
+
+        it('should abort all inbound calls when {awaitPending: false}', async () => {
+            
+            let serverInitiatedCall = null;
+            const {url, close, server} = await createServer({}, {
+                withClient: client => {
+                    serverInitiatedCall = client.call('Sleep', {ms: 50});
+                }
+            });
+            const cli = new RPCClient({url});
+
+            try {
+                cli.handle('Sleep', async ({params, signal}) => {
+                    await setTimeout(params.ms, null, {signal});
+                });
+
+                await cli.connect();
+                
+                const [callResult, closeResult] = await Promise.allSettled([
+                    serverInitiatedCall,
+                    cli.close({awaitPending: false})
+                ]);
+                assert.equal(callResult.status, 'rejected');
+                assert.equal(closeResult.status, 'fulfilled');
+
+            } finally {
+                close();
+            }
+
+        });
+
+        it('should wait for all outbound calls to settle when {awaitPending: true}', async () => {
+
+            const {url, close, server} = await createServer();
+            const cli = new RPCClient({url});
+
+            try {
+                await cli.connect();
+                const [rejectResult, sleepResult, closeResult] = await Promise.allSettled([
+                    cli.call('Reject', {code: 'TEST'}),
+                    cli.call('Sleep', {ms: 50}),
+                    cli.close({awaitPending: true})
+                ]);
+                assert.equal(rejectResult.status, 'rejected');
+                assert.equal(rejectResult.reason.code, 'TEST');
+                assert.equal(sleepResult.status, 'fulfilled');
+                assert.equal(closeResult.status, 'fulfilled');
+
+            } finally {
+                close();
+            }
+
+        });
+
+        it('should wait for all inbound calls to settle when {awaitPending: true}', async () => {
+            
+            const echoVal = 'TEST123';
+            let serverInitiatedCall = null;
+            const {url, close, server} = await createServer({}, {
+                withClient: client => {
+                    serverInitiatedCall = client.call('SlowEcho', {ms: 50, val: echoVal});
+                }
+            });
+            const cli = new RPCClient({url});
+
+            try {
+                cli.handle('SlowEcho', async ({params}) => {
+                    await setTimeout(params.ms);
+                    return params.val;
+                });
+
+                await cli.connect();
+                
+                const [callResult, closeResult] = await Promise.allSettled([
+                    serverInitiatedCall,
+                    cli.close({awaitPending: true})
+                ]);
+                assert.equal(callResult.status, 'fulfilled');
+                assert.equal(callResult.value, echoVal);
+                assert.equal(closeResult.status, 'fulfilled');
+
+            } finally {
+                close();
+            }
+
+        });
+
+        it('should close immediately with code 1006 when {force: true}', async () => {
+            
+            const {url, close, server} = await createServer();
+            const cli = new RPCClient({url});
+
+            try {
+                await cli.connect();
+                cli.close({code: 4000, force: true});
+                const [dc] = await once(cli, 'close');
+                assert.equal(dc.code, 1006);
+
+            } finally {
+                close();
+            }
+
+        });
+
+        it('should immediately reject any in-flight calls when {force: true}', async () => {
+            
+            let serverInitiatedCall = null;
+            const {url, close, server} = await createServer({}, {
+                withClient: client => {
+                    serverInitiatedCall = client.call('Sleep', {ms: 5000});
+                }
+            });
+            const cli = new RPCClient({url});
+            cli.handle('Sleep', async ({params, signal}) => {
+                await setTimeout(params.ms, null, {signal});
+                return `Waited ${params.ms}ms`;
+            });
+
+            try {
+                await cli.connect();
+
+                const clientInitiatedCall = cli.call('Sleep', {ms: 5000});
+
+                cli.close({code: 4000, force: true});
+                const dcp = once(cli, 'close');
+
+                await assert.rejects(clientInitiatedCall);
+                await assert.rejects(serverInitiatedCall);
+                
+                const [dc] = await dcp;
+                assert.equal(dc.code, 1006);
+                
+
+            } finally {
+                close();
+            }
+
+        });
+
+    });
+
+
+    describe('#call', function() {
+
+        it('should timeout after client callTimeoutMs option', async () => {
+
+            const {url, close, server} = await createServer();
+            const cli = new RPCClient({
+                url,
+                callTimeoutMs: 20,
+            });
+
+            try {
+                await cli.connect();
+                await assert.rejects(cli.call('Sleep', {ms: 50}), TimeoutError);
+            } finally {
+                await cli.close();
+                close();
+            }
+
+        });
+
+        it('should not timeout after call callTimeoutMs option override', async () => {
+
+            const {url, close, server} = await createServer();
+            const cli = new RPCClient({
+                url,
+                callTimeoutMs: 50,
+            });
+
+            try {
+                await cli.connect();
+                await assert.doesNotReject(cli.call('Sleep', {ms: 50}, {callTimeoutMs: 100}));
+            } finally {
+                await cli.close();
+                close();
+            }
+
+        });
+
+        it('should reject when state === CLOSING with {awaitPending: true}', async () => {
+
+            const {url, close, server} = await createServer();
+            const cli = new RPCClient({url});
+
+            try {
+                await cli.connect();
+                const promSleep1 = cli.call('Sleep', {ms: 20});
+                const promClose = cli.close({awaitPending: true});
+                const promSleep2 = cli.call('Sleep', {ms: 1000});
+
+                assert.equal(cli.state, CLOSING);
+
+                await Promise.all([
+                    assert.doesNotReject(promClose),
+                    assert.doesNotReject(promSleep1),
+                    assert.rejects(promSleep2),
+                ]);
+
+            } finally {
+                close();
+            }
+
+        });
+
+        it('should reject when state === CLOSING', async () => {
+
+            const {url, close, server} = await createServer();
+            const cli = new RPCClient({url});
+
+            try {
+                await cli.connect();
+                cli.close();
+                const callPromise = cli.call('Sleep', {ms: 1000});
+
+                await assert.rejects(callPromise);
+                assert.equal(cli.state, CLOSING);
+
+            } finally {
+                close();
+            }
+
+        });
+
+        it('should reject when state === CLOSED', async () => {
+
+            const {url, close, server} = await createServer();
+            const cli = new RPCClient({url});
+
+            try {
+                const callPromise = cli.call('Sleep', {ms: 1000});
+
+                await assert.rejects(callPromise);
+                assert.equal(cli.state, CLOSED);
+
+            } finally {
+                close();
+            }
+
+        });
+
+        it('should queue when state === CONNECTING', async () => {
+
+            const {url, close, server} = await createServer();
+            const cli = new RPCClient({url});
+
+            try {
+                cli.connect();
+                const resPromise = cli.call('Echo', 'TEST');
+
+                assert.equal(cli.state, CONNECTING);
+                await assert.doesNotReject(resPromise);
+                await assert.equal(await resPromise, 'TEST');
+
+            } finally {
+                await cli.close();
+                close();
+            }
+
+        });
+
+        it('should reject when options.signal aborts', async () => {
+
+            const reason = "TEST123";
+            const {url, close} = await createServer();
+            const cli = new RPCClient({url});
+
+            try {
+                await cli.connect();
+                const ac = new AbortController();
+                
+                const callProm = cli.call('Sleep', {ms: 5000}, {signal: ac.signal});
+                ac.abort(reason);
+                await assert.rejects(callProm);
+                const abortedReason = await callProm.catch(err => err.message);
+                assert.equal(reason, abortedReason);
+
+            } finally {
+                await cli.close();
+                close();
+            }
+
+        });
+
+    });
+
+    
+    describe('#handleDisconnect', function() {
+
+        it('client should disconnect when server closes', async () => {
+
+            const {url, close, server} = await createServer();
+            const cli = new RPCClient({url});
+
+            await cli.connect();
+            close({code: 4050});
+            const [dc] = await once(cli, 'close');
+            assert(dc.code, 4050);
+
+        });
+
+        it('should reject outbound call in-flight when connection drops', async () => {
+
+            const {url, close, server} = await createServer({}, {
+                withClient: async (client) => {
+                    await client.close({code: 4001});
+                }
+            });
+            const cli = new RPCClient({url});
+
+            try {
+                const closePromise = once(cli, 'close');
+                await cli.connect();
+                await assert.rejects(cli.call('Sleep', {ms: 1000}));
+                const [closeResult] = await closePromise;
+                assert.equal(closeResult.code, 4001);
+                
+            } finally {
+                await cli.close();
+                close();
+            }
+
+        });
+
+        it('should reconnect if using option {reconnect: true}', async () => {
+
+            let disconnectedOnce = false;
+            const {url, close, server} = await createServer({}, {
+                withClient: async (client) => {
+                    if (!disconnectedOnce) {
+                        disconnectedOnce = true;
+                        await client.close({code: 4010, reason: "Please reconnect"});
+                    }
+                }
+            });
+            const cli = new RPCClient({
+                url,
+                reconnect: true,
+                maxReconnects: 2,
+                backoff: {
+                    initialDelay: 1,
+                    maxDelay: 2,
+                }
+            });
+
+            try {
+                await cli.connect();
+                const test1 = cli.call('Sleep', {ms: 1000});
+                const [dc1] = await once(cli, 'disconnect');
+
+                assert.equal(dc1.code, 4010);
+                await assert.rejects(test1);
+                
+                const test2 = await cli.call('Echo', 'TEST2');
+                assert.equal(test2, 'TEST2');
+
+            } finally {
+                await cli.close();
+                close();
+            }
+
+        });
+
+        it('should reconnect exactly {maxReconnects} times before giving up', async () => {
+
+            const maxReconnects = 3;
+            const {url, close, server} = await createServer();
+            const cli = new RPCClient({
+                url,
+                reconnect: true,
+                maxReconnects,
+                backoff: {
+                    initialDelay: 10,
+                    maxDelay: 11,
+                }
+            });
+
+            await cli.connect();
+
+            let reconCount = 0;
+            cli.on('connecting', () => reconCount++);
+            close();
+
+            await once(cli, 'close');
+            assert.equal(reconCount, maxReconnects);
+
+        });
+
+        it('should close with code 1001 after failed reconnect', async () => {
+
+            const {url, close, server} = await createServer();
+            const cli = new RPCClient({
+                url,
+                reconnect: true,
+                maxReconnects: 3,
+                backoff: {
+                    initialDelay: 10,
+                    maxDelay: 11,
+                }
+            });
+
+            await cli.connect();
+            close({code: 4060});
+
+            const [closed] = await once(cli, 'close');
+            assert.equal(closed.code, 1001);
+
+        });
+
+    });
+
+
+    describe('#onMessage', function() {
+
+        it('should close connections with code 1002 when receiving malformed messages', async () => {
+            
+            const {url, close, server} = await createServer({}, {
+                withClient: async (client) => {
+                    client.sendRaw('x');
+                }
+            });
+            const cli = new RPCClient({
+                url,
+                callTimeoutMs: 50,
+            });
+
+            try {
+                await cli.connect();
+                const [closed] = await once(cli, 'close');
+                assert.equal(closed.code, 1002);
+
+            } finally {
+                await cli.close();
+                close();
+            }
+
+        });
+
+    });
+
+
+    // describe('#ping', function() {
+
+    //     it('should work', async () => {
+            
+    //         const {url, close, server} = await createServer({}, {
+    //             withClient: async (client) => {
+    //                 client.send('x');
+    //             }
+    //         });
+    //         const cli = new RPCClient({
+    //             url,
+    //             callTimeoutMs: 50,
+    //         });
+
+    //         try {
+    //             throw Error("no")
+    //             await cli.connect();
+    //             const [closed] = await once(cli, 'close');
+    //             assert.equal(closed.code, 1002);
+
+    //         } finally {
+    //             await cli.close();
+    //             close();
+    //         }
+
+    //     });
+
+    // });
+
+});
