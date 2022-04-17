@@ -1,10 +1,10 @@
 # OCPP-RPC
 
-A client & server implementation of the WAMP-like RPC-over-websocket system defined in the OCPP protcols (e.g. OCPP1.6-J and OCPP2.0.1).
+A client & server implementation of the WAMP-like RPC-over-websocket system defined in the [OCPP protcols](https://www.openchargealliance.org/protocols/) (e.g. [OCPP1.6-J](https://www.openchargealliance.org/protocols/ocpp-16/) and [OCPP2.0.1](https://www.openchargealliance.org/protocols/ocpp-201/)).
 
 Requires Node.js >= 14.17.0 (or >= 17.2.0 for `AbortController#abort([reason])` support)
 
-# Features
+## Features
 
 * **Everything is abortable** - `AbortSignal`s can be passed to most async methods.
 * **Automatic reconnects** - Client supports automatic exponential-backoff reconnects.
@@ -12,8 +12,23 @@ Requires Node.js >= 14.17.0 (or >= 17.2.0 for `AbortController#abort([reason])` 
 * **Graceful shutdowns** - Supports waiting for all in-flight messages to be responded to before closing sockets.
 * **Clean closing of websockets** - Supports sending & receiving close codes & reasons.
 * **Authentication** - Optional authentication step for filtering incoming clients.
-* **Subprotocol negotiation** - 
+* **Optional HTTP server** - Bring your own HTTP server if you want to, or let `RPCServer` create one for you.
 
+## Examples
+
+### Creating a barebones OCPP server
+
+```js
+```
+
+### Use with [Express.js](https://expressjs.com/)
+
+```js
+```
+
+## API
+
+* 
 
 ## RPCClient state lifecycle
 

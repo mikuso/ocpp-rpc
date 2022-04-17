@@ -602,13 +602,13 @@ describe('RPCClient', function(){
             const cli = new RPCClient({
                 url,
                 reconnect: true,
-                maxReconnects: 2,
+                maxReconnects: 1,
                 backoff: {
                     initialDelay: 1,
                     maxDelay: 2,
                 }
             });
-
+            
             try {
                 await cli.connect();
                 const test1 = cli.call('Sleep', {ms: 1000});
