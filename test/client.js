@@ -297,7 +297,7 @@ describe('RPCClient', function(){
 
         it('should wait for all outbound calls to settle when {awaitPending: true}', async () => {
 
-            const {url, close, server} = await createServer();
+            const {url, close, server} = await createServer({respondWithDetailedErrors: true});
             const cli = new RPCClient({url});
 
             try {
@@ -308,7 +308,7 @@ describe('RPCClient', function(){
                     cli.close({awaitPending: true})
                 ]);
                 assert.equal(rejectResult.status, 'rejected');
-                assert.equal(rejectResult.reason.code, 'TEST');
+                assert.equal(rejectResult.reason.details.code, 'TEST');
                 assert.equal(sleepResult.status, 'fulfilled');
                 assert.equal(closeResult.status, 'fulfilled');
 
@@ -396,6 +396,38 @@ describe('RPCClient', function(){
                 const [dc] = await dcp;
                 assert.equal(dc.code, 1006);
                 
+
+            } finally {
+                close();
+            }
+
+        });
+
+        it('should not reconnect even when {reconnect: true}', async () => {
+            
+            let serverInitiatedCall = null;
+            const {url, close, server} = await createServer({
+                protocols: ['a'],
+            });
+
+            const cli = new RPCClient({
+                url,
+                protocols: ['a'],
+                reconnect: true,
+                maxReconnects: Infinity,
+            });
+
+            let connectCount = 0;
+            cli.on('connecting', () => {
+                console.log('@connecting');
+                connectCount++;
+            });
+
+            try {
+                await cli.connect();
+                const dc = await cli.close({code: 4000});
+                assert.equal(dc.code, 4000);
+                assert.equal(connectCount, 1);
 
             } finally {
                 close();
@@ -588,7 +620,7 @@ describe('RPCClient', function(){
 
         });
 
-        it('should reconnect if using option {reconnect: true}', async () => {
+        it('should not reconnect if using option {reconnect: true} without subprotocols', async () => {
 
             let disconnectedOnce = false;
             const {url, close, server} = await createServer({}, {
@@ -602,6 +634,50 @@ describe('RPCClient', function(){
             const cli = new RPCClient({
                 url,
                 reconnect: true,
+                reconnectWithoutSubprotocol: true,
+                maxReconnects: 1,
+                backoff: {
+                    initialDelay: 1,
+                    maxDelay: 2,
+                }
+            });
+            
+            try {
+                await cli.connect();
+                const test1 = cli.call('Sleep', {ms: 1000});
+                const [dc1] = await once(cli, 'disconnect');
+
+                assert.equal(dc1.code, 4010);
+                await assert.rejects(test1);
+                
+                const test2 = await cli.call('Echo', 'TEST2');
+                assert.equal(test2, 'TEST2');
+
+            } finally {
+                await cli.close();
+                close();
+            }
+
+        });
+
+        it('should reconnect if using option {reconnect: true} with subprotocols', async () => {
+
+            let disconnectedOnce = false;
+            const {url, close, server} = await createServer({
+                protocols: ['a'],
+                protocolRequired: true,
+            }, {
+                withClient: async (client) => {
+                    if (!disconnectedOnce) {
+                        disconnectedOnce = true;
+                        await client.close({code: 4010, reason: "Please reconnect"});
+                    }
+                }
+            });
+            const cli = new RPCClient({
+                url,
+                reconnect: true,
+                protocols: ['a'],
                 maxReconnects: 1,
                 backoff: {
                     initialDelay: 1,
@@ -634,6 +710,7 @@ describe('RPCClient', function(){
             const cli = new RPCClient({
                 url,
                 reconnect: true,
+                reconnectWithoutSubprotocol: true,
                 maxReconnects,
                 backoff: {
                     initialDelay: 10,
@@ -658,6 +735,7 @@ describe('RPCClient', function(){
             const cli = new RPCClient({
                 url,
                 reconnect: true,
+                reconnectWithoutSubprotocol: true,
                 maxReconnects: 3,
                 backoff: {
                     initialDelay: 10,
