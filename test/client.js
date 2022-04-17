@@ -405,7 +405,6 @@ describe('RPCClient', function(){
 
         it('should not reconnect even when {reconnect: true}', async () => {
             
-            let serverInitiatedCall = null;
             const {url, close, server} = await createServer({
                 protocols: ['a'],
             });
@@ -419,7 +418,6 @@ describe('RPCClient', function(){
 
             let connectCount = 0;
             cli.on('connecting', () => {
-                console.log('@connecting');
                 connectCount++;
             });
 
