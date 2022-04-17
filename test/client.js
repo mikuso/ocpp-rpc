@@ -620,19 +620,14 @@ describe('RPCClient', function(){
 
         it('should not reconnect if using option {reconnect: true} without subprotocols', async () => {
 
-            let disconnectedOnce = false;
             const {url, close, server} = await createServer({}, {
                 withClient: async (client) => {
-                    if (!disconnectedOnce) {
-                        disconnectedOnce = true;
-                        await client.close({code: 4010, reason: "Please reconnect"});
-                    }
+                    await client.close({code: 4010, reason: "Bye"});
                 }
             });
             const cli = new RPCClient({
                 url,
                 reconnect: true,
-                reconnectWithoutSubprotocol: true,
                 maxReconnects: 1,
                 backoff: {
                     initialDelay: 1,
@@ -641,18 +636,18 @@ describe('RPCClient', function(){
             });
             
             try {
+                let connectCount = 0;
+                cli.on('connecting', () => {
+                    connectCount++;
+                });
+                
                 await cli.connect();
-                const test1 = cli.call('Sleep', {ms: 1000});
-                const [dc1] = await once(cli, 'disconnect');
+                const [dc1] = await once(cli, 'close');
 
                 assert.equal(dc1.code, 4010);
-                await assert.rejects(test1);
+                assert.equal(connectCount, 1);
                 
-                const test2 = await cli.call('Echo', 'TEST2');
-                assert.equal(test2, 'TEST2');
-
             } finally {
-                await cli.close();
                 close();
             }
 
