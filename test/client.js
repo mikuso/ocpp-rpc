@@ -578,6 +578,86 @@ describe('RPCClient', function(){
 
         });
 
+        it('should send calls serially (one at a time)', async () => {
+
+            let concurrentCalls = 0;
+            let mostConcurrent = 0;
+
+            const {url, close} = await createServer({}, {
+                withClient: client => {
+                    client.handle('Conc', async () => {
+                        concurrentCalls++;
+                        mostConcurrent = Math.max(mostConcurrent, concurrentCalls);
+                        await setTimeout(50);
+                        concurrentCalls--;
+                    });
+                }
+            });
+            const cli = new RPCClient({
+                url,
+                callConcurrency: 1,
+            });
+
+            try {
+                await cli.connect();
+                
+                await Promise.all([
+                    cli.call('Conc'),
+                    cli.call('Conc'),
+                    cli.call('Conc'),
+                    cli.call('Conc'),
+                    cli.call('Conc'),
+                ]);
+
+                assert.equal(mostConcurrent, 1);
+
+            } finally {
+                await cli.close();
+                close();
+            }
+
+        });
+
+        it('should send calls concurrently with option {callConcurrency}', async () => {
+
+            let concurrentCalls = 0;
+            let mostConcurrent = 0;
+
+            const {url, close} = await createServer({}, {
+                withClient: client => {
+                    client.handle('Conc', async () => {
+                        concurrentCalls++;
+                        mostConcurrent = Math.max(mostConcurrent, concurrentCalls);
+                        await setTimeout(50);
+                        concurrentCalls--;
+                    });
+                }
+            });
+            const cli = new RPCClient({
+                url,
+                callConcurrency: 3,
+            });
+
+            try {
+                await cli.connect();
+                
+                await Promise.all([
+                    cli.call('Conc'),
+                    cli.call('Conc'),
+                    cli.call('Conc'),
+                    cli.call('Conc'),
+                    cli.call('Conc'),
+                ]);
+
+                assert.equal(mostConcurrent, 3);
+
+            } finally {
+                await cli.close();
+                close();
+            }
+
+        });
+
     });
 
     
@@ -804,5 +884,10 @@ describe('RPCClient', function(){
     //     });
 
     // });
+
+
+    // it should only send calls serially (one at a time)
+    // perhaps another option? {callConcurrency: 1}
+    // 
 
 });
