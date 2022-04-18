@@ -666,7 +666,7 @@ describe('RPCClient', function(){
     });
 
     
-    describe('#handleDisconnect', function() {
+    describe('#_handleDisconnect', function() {
 
         it('client should disconnect when server closes', async () => {
 
@@ -925,7 +925,7 @@ describe('RPCClient', function(){
     });
 
 
-    describe('#onMessage', function() {
+    describe('#_onMessage', function() {
 
         it('should close connections with code 1002 when receiving malformed messages', async () => {
             
@@ -1020,33 +1020,56 @@ describe('RPCClient', function(){
     });
 
 
-    // describe('#ping', function() {
+    describe('#_keepAlive', function() {
 
-    //     it('should work', async () => {
+        it('should ping at the chosen interval', async () => {
             
-    //         const {url, close, server} = await createServer({}, {
-    //             withClient: async (client) => {
-    //                 client.send('x');
-    //             }
-    //         });
-    //         const cli = new RPCClient({
-    //             url,
-    //             callTimeoutMs: 50,
-    //         });
+            const pingIntervalMs = 40;
 
-    //         try {
-    //             throw Error("no")
-    //             await cli.connect();
-    //             const [closed] = await once(cli, 'close');
-    //             assert.equal(closed.code, 1002);
+            const {url, close, server} = await createServer();
+            const cli = new RPCClient({
+                url,
+                pingIntervalMs,
+            });
 
-    //         } finally {
-    //             await cli.close();
-    //             close();
-    //         }
+            try {
+                await cli.connect();
+                const start = Date.now();
+                await once(cli, 'ping');
+                const fin = Date.now() - start;
+                const {code} = await cli.close({code: 4050});
+                assert.ok(fin >= pingIntervalMs);
+                assert.ok(fin <= pingIntervalMs * 2);
+                assert.equal(code, 4050);
 
-    //     });
+            } finally {
+                close();
+            }
 
-    // });
+        });
+
+        it('should force close client if no pong between pings', async () => {
+            
+            // is there a better way to test this than spamming pings at 1ms interval?
+
+            const {url, close, server} = await createServer();
+            const cli = new RPCClient({
+                url,
+                pingIntervalMs: 1, // should fail pretty quickly
+            });
+
+            try {
+
+                await cli.connect();
+                const [dc] = await once(cli, 'close');
+                assert.equal(dc.code, 1006);
+
+            } finally {
+                close();
+            }
+
+        });
+
+    });
 
 });

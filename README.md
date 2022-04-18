@@ -2,7 +2,7 @@
 
 A client & server implementation of the WAMP-like RPC-over-websocket system defined in the [OCPP protcols](https://www.openchargealliance.org/protocols/) (e.g. [OCPP1.6-J](https://www.openchargealliance.org/protocols/ocpp-16/) and [OCPP2.0.1](https://www.openchargealliance.org/protocols/ocpp-201/)).
 
-Requires Node.js >= 14.17.0 (or >= 17.2.0 for `AbortController#abort([reason])` support)
+Requires Node.js >= 15.9.0 (or >= 17.2.0 for `AbortController#abort([reason])` support)
 
 ## Features
 
