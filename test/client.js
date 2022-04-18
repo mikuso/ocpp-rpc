@@ -340,8 +340,9 @@ describe('RPCClient', function(){
                 
                 const [callResult, closeResult] = await Promise.allSettled([
                     serverInitiatedCall,
-                    cli.close({awaitPending: true})
+                    setTimeout(1).then(() => cli.close({awaitPending: true})),
                 ]);
+                
                 assert.equal(callResult.status, 'fulfilled');
                 assert.equal(callResult.value, echoVal);
                 assert.equal(closeResult.status, 'fulfilled');
@@ -591,7 +592,7 @@ describe('RPCClient', function(){
                         totalCalls++;
                         concurrentCalls++;
                         mostConcurrent = Math.max(mostConcurrent, concurrentCalls);
-                        await setTimeout(50);
+                        await setTimeout(30);
                         concurrentCalls--;
                     });
                 }
@@ -607,13 +608,10 @@ describe('RPCClient', function(){
                 await Promise.all([
                     cli.call('Conc'),
                     cli.call('Conc'),
-                    cli.call('Conc'),
-                    cli.call('Conc'),
-                    cli.call('Conc'),
                 ]);
 
                 assert.equal(mostConcurrent, 1);
-                assert.equal(totalCalls, 5);
+                assert.equal(totalCalls, 2);
 
             } finally {
                 await cli.close();
@@ -634,7 +632,7 @@ describe('RPCClient', function(){
                         totalCalls++;
                         concurrentCalls++;
                         mostConcurrent = Math.max(mostConcurrent, concurrentCalls);
-                        await setTimeout(50);
+                        await setTimeout(20);
                         concurrentCalls--;
                     });
                 }
@@ -852,6 +850,72 @@ describe('RPCClient', function(){
                 await cli.connect();
                 const [closed] = await once(cli, 'close');
                 assert.equal(closed.code, 1002);
+
+            } finally {
+                await cli.close();
+                close();
+            }
+
+        });
+
+    });
+
+
+    describe('#handle', function() {
+
+        it('should only start handling one tick after connection opened', async () => {
+            
+            const {url, close, server} = await createServer({protocols: ['b', 'c']}, {
+                withClient: client => {
+                    client.call('Test', {val: 123});
+                }
+            });
+            const cli = new RPCClient({url, protocols: ['a','b']});
+
+            try {
+                const res = await new Promise(async (resolve, reject) => {
+                    cli.handle(({method}) => {
+                        reject(Error("Wildcard handler called for method: "+method));
+                    });
+
+                    await cli.connect();
+                    assert.equal(cli.protocol, 'b');
+                    cli.handle('Test', resolve);
+                });
+
+                assert.equal(res.method, 'Test');
+                assert.equal(res.params.val, 123);
+
+            } finally {
+                await cli.close();
+                close();
+            }
+
+        });
+
+
+        it('should not invoke handler if client closes fast', async () => {
+            
+            const {url, close, server} = await createServer({protocols: ['b', 'c']}, {
+                withClient: client => {
+                    client.call('Test', {val: 123});
+                }
+            });
+            const cli = new RPCClient({url, protocols: ['a','b']});
+
+            try {
+                const [dc] = await new Promise(async (resolve, reject) => {
+                    cli.handle(({method}) => {
+                        reject(Error("Wildcard handler called for method: "+method));
+                    });
+
+                    await cli.connect();
+                    cli.close({code: 4050});
+
+                    once(cli, 'close').then(resolve);
+                });
+
+                assert.equal(dc.code, 4050);
 
             } finally {
                 await cli.close();
