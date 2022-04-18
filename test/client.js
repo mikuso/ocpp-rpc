@@ -703,11 +703,15 @@ describe('RPCClient', function(){
 
         });
 
-        it('should not reconnect if using option {reconnect: true} without subprotocols', async () => {
+        it('should reconnect if using option {reconnect: true} without subprotocols', async () => {
 
+            let disconnectedOnce = false;
             const {url, close, server} = await createServer({}, {
                 withClient: async (client) => {
-                    await client.close({code: 4010, reason: "Bye"});
+                    if (!disconnectedOnce) {
+                        disconnectedOnce = true;
+                        await client.close({code: 4010, reason: "Please reconnect"});
+                    }
                 }
             });
             const cli = new RPCClient({
@@ -721,18 +725,18 @@ describe('RPCClient', function(){
             });
             
             try {
-                let connectCount = 0;
-                cli.on('connecting', () => {
-                    connectCount++;
-                });
-                
                 await cli.connect();
-                const [dc1] = await once(cli, 'close');
+                const test1 = cli.call('Sleep', {ms: 1000});
+                const [dc1] = await once(cli, 'disconnect');
 
                 assert.equal(dc1.code, 4010);
-                assert.equal(connectCount, 1);
+                await assert.rejects(test1);
                 
+                const test2 = await cli.call('Echo', 'TEST2');
+                assert.equal(test2, 'TEST2');
+
             } finally {
+                await cli.close();
                 close();
             }
 
@@ -788,7 +792,6 @@ describe('RPCClient', function(){
             const cli = new RPCClient({
                 url,
                 reconnect: true,
-                reconnectWithoutSubprotocol: true,
                 maxReconnects,
                 backoff: {
                     initialDelay: 10,
@@ -909,7 +912,6 @@ describe('RPCClient', function(){
             const cli = new RPCClient({
                 url,
                 reconnect: true,
-                reconnectWithoutSubprotocol: true,
                 maxReconnects: 5,
                 // protocols: ['a', 'b'],
                 backoff: {
@@ -941,7 +943,6 @@ describe('RPCClient', function(){
             const cli = new RPCClient({
                 url,
                 reconnect: true,
-                reconnectWithoutSubprotocol: true,
                 maxReconnects: 3,
                 backoff: {
                     initialDelay: 10,
