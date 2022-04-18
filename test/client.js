@@ -893,50 +893,6 @@ describe('RPCClient', function(){
 
         });
 
-        it('should fail if reconnect cannot use same subprotocol', async () => {
-
-            const server2 = new RPCServer({
-                protocols: ['b'],
-            });
-
-            const {url, close, server, port} = await createServer({
-                // protocols: ['a', 'b'],
-            }, {withClient: client => {
-                client.handle('Switcheroo', () => {
-                    close();
-                    server2.listen(port);
-                });
-            }});
-            
-
-            const cli = new RPCClient({
-                url,
-                reconnect: true,
-                maxReconnects: 5,
-                // protocols: ['a', 'b'],
-                backoff: {
-                    initialDelay: 10,
-                    maxDelay: 11,
-                }
-            });
-
-            try {
-                
-                await cli.connect();
-                const call1Prom = cli.call('Switcheroo');
-                await assert.rejects(call1Prom);
-
-                await once(cli, 'connecting');
-                const [dc] = await once(cli, 'close');
-                assert.equal(dc.code, 1001);
-                assert.equal(dc.reason, 'Giving up');
-
-            } finally {
-                server2.close();
-            }
-
-        });
-
         it('should close with code 1001 after failed reconnect', async () => {
 
             const {url, close, server} = await createServer();
