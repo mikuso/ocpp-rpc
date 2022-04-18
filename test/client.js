@@ -906,11 +906,19 @@ describe('RPCClient', function(){
                 }
             });
 
+            let timesOpened= 0;
+            let timesConnecting= 0;
+
+            cli.on('open', () => timesOpened++);
+            cli.on('connecting', () => timesConnecting++);
+
             await cli.connect();
             close({code: 4060});
 
             const [closed] = await once(cli, 'close');
             assert.equal(closed.code, 1001);
+            assert.equal(timesOpened, 1);
+            assert.equal(timesConnecting, 4); // original + 3 reconnects
 
         });
 
