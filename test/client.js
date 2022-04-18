@@ -298,7 +298,7 @@ describe('RPCClient', function(){
         it('should wait for all outbound calls to settle when {awaitPending: true}', async () => {
 
             const {url, close, server} = await createServer({respondWithDetailedErrors: true});
-            const cli = new RPCClient({url});
+            const cli = new RPCClient({url, callConcurrency: 2});
 
             try {
                 await cli.connect();
@@ -307,6 +307,7 @@ describe('RPCClient', function(){
                     cli.call('Sleep', {ms: 50}),
                     cli.close({awaitPending: true})
                 ]);
+
                 assert.equal(rejectResult.status, 'rejected');
                 assert.equal(rejectResult.reason.details.code, 'TEST');
                 assert.equal(sleepResult.status, 'fulfilled');
@@ -581,11 +582,13 @@ describe('RPCClient', function(){
         it('should send calls serially (one at a time)', async () => {
 
             let concurrentCalls = 0;
+            let totalCalls = 0;
             let mostConcurrent = 0;
 
             const {url, close} = await createServer({}, {
                 withClient: client => {
                     client.handle('Conc', async () => {
+                        totalCalls++;
                         concurrentCalls++;
                         mostConcurrent = Math.max(mostConcurrent, concurrentCalls);
                         await setTimeout(50);
@@ -610,6 +613,7 @@ describe('RPCClient', function(){
                 ]);
 
                 assert.equal(mostConcurrent, 1);
+                assert.equal(totalCalls, 5);
 
             } finally {
                 await cli.close();
@@ -621,11 +625,13 @@ describe('RPCClient', function(){
         it('should send calls concurrently with option {callConcurrency}', async () => {
 
             let concurrentCalls = 0;
+            let totalCalls = 0;
             let mostConcurrent = 0;
 
             const {url, close} = await createServer({}, {
                 withClient: client => {
                     client.handle('Conc', async () => {
+                        totalCalls++;
                         concurrentCalls++;
                         mostConcurrent = Math.max(mostConcurrent, concurrentCalls);
                         await setTimeout(50);
@@ -650,6 +656,7 @@ describe('RPCClient', function(){
                 ]);
 
                 assert.equal(mostConcurrent, 3);
+                assert.equal(totalCalls, 5);
 
             } finally {
                 await cli.close();
@@ -884,10 +891,5 @@ describe('RPCClient', function(){
     //     });
 
     // });
-
-
-    // it should only send calls serially (one at a time)
-    // perhaps another option? {callConcurrency: 1}
-    // 
 
 });
