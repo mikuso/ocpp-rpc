@@ -85,13 +85,13 @@ npm install ocpp-rpc
 
 - `options` {Object}
   - `wsOptions` {Object} - Additional [WebSocket options](https://github.com/websockets/ws/blob/master/doc/ws.md#new-websocketaddress-protocols-options).
-  - `callTimeoutMs` {Number} - Milliseconds to wait before unanswered outbound calls are rejected automatically. Defaults to `Infinity`.
+  - `callTimeoutMs` {Number} - Milliseconds to wait before unanswered outbound calls are rejected automatically. Defaults to `60000`.
   - `pingIntervalMs` {Number} - Milliseconds between WebSocket pings. Defaults to `30000`.
   - `url` {String} - The WebSocket URL to connect to.
   - `protocols` {Array<String>} - Array of subprotocols supported by this client. Defaults to `[]`.
   - `respondWithDetailedErrors` {Boolean} - Specifies whether to send detailed errors (including stack trace) to remote party upon an error being thrown by a handler. Defaults to `false`.
   - `callConcurrency` {Number} - The number of concurrent in-flight outbound calls permitted at any one time. Additional calls are queued. There is no limit on inbound calls. Defaults to `1`.
-  - `reconnect` {Boolean} - If `true`, the client will attempt to reconnect after losing connection to the RPCServer. Only works after making one initial successful connection. Defaults to `false`.
+  - `reconnect` {Boolean} - If `true`, the client will attempt to reconnect after losing connection to the RPCServer. Only works after making one initial successful connection. Defaults to `true`.
   - `maxReconnects` {Number} - If `reconnect` is `true`, specifies the number of times to try reconnecting before failing an emitting a `close` event. Defaults to `Infinity`
   - `backoff` {Object} - If `reconnect` is `true`, specifies the options for an [ExponentialStrategy](https://github.com/MathieuTurcotte/node-backoff#class-exponentialstrategy) backoff strategy, used for reconnects.
 
@@ -166,6 +166,10 @@ If the invocation of the `handler` rejects or throws, an error will be passed to
 Calls a remote method. Returns a `Promise` which either:
 * resolves to the value returned by the remote handler.
 * rejects with an error.
+
+If the underlying connection is interrupted while waiting for a response, this method will reject.
+
+It's tempting to set `callTimeoutMs` to `Infinity` but this could be a mistake; If the remote handler never returns a response, the RPC communications will be blocked as soon as `callConcurrency` is exhausted (which is `1` by default). (While this is still an unlikely outcome when using this module for both client *and* server components - interoperability with real world systems can sometimes be unpredictable.)
 
 ### createRPCError(type[, message[, details]])
 * `type` {String} - One of the supported error types (see below).

@@ -700,7 +700,7 @@ describe('RPCClient', function(){
         it('client should disconnect when server closes', async () => {
 
             const {endpoint, close, server} = await createServer();
-            const cli = new RPCClient({endpoint, identity: 'X'});
+            const cli = new RPCClient({endpoint, identity: 'X', reconnect: false});
 
             await cli.connect();
             close({code: 4050});
@@ -716,7 +716,7 @@ describe('RPCClient', function(){
                     await client.close({code: 4001});
                 }
             });
-            const cli = new RPCClient({endpoint, identity: 'X'});
+            const cli = new RPCClient({endpoint, identity: 'X', reconnect: false});
 
             try {
                 const closePromise = once(cli, 'close');
@@ -1096,6 +1096,7 @@ describe('RPCClient', function(){
             const cli = new RPCClient({
                 endpoint,
                 identity: 'X',
+                reconnect: false,
                 pingIntervalMs: 30, // should fail pretty quickly
             });
 
