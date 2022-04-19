@@ -45,14 +45,13 @@ npm install ocpp-rpc
   * [new RPCClient(options)](#new-rpcclientoptions)
   * Event: 'close'
   * Event: 'closing'
-  * Event: 'socketError'
-  * Event: 'ping'
-  * Event: 'disconnect'
   * Event: 'connecting'
-  * Event: 'open'
-  * Event: 'protocol'
+  * Event: 'disconnect'
   * Event: 'message'
-  * Event: 'unexpectedMessage'
+  * Event: 'open'
+  * Event: 'ping'
+  * Event: 'protocol'
+  * Event: 'socketError'
   * Event: 'unexpectedMessage'
   * [client.id](#clientid)
   * [client.state](#clientstate)
