@@ -72,7 +72,8 @@ npm install ocpp-rpc
   - `wssOptions` {Object} - Additional [WebSocketServer options](https://github.com/websockets/ws/blob/master/doc/ws.md#new-websocketserveroptions-callback).
   - `callTimeoutMs` {Number} - Milliseconds to wait before unanswered outbound calls are rejected automatically. Defaults to `Infinity`.
   - `pingIntervalMs` {Number} - Milliseconds between WebSocket pings to connected clients. Defaults to `30000`.
-  - `url` {String} - The WebSocket URL to connect to.
+  - `endpoint` {String} - The RPC endpoint URL. (begins with `ws://` or `wss://`).
+  - `identity` {String} - The self-reported identity of this RPC client.
   - `protocols` {Array<String>} - Array of subprotocols supported by this client. Defaults to `[]`.
   - `protocolRequired` {Boolean} - If `protocols` is not empty, this option specifies whether a subprotocol is required. If true, connections without subprotocols are dropped during handshake. Defaults to `true`.
   - `respondWithDetailedErrors` {Boolean} - Specifies whether to send detailed errors (including stack trace) to remote party upon an error being thrown by a handler. Defaults to `false`.

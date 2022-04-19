@@ -14,7 +14,7 @@ describe('RPCClient', function(){
         const server = new RPCServer(options);
         const httpServer = await server.listen(0);
         const port = httpServer.address().port;
-        const url = `ws://localhost:${port}`;
+        const endpoint = `ws://localhost:${port}`;
         const close = (...args) => server.close(...args);
         server.on('client', client => {
             client.handle('Echo', async ({params}) => {
@@ -33,16 +33,17 @@ describe('RPCClient', function(){
                 extra.withClient(client);
             }
         });
-        return {server, httpServer, port, url, close};
+        return {server, httpServer, port, endpoint, close};
     }
 
     describe('#connect', function(){
 
         it('should connect to an RPCServer', async () => {
 
-            const {url, close} = await createServer();
+            const {endpoint, close} = await createServer();
             const cli = new RPCClient({
-                url,
+                endpoint,
+                identity: 'X',
             });
 
             await cli.connect();
@@ -66,8 +67,8 @@ describe('RPCClient', function(){
             });
             const port = httpServer.address().port;
             
-            const url = `ws://localhost:${port}`;
-            const cli = new RPCClient({url});
+            const endpoint = `ws://localhost:${port}`;
+            const cli = new RPCClient({endpoint, identity: 'X'});
 
             try {
                 await assert.rejects(cli.connect());
@@ -78,11 +79,12 @@ describe('RPCClient', function(){
 
         });
 
-        it('should reject on non-ws URL', async () => {
+        it('should reject on non-ws endpoint URL', async () => {
 
             const {close, port} = await createServer();
             const cli = new RPCClient({
-                url: `http://localhost:${port}`,
+                endpoint: `http://localhost:${port}`,
+                identity: 'X',
             });
 
             try {
@@ -94,11 +96,12 @@ describe('RPCClient', function(){
 
         });
 
-        it('should reject on malformed URL', async () => {
+        it('should reject on malformed endpoint URL', async () => {
 
             const {close} = await createServer();
             const cli = new RPCClient({
-                url: 'x',
+                endpoint: 'x',
+                identity: 'X',
             });
 
             try {
@@ -114,7 +117,8 @@ describe('RPCClient', function(){
 
             const {close} = await createServer();
             const cli = new RPCClient({
-                url: 'ws://0.0.0.0:0',
+                endpoint: 'ws://0.0.0.0:0',
+                identity: 'X',
             });
 
             try {
@@ -128,9 +132,10 @@ describe('RPCClient', function(){
 
         it('should reject when no subprotocols match', async () => {
 
-            const {url, close} = await createServer({protocols: ['one', 'two']});
+            const {endpoint, close} = await createServer({protocols: ['one', 'two']});
             const cli = new RPCClient({
-                url,
+                endpoint,
+                identity: 'X',
                 protocols: ['three', 'four']
             });
 
@@ -145,9 +150,10 @@ describe('RPCClient', function(){
 
         it('should select first matching subprotocol', async () => {
 
-            const {url, close} = await createServer({protocols: ['one', 'two', 'three', 'four', 'x']});
+            const {endpoint, close} = await createServer({protocols: ['one', 'two', 'three', 'four', 'x']});
             const cli = new RPCClient({
-                url,
+                endpoint,
+                identity: 'X',
                 protocols: ['test', 'three', 'four'],
             });
 
@@ -168,8 +174,8 @@ describe('RPCClient', function(){
 
         it('should pass code and reason to server', async () => {
 
-            const {server, url, close} = await createServer();
-            const cli = new RPCClient({url});
+            const {server, endpoint, close} = await createServer();
+            const cli = new RPCClient({endpoint, identity: 'X'});
 
             try {
                 const serverClientPromise = once(server, 'client');
@@ -189,8 +195,8 @@ describe('RPCClient', function(){
 
         it('should return the close code of the first close() call', async () => {
 
-            const {url, close} = await createServer();
-            const cli = new RPCClient({url});
+            const {endpoint, close} = await createServer();
+            const cli = new RPCClient({endpoint, identity: 'X'});
 
             try {
                 await cli.connect();
@@ -213,8 +219,8 @@ describe('RPCClient', function(){
 
         it('should abort #connect if connection in progress, with code 1001', async () => {
 
-            const {url, close} = await createServer();
-            const cli = new RPCClient({url});
+            const {endpoint, close} = await createServer();
+            const cli = new RPCClient({endpoint, identity: 'X'});
 
             try {
                 const connPromise = cli.connect();
@@ -232,8 +238,8 @@ describe('RPCClient', function(){
 
         it('should not throw if already closed', async () => {
 
-            const {url, close} = await createServer();
-            const cli = new RPCClient({url});
+            const {endpoint, close} = await createServer();
+            const cli = new RPCClient({endpoint, identity: 'X'});
 
             try {
                 await cli.connect();
@@ -247,8 +253,8 @@ describe('RPCClient', function(){
 
         it('should abort all outbound calls when {awaitPending: false}', async () => {
 
-            const {url, close, server} = await createServer();
-            const cli = new RPCClient({url});
+            const {endpoint, close, server} = await createServer();
+            const cli = new RPCClient({endpoint, identity: 'X'});
 
             try {
                 await cli.connect();
@@ -268,12 +274,12 @@ describe('RPCClient', function(){
         it('should abort all inbound calls when {awaitPending: false}', async () => {
             
             let serverInitiatedCall = null;
-            const {url, close, server} = await createServer({}, {
+            const {endpoint, close, server} = await createServer({}, {
                 withClient: client => {
                     serverInitiatedCall = client.call('Sleep', {ms: 50});
                 }
             });
-            const cli = new RPCClient({url});
+            const cli = new RPCClient({endpoint, identity: 'X'});
 
             try {
                 cli.handle('Sleep', async ({params, signal}) => {
@@ -297,8 +303,8 @@ describe('RPCClient', function(){
 
         it('should wait for all outbound calls to settle when {awaitPending: true}', async () => {
 
-            const {url, close, server} = await createServer({respondWithDetailedErrors: true});
-            const cli = new RPCClient({url, callConcurrency: 2});
+            const {endpoint, close, server} = await createServer({respondWithDetailedErrors: true});
+            const cli = new RPCClient({endpoint, identity: 'X', callConcurrency: 2});
 
             try {
                 await cli.connect();
@@ -323,12 +329,12 @@ describe('RPCClient', function(){
             
             const echoVal = 'TEST123';
             let serverInitiatedCall = null;
-            const {url, close, server} = await createServer({}, {
+            const {endpoint, close, server} = await createServer({}, {
                 withClient: client => {
                     serverInitiatedCall = client.call('SlowEcho', {ms: 50, val: echoVal});
                 }
             });
-            const cli = new RPCClient({url});
+            const cli = new RPCClient({endpoint, identity: 'X'});
 
             try {
                 cli.handle('SlowEcho', async ({params}) => {
@@ -355,8 +361,8 @@ describe('RPCClient', function(){
 
         it('should close immediately with code 1006 when {force: true}', async () => {
             
-            const {url, close, server} = await createServer();
-            const cli = new RPCClient({url});
+            const {endpoint, close, server} = await createServer();
+            const cli = new RPCClient({endpoint, identity: 'X'});
 
             try {
                 await cli.connect();
@@ -373,12 +379,12 @@ describe('RPCClient', function(){
         it('should immediately reject any in-flight calls when {force: true}', async () => {
             
             let serverInitiatedCall = null;
-            const {url, close, server} = await createServer({}, {
+            const {endpoint, close, server} = await createServer({}, {
                 withClient: client => {
                     serverInitiatedCall = client.call('Sleep', {ms: 5000});
                 }
             });
-            const cli = new RPCClient({url});
+            const cli = new RPCClient({endpoint, identity: 'X'});
             cli.handle('Sleep', async ({params, signal}) => {
                 await setTimeout(params.ms, null, {signal});
                 return `Waited ${params.ms}ms`;
@@ -407,12 +413,13 @@ describe('RPCClient', function(){
 
         it('should not reconnect even when {reconnect: true}', async () => {
             
-            const {url, close, server} = await createServer({
+            const {endpoint, close, server} = await createServer({
                 protocols: ['a'],
             });
 
             const cli = new RPCClient({
-                url,
+                endpoint,
+                identity: 'X',
                 protocols: ['a'],
                 reconnect: true,
                 maxReconnects: Infinity,
@@ -442,9 +449,10 @@ describe('RPCClient', function(){
 
         it('should timeout after client callTimeoutMs option', async () => {
 
-            const {url, close, server} = await createServer();
+            const {endpoint, close, server} = await createServer();
             const cli = new RPCClient({
-                url,
+                endpoint,
+                identity: 'X',
                 callTimeoutMs: 20,
             });
 
@@ -460,9 +468,10 @@ describe('RPCClient', function(){
 
         it('should not timeout after call callTimeoutMs option override', async () => {
 
-            const {url, close, server} = await createServer();
+            const {endpoint, close, server} = await createServer();
             const cli = new RPCClient({
-                url,
+                endpoint,
+                identity: 'X',
                 callTimeoutMs: 50,
             });
 
@@ -478,8 +487,8 @@ describe('RPCClient', function(){
 
         it('should reject when state === CLOSING with {awaitPending: true}', async () => {
 
-            const {url, close, server} = await createServer();
-            const cli = new RPCClient({url});
+            const {endpoint, close, server} = await createServer();
+            const cli = new RPCClient({endpoint, identity: 'X'});
 
             try {
                 await cli.connect();
@@ -503,8 +512,8 @@ describe('RPCClient', function(){
 
         it('should reject when state === CLOSING', async () => {
 
-            const {url, close, server} = await createServer();
-            const cli = new RPCClient({url});
+            const {endpoint, close, server} = await createServer();
+            const cli = new RPCClient({endpoint, identity: 'X'});
 
             try {
                 await cli.connect();
@@ -522,8 +531,8 @@ describe('RPCClient', function(){
 
         it('should reject when state === CLOSED', async () => {
 
-            const {url, close, server} = await createServer();
-            const cli = new RPCClient({url});
+            const {endpoint, close, server} = await createServer();
+            const cli = new RPCClient({endpoint, identity: 'X'});
 
             try {
                 const callPromise = cli.call('Sleep', {ms: 1000});
@@ -539,8 +548,8 @@ describe('RPCClient', function(){
 
         it('should queue when state === CONNECTING', async () => {
 
-            const {url, close, server} = await createServer();
-            const cli = new RPCClient({url});
+            const {endpoint, close, server} = await createServer();
+            const cli = new RPCClient({endpoint, identity: 'X'});
 
             try {
                 cli.connect();
@@ -560,8 +569,8 @@ describe('RPCClient', function(){
         it('should reject when options.signal aborts', async () => {
 
             const reason = "TEST123";
-            const {url, close} = await createServer();
-            const cli = new RPCClient({url});
+            const {endpoint, close} = await createServer();
+            const cli = new RPCClient({endpoint, identity: 'X'});
 
             try {
                 await cli.connect();
@@ -590,7 +599,7 @@ describe('RPCClient', function(){
             let totalCalls = 0;
             let mostConcurrent = 0;
 
-            const {url, close} = await createServer({}, {
+            const {endpoint, close} = await createServer({}, {
                 withClient: client => {
                     client.handle('Conc', async () => {
                         totalCalls++;
@@ -602,7 +611,8 @@ describe('RPCClient', function(){
                 }
             });
             const cli = new RPCClient({
-                url,
+                endpoint,
+                identity: 'X',
                 callConcurrency: 1,
             });
 
@@ -630,7 +640,7 @@ describe('RPCClient', function(){
             let totalCalls = 0;
             let mostConcurrent = 0;
 
-            const {url, close} = await createServer({}, {
+            const {endpoint, close} = await createServer({}, {
                 withClient: client => {
                     client.handle('Conc', async () => {
                         totalCalls++;
@@ -642,7 +652,8 @@ describe('RPCClient', function(){
                 }
             });
             const cli = new RPCClient({
-                url,
+                endpoint,
+                identity: 'X',
                 callConcurrency: 3,
             });
 
@@ -674,8 +685,8 @@ describe('RPCClient', function(){
 
         it('client should disconnect when server closes', async () => {
 
-            const {url, close, server} = await createServer();
-            const cli = new RPCClient({url});
+            const {endpoint, close, server} = await createServer();
+            const cli = new RPCClient({endpoint, identity: 'X'});
 
             await cli.connect();
             close({code: 4050});
@@ -686,12 +697,12 @@ describe('RPCClient', function(){
 
         it('should reject outbound call in-flight when connection drops', async () => {
 
-            const {url, close, server} = await createServer({}, {
+            const {endpoint, close, server} = await createServer({}, {
                 withClient: async (client) => {
                     await client.close({code: 4001});
                 }
             });
-            const cli = new RPCClient({url});
+            const cli = new RPCClient({endpoint, identity: 'X'});
 
             try {
                 const closePromise = once(cli, 'close');
@@ -710,7 +721,7 @@ describe('RPCClient', function(){
         it('should reconnect if using option {reconnect: true} without subprotocols', async () => {
 
             let disconnectedOnce = false;
-            const {url, close, server} = await createServer({}, {
+            const {endpoint, close, server} = await createServer({}, {
                 withClient: async (client) => {
                     if (!disconnectedOnce) {
                         disconnectedOnce = true;
@@ -719,7 +730,8 @@ describe('RPCClient', function(){
                 }
             });
             const cli = new RPCClient({
-                url,
+                endpoint,
+                identity: 'X',
                 reconnect: true,
                 maxReconnects: 1,
                 backoff: {
@@ -749,7 +761,7 @@ describe('RPCClient', function(){
         it('should reconnect if using option {reconnect: true} with subprotocols', async () => {
 
             let disconnectedOnce = false;
-            const {url, close, server} = await createServer({
+            const {endpoint, close, server} = await createServer({
                 protocols: ['a'],
                 protocolRequired: true,
             }, {
@@ -761,7 +773,8 @@ describe('RPCClient', function(){
                 }
             });
             const cli = new RPCClient({
-                url,
+                endpoint,
+                identity: 'X',
                 reconnect: true,
                 protocols: ['a'],
                 maxReconnects: 1,
@@ -792,9 +805,10 @@ describe('RPCClient', function(){
         it('should reconnect exactly {maxReconnects} times before giving up', async () => {
 
             const maxReconnects = 3;
-            const {url, close, server} = await createServer();
+            const {endpoint, close, server} = await createServer();
             const cli = new RPCClient({
-                url,
+                endpoint,
+                identity: 'X',
                 reconnect: true,
                 maxReconnects,
                 backoff: {
@@ -820,7 +834,7 @@ describe('RPCClient', function(){
                 protocols: ['b', 'a'],
             });
 
-            const {url, close, server, port} = await createServer({
+            const {endpoint, close, server, port} = await createServer({
                 protocols: ['a', 'b'],
             }, {withClient: client => {
                 client.handle('Switcheroo', () => {
@@ -831,7 +845,8 @@ describe('RPCClient', function(){
             
 
             const cli = new RPCClient({
-                url,
+                endpoint,
+                identity: 'X',
                 reconnect: true,
                 protocols: ['a', 'b'],
                 backoff: {
@@ -862,7 +877,7 @@ describe('RPCClient', function(){
                 protocols: ['b'],
             });
 
-            const {url, close, server, port} = await createServer({
+            const {endpoint, close, server, port} = await createServer({
                 protocols: ['a', 'b'],
             }, {withClient: client => {
                 client.handle('Switcheroo', () => {
@@ -873,7 +888,8 @@ describe('RPCClient', function(){
             
 
             const cli = new RPCClient({
-                url,
+                endpoint,
+                identity: 'X',
                 reconnect: true,
                 protocols: ['a', 'b'],
                 backoff: {
@@ -899,9 +915,10 @@ describe('RPCClient', function(){
 
         it('should close with code 1001 after failed reconnect', async () => {
 
-            const {url, close, server} = await createServer();
+            const {endpoint, close, server} = await createServer();
             const cli = new RPCClient({
-                url,
+                endpoint,
+                identity: 'X',
                 reconnect: true,
                 maxReconnects: 3,
                 backoff: {
@@ -933,13 +950,14 @@ describe('RPCClient', function(){
 
         it('should close connections with code 1002 when receiving malformed messages', async () => {
             
-            const {url, close, server} = await createServer({}, {
+            const {endpoint, close, server} = await createServer({}, {
                 withClient: async (client) => {
                     client.sendRaw('x');
                 }
             });
             const cli = new RPCClient({
-                url,
+                endpoint,
+                identity: 'X',
                 callTimeoutMs: 50,
             });
 
@@ -962,12 +980,12 @@ describe('RPCClient', function(){
 
         it('should only start handling one tick after connection opened', async () => {
             
-            const {url, close, server} = await createServer({protocols: ['b', 'c']}, {
+            const {endpoint, close, server} = await createServer({protocols: ['b', 'c']}, {
                 withClient: client => {
                     client.call('Test', {val: 123});
                 }
             });
-            const cli = new RPCClient({url, protocols: ['a','b']});
+            const cli = new RPCClient({endpoint, identity: 'X', protocols: ['a','b']});
 
             try {
                 const res = await new Promise(async (resolve, reject) => {
@@ -993,12 +1011,12 @@ describe('RPCClient', function(){
 
         it('should not invoke handler if client closes fast', async () => {
             
-            const {url, close, server} = await createServer({protocols: ['b', 'c']}, {
+            const {endpoint, close, server} = await createServer({protocols: ['b', 'c']}, {
                 withClient: client => {
                     client.call('Test', {val: 123});
                 }
             });
-            const cli = new RPCClient({url, protocols: ['a','b']});
+            const cli = new RPCClient({endpoint, identity: 'X', protocols: ['a','b']});
 
             try {
                 const [dc] = await new Promise(async (resolve, reject) => {
@@ -1030,9 +1048,10 @@ describe('RPCClient', function(){
             
             const pingIntervalMs = 40;
 
-            const {url, close, server} = await createServer();
+            const {endpoint, close, server} = await createServer();
             const cli = new RPCClient({
-                url,
+                endpoint,
+                identity: 'X',
                 pingIntervalMs,
             });
 
@@ -1054,14 +1073,15 @@ describe('RPCClient', function(){
 
         it('should force close client if no pong between pings', async () => {
             
-            const {url, close, server} = await createServer({}, {
+            const {endpoint, close, server} = await createServer({}, {
                 withClient: client => {
                     // a hack to prevent WebSocket from responding to pings
                     client._ws._receiver.removeAllListeners('ping');
                 }
             });
             const cli = new RPCClient({
-                url,
+                endpoint,
+                identity: 'X',
                 pingIntervalMs: 30, // should fail pretty quickly
             });
 
@@ -1080,7 +1100,7 @@ describe('RPCClient', function(){
         it('should process pings normally after keepAlive forces a reconnect', async () => {
             
             let doneOnce = false;
-            const {url, close, server} = await createServer({}, {
+            const {endpoint, close, server} = await createServer({}, {
                 withClient: client => {
                     if (!doneOnce) {
                         doneOnce = true;
@@ -1090,7 +1110,8 @@ describe('RPCClient', function(){
                 }
             });
             const cli = new RPCClient({
-                url,
+                endpoint,
+                identity: 'X',
                 pingIntervalMs: 25,
                 reconnect: true,
                 backoff: {
