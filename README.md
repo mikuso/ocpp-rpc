@@ -211,6 +211,12 @@ Returns the corresponding `Error` object.
 
 Note: Whenever the underlying websocket loses connection, any in-flight outbound RPC calls are immediately rejected, and the `AbortSignal`s passed to any in-flight inbound RPC calls are aborted.
 
+## TODO
+
+* Add support for TLS Client certs
+* Add re-configurable reconnect backoff options
+* Add support for signed (JWS) messages
+
 ## License
 
 [MIT](LICENSE.md)

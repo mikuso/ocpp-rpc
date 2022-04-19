@@ -16,6 +16,7 @@ describe('RPCServer', function(){
 
     });
 
+    // should correctly decode identity
     // should close connections when receiving malformed messages
     // should not allow new connections after close (before http close)
     // should attach to an existing http server
