@@ -1,22 +1,85 @@
+const assert = require('assert/strict');
+const http = require('http');
+const { once } = require('events');
+const RPCClient = require("../lib/client");
+const { TimeoutError } = require('../lib/errors');
+const RPCServer = require("../lib/server");
+const { setTimeout } = require('timers/promises');
+const {CLOSING, CLOSED, CONNECTING} = RPCClient;
 
 describe('RPCServer', function(){
+    this.timeout(500);
 
-    // this.beforeEach(async function(){
-
-    //     this.httpServer = await server.listen(0);
-    //     this.port = this.httpServer.address().port;
-    // });
-
+    async function createServer(options = {}, extra = {}) {
+        const server = new RPCServer(options);
+        const httpServer = await server.listen(0);
+        const port = httpServer.address().port;
+        const endpoint = `ws://localhost:${port}`;
+        const close = (...args) => server.close(...args);
+        server.on('client', client => {
+            client.handle('Echo', async ({params}) => {
+                return params;
+            });
+            client.handle('Sleep', async ({params, signal}) => {
+                await setTimeout(params.ms, null, {signal});
+                return `Waited ${params.ms}ms`;
+            });
+            client.handle('Reject', async ({params}) => {
+                const err = Error("Rejecting");
+                Object.assign(err, params);
+                throw err;
+            });
+            if (extra.withClient) {
+                extra.withClient(client);
+            }
+        });
+        return {server, httpServer, port, endpoint, close};
+    }
 
     describe('events', function(){
 
         it('should emit "client" when client connects', async () => {
 
+            const {endpoint, close, server} = await createServer();
+            const cli = new RPCClient({endpoint, identity: 'X'});
+
+            try {
+                
+                const clientProm = once(server, 'client');
+                await cli.connect();
+                const [client] = await clientProm;
+                assert.equal(client.identity, 'X');
+
+            } finally {
+                await cli.close();
+                close();
+            }
+
+        });
+
+        it('should correctly decode the client identity', async () => {
+
+            const identity = 'RPC/ /123';
+            const {endpoint, close, server} = await createServer();
+            const cli = new RPCClient({endpoint, identity});
+
+            try {
+                
+                const clientProm = once(server, 'client');
+                await cli.connect();
+                const [client] = await clientProm;
+                assert.equal(client.identity, identity);
+
+            } finally {
+                await cli.close();
+                close();
+            }
+
         });
 
     });
 
-    // should correctly decode identity
+    // 
     // should close connections when receiving malformed messages
     // should not allow new connections after close (before http close)
     // should attach to an existing http server

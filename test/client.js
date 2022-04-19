@@ -5,7 +5,7 @@ const RPCClient = require("../lib/client");
 const { TimeoutError } = require('../lib/errors');
 const RPCServer = require("../lib/server");
 const { setTimeout } = require('timers/promises');
-const {CLOSING, CLOSED, CONNECTING} = require('ws');
+const {CLOSING, CLOSED, CONNECTING} = RPCClient;
 
 describe('RPCClient', function(){
     this.timeout(500);
