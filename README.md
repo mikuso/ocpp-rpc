@@ -63,7 +63,7 @@ npm install ocpp-rpc
 #### new RPCServer(options)
 
 - `options` {Object}
-  - `wssOptions` {Object} - Additional WebSocketServer options ([see docs](https://github.com/websockets/ws/blob/master/doc/ws.md#new-websocketserveroptions-callback)).
+  - `wssOptions` {Object} - Additional [WebSocketServer options](https://github.com/websockets/ws/blob/master/doc/ws.md#new-websocketserveroptions-callback).
   - `callTimeoutMs` {Number} - Milliseconds to wait before unanswered outbound calls are rejected automatically. Defaults to `Infinity`.
   - `pingIntervalMs` {Number} - Milliseconds between WebSocket pings to connected clients. Defaults to `30000`.
   - `url` {String} - The WebSocket URL to connect to.
@@ -77,7 +77,7 @@ npm install ocpp-rpc
 #### new RPCClient(options)
 
 - `options` {Object}
-  - `wsOptions` {Object} - Additional WebSocket options ([see docs](https://github.com/websockets/ws/blob/master/doc/ws.md#new-websocketaddress-protocols-options))
+  - `wsOptions` {Object} - Additional [WebSocket options](https://github.com/websockets/ws/blob/master/doc/ws.md#new-websocketaddress-protocols-options).
   - `callTimeoutMs` {Number} - Milliseconds to wait before unanswered outbound calls are rejected automatically. Defaults to `Infinity`.
   - `pingIntervalMs` {Number} - Milliseconds between WebSocket pings. Defaults to `30000`.
   - `url` {String} - The WebSocket URL to connect to.
@@ -85,8 +85,8 @@ npm install ocpp-rpc
   - `respondWithDetailedErrors` {Boolean} - Specifies whether to send detailed errors (including stack trace) to remote party upon an error being thrown by a handler. Defaults to `false`.
   - `callConcurrency` {Number} - The number of concurrent in-flight outbound calls permitted at any one time. Additional calls are queued. There is no limit on inbound calls. Defaults to `1`.
   - `reconnect` {Boolean} - If `true`, the client will attempt to reconnect after losing connection to the RPCServer. Only works after making one initial successful connection. Defaults to `false`.
-  - `maxReconnects` {Number} - If `reconnect` === `true`, specifies the number of times to try reconnecting before failing an emitting a `close` event. Defaults to `Infinity`
-  - `backoff` {Object} - If `reconnect` === `true`, specifies the options for the [ExponentialStrategy](https://github.com/MathieuTurcotte/node-backoff#class-exponentialstrategy) backoff strategy for reconnects.
+  - `maxReconnects` {Number} - If `reconnect` is `true`, specifies the number of times to try reconnecting before failing an emitting a `close` event. Defaults to `Infinity`
+  - `backoff` {Object} - If `reconnect` is `true`, specifies the options for an [ExponentialStrategy](https://github.com/MathieuTurcotte/node-backoff#class-exponentialstrategy) backoff strategy, used for reconnects.
 
 #### client.id
 
@@ -98,7 +98,7 @@ A random 36-character UUID unique to the client.
 
 * {Number}
 
-The client's state. [See state lifecycle](#rpcclient-state-lifecycle)
+The client's state. See [state lifecycle](#rpcclient-state-lifecycle)
 
 | Enum       | Value |
 | ---------- | ----- |
@@ -135,17 +135,37 @@ In some circumstances, the final `code` and `reason` returned may be different f
 #### handle([method,] handler)
 
 * `method` {String} - The name of the method to be handled. If not provided, acts as a wildcard handler which will handle any call that doesn't have a more specific handler already registered.
-* `handler` {Function} - The function to be invoked when attempting to handle a call.
+* `handler` {Function} - The function to be invoked when attempting to handle a call. Can return a `Promise`.
 
 Register a call handler. When the `handler` function is invoked, it will be passed an object with the following properties:
 * `method` {String} - The name of the method being invoked (useful for wildcard handlers).
 * `params` {*} - The `params` value passed to the call.
 * `signal` {AbortSignal} - A signal which will abort if the underlying connection is dropped (therefore, the response will never be received by the caller). You may choose whether to ignore the signal or not, but it could save you some time if you use it to abort the call early.
 
+If the invocation of the `handler` resolves or returns, the resolved value will be returned to the caller.
+If the invocation of the `handler` rejects or throws, an error will be passed to the caller. By default, the error will be an instance of `RPCGenericError`, although additional error types are possible ([see createRPCError](#createrpcerror)).
+
 #### call(method[, params][, options])
 
+### createRPCError(type[, message[, details]])
+* `type` {String} - One of the supported error types (see below).
+* `message` {String} - The error's message. Defaults to `''`.
+* `details` {Object} - The details object to pass along with the error. Defaults to `{}`.
 
+Create a special type of RPC Error which is recognised by this protocol to provide more specific error types.
 
+| Type                         | Description                                                                                                           |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| GenericError                 | A generic error when no more specific error is appropriate                                                            |
+| NotImplemented               | Requested method is not known                                                                                         |
+| NotSupported                 | Requested method is recognised but not supported                                                                      |
+| InternalError                | An internal error occurred and the receiver was not able to process the requested method successfully                 |
+| ProtocolError                | Payload for method is incomplete                                                                                      |
+| SecurityError                | During the processing of method a security issue occurred preventing receiver from completing the method successfully |
+| FormationViolation           | Payload for the method is syntactically incorrect or not conform the PDU structure for the method                     |
+| PropertyConstraintViolation  | Payload is syntactically correct but at least one field contains an invalid value                                     |
+| OccurenceConstraintViolation | Payload for the method is syntactically correct but at least one of the fields violates occurence constraints         |
+| TypeConstraintViolation      | Payload for the method is syntactically correct but at least one of the fields violates data type constraints         |
 
 ## RPCClient state lifecycle
 
