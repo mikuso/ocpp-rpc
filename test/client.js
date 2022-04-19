@@ -96,6 +96,20 @@ describe('RPCClient', function(){
 
         });
 
+        it('should reject on missing identity', async () => {
+
+            const {close, endpoint, port} = await createServer();
+            const cli = new RPCClient({endpoint});
+
+            try {
+                await assert.rejects(cli.connect());
+            } finally {
+                await cli.close();
+                close();
+            }
+
+        });
+
         it('should reject on malformed endpoint URL', async () => {
 
             const {close} = await createServer();
