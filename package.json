@@ -11,7 +11,7 @@
   },
   "keywords": ["ocpp", "rpc", "websocket rpc", "wamp", "websockets", "ocpp1.6", "ocpp2.0.1", "ocpp1.6-j"],
   "author": {
-    "name" : "@flamescape",
+    "name" : "Gareth Hughes",
     "url" : "https://github.com/mikuso"
   },
   "bugs": {
