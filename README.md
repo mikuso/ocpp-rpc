@@ -187,6 +187,8 @@ Returns the corresponding `Error` object.
 | PropertyConstraintViolation  | Payload is syntactically correct but at least one field contains an invalid value                                     |
 | OccurenceConstraintViolation | Payload for the method is syntactically correct but at least one of the fields violates occurence constraints         |
 | TypeConstraintViolation      | Payload for the method is syntactically correct but at least one of the fields violates data type constraints         |
+| MessageTypeNotSupported      | A message with a Message Type Number received is not supported by this implementation.                                |
+| RpcFrameworkError            | Content of the call is not a valid RPC Request, for example: MessageId could not be read.                             |
 
 ## RPCClient state lifecycle
 
