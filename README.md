@@ -36,6 +36,11 @@ npm install ocpp-rpc
 
 * [Class: RPCServer](#class-rpcserver)
   * [new RPCServer(options)](#new-rpcserveroptions)
+  * Event: 'client'
+  * server.auth(callback)
+  * server.listen(port[, host])
+  * server.close([options])
+
 * [Class: RPCClient](#class-rpcclient)
   * [new RPCClient(options)](#new-rpcclientoptions)
   * Event: 'close'
@@ -57,6 +62,8 @@ npm install ocpp-rpc
   * [client.close([options])](#clientcloseoptions)
   * [handle([method,] handler)](#handlemethod-handler)
   * [call(method[, params][, options])](#callmethod-params-options)
+
+* [createRPCError(type[, message[, details]])](#createrpcerrortype-message-details)
 
 ### Class: RPCServer
 
