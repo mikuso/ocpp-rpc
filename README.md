@@ -34,6 +34,30 @@ npm install ocpp-rpc
 
 ## API
 
+* [Class: RPCServer](#class-rpcserver)
+  * [new RPCServer(options)](#new-rpcserveroptions)
+* [Class: RPCClient](#class-rpcclient)
+  * [new RPCClient(options)](#new-rpcclientoptions)
+  * Event: 'close'
+  * Event: 'closing'
+  * Event: 'socketError'
+  * Event: 'ping'
+  * Event: 'disconnect'
+  * Event: 'connecting'
+  * Event: 'open'
+  * Event: 'protocol'
+  * Event: 'message'
+  * Event: 'unexpectedMessage'
+  * Event: 'unexpectedMessage'
+  * [client.id](#clientid)
+  * [client.state](#clientstate)
+  * [client.protocol](#clientprotocol)
+  * [client.connect()](#clientconnect)
+  * [client.sendRaw(message)](#clientsendrawmessage)
+  * [client.close([options])](#clientcloseoptions)
+  * [handle([method,] handler)](#handlemethod-handler)
+  * [call(method[, params][, options])](#callmethod-params-options)
+
 ### Class: RPCServer
 
 #### new RPCServer(options)
@@ -76,6 +100,13 @@ A random 36-character UUID unique to the client.
 
 The client's state. [See state lifecycle](#rpcclient-state-lifecycle)
 
+| Enum       | Value |
+| ---------- | ----- |
+| CONNECTING | 0     |
+| OPEN       | 1     |
+| CLOSING    | 2     |
+| CLOSED     | 3     |
+
 #### client.protocol
 
 * {String}
@@ -90,7 +121,7 @@ The client will attempt to connect to the `RPCServer` specified in `options.url`
 
 * `message` {String} - A raw message to send across the WebSocket. Not intended for general use.
 
-#### client.close([options]) {
+#### client.close([options])
 * `options` {Object}
   * `code` {Number} - The [WebSocket close code](https://developer.mozilla.org/en-US/docs/Web/API/CloseEvent/code). Defaults to `1000`.
   * `reason` {String} - The reason for closure. Defaults to `''`.
@@ -112,6 +143,7 @@ Register a call handler. When the `handler` function is invoked, it will be pass
 * `signal` {AbortSignal} - A signal which will abort if the underlying connection is dropped (therefore, the response will never be received by the caller). You may choose whether to ignore the signal or not, but it could save you some time if you use it to abort the call early.
 
 #### call(method[, params][, options])
+
 
 
 
