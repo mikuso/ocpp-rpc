@@ -57,10 +57,10 @@ npm install ocpp-rpc
   * [client.state](#clientstate)
   * [client.protocol](#clientprotocol)
   * [client.connect()](#clientconnect)
-  * [client.sendRaw(message)](#clientsendrawmessage)
   * [client.close([options])](#clientcloseoptions)
-  * [handle([method,] handler)](#handlemethod-handler)
-  * [call(method[, params][, options])](#callmethod-params-options)
+  * [client.handle([method,] handler)](#handlemethod-handler)
+  * [client.call(method[, params][, options])](#callmethod-params-options)
+  * [client.sendRaw(message)](#clientsendrawmessage)
 
 * [createRPCError(type[, message[, details]])](#createrpcerrortype-message-details)
 
@@ -121,7 +121,9 @@ The agreed subprotocol. Once connected for the first time, this subprotocol beco
 
 #### client.connect()
 
-The client will attempt to connect to the `RPCServer` specified in `options.url`. Will reject if connection fails.
+The client will attempt to connect to the `RPCServer` specified in `options.url`.
+
+Returns a `Promise` which will resolve upon successfully connecting or reject if the connection fails.
 
 #### client.sendRaw(message)
 
@@ -135,6 +137,8 @@ The client will attempt to connect to the `RPCServer` specified in `options.url`
   * `force` {Boolean} - If `true`, terminates the WebSocket connection instantly and uncleanly.
 
 Close the underlying connection. Unless `awaitPending` is true, all in-flight outbound calls will be instantly rejected and any inbound calls in process will have their `signal` aborted. Unless `force` is true, `close()` will wait until all calls are settled before returning the final `code` and `reason` for closure.
+
+Returns a `Promise` which resolves to an Object with properties `code` and `reason`.
 
 In some circumstances, the final `code` and `reason` returned may be different from those which were requested. For instance, if `close()` is called twice, the first `code` provided is canonical. Also, if `close()` is called while in the CONNECTING state during the first connect, the `code` will always be `1001`, with the `reason` of `'Connection aborted'`.
 
@@ -153,12 +157,23 @@ If the invocation of the `handler` rejects or throws, an error will be passed to
 
 #### call(method[, params][, options])
 
+* `method` {String} - The name of the method to call.
+* `params` {*} - Parameters to send to the call handler.
+* `options` {Object}
+  * `callTimeoutMs` {Number} - Milliseconds before unanswered call is rejected. Defaults to the same value as the option passed to the client/server constructor.
+
+Calls a remote method. Returns a `Promise` which either:
+* resolves to the value returned by the remote handler.
+* rejects with an error.
+
 ### createRPCError(type[, message[, details]])
 * `type` {String} - One of the supported error types (see below).
 * `message` {String} - The error's message. Defaults to `''`.
 * `details` {Object} - The details object to pass along with the error. Defaults to `{}`.
 
 Create a special type of RPC Error which is recognised by this protocol to provide more specific error types.
+
+Returns the corresponding `Error` object.
 
 | Type                         | Description                                                                                                           |
 | ---------------------------- | --------------------------------------------------------------------------------------------------------------------- |
