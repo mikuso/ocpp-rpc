@@ -79,6 +79,45 @@ describe('RPCServer', function(){
 
     });
 
+    
+    describe('#auth', function(){
+
+        it('should pass identity and endpoint path to auth', async () => {
+
+            const identity = 'RPC/ /123';
+            const extraPath = '/extra/long/path';
+            const {endpoint, close, server} = await createServer({protocols: ['a', 'b']});
+            const cli = new RPCClient({
+                endpoint: endpoint + extraPath,
+                identity,
+                protocols: ['a', 'b'],
+            });
+
+            try {
+                
+                let authParams;
+                server.auth(params => {
+                    authParams = params;
+                    return true;
+                });
+
+                const clientProm = once(server, 'client');
+                await cli.connect();
+                const [client] = await clientProm;
+                assert.equal(client.identity, identity);
+                assert.equal(authParams.identity, identity);
+                assert.equal(authParams.endpoint, extraPath);
+                assert.equal(authParams.protocol, 'a');
+
+            } finally {
+                await cli.close();
+                close();
+            }
+
+        });
+
+    });
+
     // 
     // should close connections when receiving malformed messages
     // should not allow new connections after close (before http close)
