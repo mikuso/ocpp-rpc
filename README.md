@@ -60,9 +60,59 @@ npm install ocpp-rpc
   - `protocols` {Array<String>} - Array of subprotocols supported by this client. Defaults to `[]`.
   - `respondWithDetailedErrors` {Boolean} - Specifies whether to send detailed errors (including stack trace) to remote party upon an error being thrown by a handler. Defaults to `false`.
   - `callConcurrency` {Number} - The number of concurrent in-flight outbound calls permitted at any one time. Additional calls are queued. There is no limit on inbound calls. Defaults to `1`.
-  - `reconnect` {Boolean} - If true, the client will attempt to reconnect after losing connection to the RPCServer. Only works after making one initial successful connection. Defaults to `false`.
+  - `reconnect` {Boolean} - If `true`, the client will attempt to reconnect after losing connection to the RPCServer. Only works after making one initial successful connection. Defaults to `false`.
   - `maxReconnects` {Number} - If `reconnect` === `true`, specifies the number of times to try reconnecting before failing an emitting a `close` event. Defaults to `Infinity`
   - `backoff` {Object} - If `reconnect` === `true`, specifies the options for the [ExponentialStrategy](https://github.com/MathieuTurcotte/node-backoff#class-exponentialstrategy) backoff strategy for reconnects.
+
+#### client.id
+
+* {String}
+
+A random 36-character UUID unique to the client.
+
+#### client.state
+
+* {Number}
+
+The client's state. [See state lifecycle](#rpcclient-state-lifecycle)
+
+#### client.protocol
+
+* {String}
+
+The agreed subprotocol. Once connected for the first time, this subprotocol becomes fixed and will be expected upon automatic reconnects (even if the server changes the available subprotocol options).
+
+#### client.connect()
+
+The client will attempt to connect to the `RPCServer` specified in `options.url`. Will reject if connection fails.
+
+#### client.sendRaw(message)
+
+* `message` {String} - A raw message to send across the WebSocket. Not intended for general use.
+
+#### client.close([options]) {
+* `options` {Object}
+  * `code` {Number} - The [WebSocket close code](https://developer.mozilla.org/en-US/docs/Web/API/CloseEvent/code). Defaults to `1000`.
+  * `reason` {String} - The reason for closure. Defaults to `''`.
+  * `awaitPending` {Boolean} - If `true`, the connection won't be fully closed until any outstanding in-flight (inbound & outbound) calls are responded to. Additional calls will be rejected in the meantime.
+  * `force` {Boolean} - If `true`, terminates the WebSocket connection instantly and uncleanly.
+
+Close the underlying connection. Unless `awaitPending` is true, all in-flight outbound calls will be instantly rejected and any inbound calls in process will have their `signal` aborted. Unless `force` is true, `close()` will wait until all calls are settled before returning the final `code` and `reason` for closure.
+
+In some circumstances, the final `code` and `reason` returned may be different from those which were requested. For instance, if `close()` is called twice, the first `code` provided is canonical. Also, if `close()` is called while in the CONNECTING state during the first connect, the `code` will always be `1001`, with the `reason` of `'Connection aborted'`.
+
+#### handle([method,] handler)
+
+* `method` {String} - The name of the method to be handled. If not provided, acts as a wildcard handler which will handle any call that doesn't have a more specific handler already registered.
+* `handler` {Function} - The function to be invoked when attempting to handle a call.
+
+Register a call handler. When the `handler` function is invoked, it will be passed an object with the following properties:
+* `method` {String} - The name of the method being invoked (useful for wildcard handlers).
+* `params` {*} - The `params` value passed to the call.
+* `signal` {AbortSignal} - A signal which will abort if the underlying connection is dropped (therefore, the response will never be received by the caller). You may choose whether to ignore the signal or not, but it could save you some time if you use it to abort the call early.
+
+#### call(method[, params][, options])
+
 
 
 ## RPCClient state lifecycle
