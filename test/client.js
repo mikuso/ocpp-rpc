@@ -570,8 +570,12 @@ describe('RPCClient', function(){
                 const callProm = cli.call('Sleep', {ms: 5000}, {signal: ac.signal});
                 ac.abort(reason);
                 await assert.rejects(callProm);
-                const abortedReason = await callProm.catch(err => err.message);
-                assert.equal(reason, abortedReason);
+                const abortedReason = await callProm.catch(err => err);
+                if (abortedReason.message !== '') {
+                    // nodejs < 17.2.0 always sets AbortError message to ''
+                    // because AbortController#abort(reason) did not exist at the time.
+                    assert.equal(reason, abortedReason.message);
+                }
 
             } finally {
                 await cli.close();
@@ -592,7 +596,7 @@ describe('RPCClient', function(){
                         totalCalls++;
                         concurrentCalls++;
                         mostConcurrent = Math.max(mostConcurrent, concurrentCalls);
-                        await setTimeout(30);
+                        await setTimeout(25);
                         concurrentCalls--;
                     });
                 }
@@ -1050,12 +1054,15 @@ describe('RPCClient', function(){
 
         it('should force close client if no pong between pings', async () => {
             
-            // is there a better way to test this than spamming pings at 1ms interval?
-
-            const {url, close, server} = await createServer();
+            const {url, close, server} = await createServer({}, {
+                withClient: client => {
+                    // a hack to prevent WebSocket from responding to pings
+                    client._ws._receiver.removeAllListeners('ping');
+                }
+            });
             const cli = new RPCClient({
                 url,
-                pingIntervalMs: 1, // should fail pretty quickly
+                pingIntervalMs: 30, // should fail pretty quickly
             });
 
             try {
@@ -1065,6 +1072,43 @@ describe('RPCClient', function(){
                 assert.equal(dc.code, 1006);
 
             } finally {
+                close();
+            }
+
+        });
+
+        it('should process pings normally after keepAlive forces a reconnect', async () => {
+            
+            let doneOnce = false;
+            const {url, close, server} = await createServer({}, {
+                withClient: client => {
+                    if (!doneOnce) {
+                        doneOnce = true;
+                        // a hack to prevent WebSocket from responding to pings
+                        client._ws._receiver.removeAllListeners('ping');
+                    }
+                }
+            });
+            const cli = new RPCClient({
+                url,
+                pingIntervalMs: 25,
+                reconnect: true,
+                backoff: {
+                    initialDelay: 1,
+                    maxDelay: 2,
+                }
+            });
+
+            try {
+
+                await cli.connect();
+                const [dc] = await once(cli, 'disconnect');
+                assert.equal(dc.code, 1006);
+                await once(cli, 'open');
+                await once(cli, 'ping');
+
+            } finally {
+                await cli.close();
                 close();
             }
 
