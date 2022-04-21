@@ -851,8 +851,8 @@ describe('RPCClient', function(){
             const {endpoint, close, server, port} = await createServer({
                 protocols: ['a', 'b'],
             }, {withClient: client => {
-                client.handle('Switcheroo', () => {
-                    close();
+                client.handle('Switcheroo', async () => {
+                    await close();
                     server2.listen(port);
                 });
             }});
@@ -894,8 +894,8 @@ describe('RPCClient', function(){
             const {endpoint, close, server, port} = await createServer({
                 protocols: ['a', 'b'],
             }, {withClient: client => {
-                client.handle('Switcheroo', () => {
-                    close();
+                client.handle('Switcheroo', async () => {
+                    await close();
                     server2.listen(port);
                 });
             }});

@@ -116,15 +116,193 @@ describe('RPCServer', function(){
 
         });
 
+        it('should attach auth and request properties to client', async () => {
+
+            let authParams;
+            let connectedClient;
+            const extraPath = '/extra/path';
+            const identity = 'X';
+            const proto = 'a';
+
+            const {endpoint, close, server} = await createServer({protocols: [proto, 'b']}, {
+                withClient: client => {
+                    connectedClient = client;
+                }
+            });
+            
+            server.auth(params => {
+                authParams = params;
+                return params;
+            });
+
+            const cli = new RPCClient({
+                endpoint: endpoint + extraPath,
+                identity,
+                protocols: [proto, 'c'],
+            });
+
+            try {
+                
+                await cli.connect();
+                assert.deepEqual(connectedClient.auth, authParams);
+                assert.equal(authParams.identity, identity);
+                assert.equal(authParams.protocol, proto);
+                assert.equal(authParams.endpoint, extraPath);
+                assert.equal(connectedClient.request.url, extraPath + '/' + identity);
+
+            } finally {
+                await cli.close();
+                close();
+            }
+
+        });
+
+        it('should disconnect client if auth failed', async () => {
+
+            const {endpoint, close, server} = await createServer();
+            server.auth(() => false);
+            const cli = new RPCClient({endpoint, identity: 'X'});
+
+
+    
+            cli.on('open', ({response}) => console.log('@open', response.headers));
+            cli.on('close', (...args) => console.log('@close', args));
+            cli.on('connecting', (...args) => console.log('@connecting', args));
+            cli.on('disconnect', (...args) => console.log('@disconnect', args));
+            cli.on('protocol', (...args) => console.log('@protocol', args));
+            cli.on('closing', (...args) => console.log('@closing', args));
+        
+
+            const err = await cli.connect().catch(e=>e);
+            console.log({err});
+
+
+        });
+
+    });
+
+    
+    describe('#close', function(){
+
+        it('should not allow new connections after close (before clients kicked)', async () => {
+
+            let callReceived;
+            const callReceivedPromise = new Promise(r => {callReceived = r;});
+
+            const {endpoint, close, server} = await createServer({}, {
+                withClient: client => {
+                    client.handle('Test', async () => {
+                        callReceived();
+                        await setTimeout(50);
+                        return 123;
+                    });
+                }
+            });
+
+            const cli1 = new RPCClient({
+                endpoint,
+                identity: '1',
+                reconnect: false,
+            });
+            const cli2 = new RPCClient({
+                endpoint,
+                identity: '2',
+            });
+
+            try {
+                
+                await cli1.connect();
+                const callP = cli1.call('Test');
+                await callReceivedPromise;
+                close({awaitPending: true});
+                const [callResult, connResult] = await Promise.allSettled([
+                    callP,
+                    cli2.connect()
+                ]);
+
+                assert.equal(callResult.status, 'fulfilled');
+                assert.equal(callResult.value, 123);
+                assert.equal(connResult.status, 'rejected');
+                assert.equal(connResult.reason.code, 'ECONNREFUSED');
+
+            } finally {
+                close();
+            }
+
+        });
+
+    });
+    
+    describe('#listen', function(){
+
+        it('should attach to an existing http server', async () => {
+
+            const server = new RPCServer();
+            server.on('client', client => {
+                client.handle('Test', () => {
+                    return 123;
+                });
+            });
+
+            const httpServer = http.createServer({}, (req, res) => res.end());
+            httpServer.on('upgrade', server.handleUpgrade);
+            await new Promise((resolve, reject) => {
+                httpServer.listen({port: 0}, err => err ? reject(err) : resolve());
+            });
+
+            const endpoint = 'ws://localhost:'+httpServer.address().port;
+
+            const cli1 = new RPCClient({
+                endpoint,
+                identity: '1'
+            });
+            const cli2 = new RPCClient({
+                endpoint,
+                identity: '2'
+            });
+
+            await cli1.connect();
+            httpServer.close();
+            const [callResult, connResult] = await Promise.allSettled([
+                cli1.call('Test'),
+                cli2.connect(),
+            ]);
+            await cli1.close(); // httpServer.close() won't kick clients
+            
+            assert.equal(callResult.status, 'fulfilled');
+            assert.equal(callResult.value, 123);
+            assert.equal(connResult.status, 'rejected');
+            assert.equal(connResult.reason.code, 'ECONNREFUSED');
+
+        });
+
+        it('should create multiple http servers with listen()', async () => {
+
+            const server = new RPCServer();
+            const s1 = await server.listen();
+            const e1 = 'ws://localhost:'+s1.address().port;
+            const s2 = await server.listen();
+            const e2 = 'ws://localhost:'+s2.address().port;
+
+            const cli1 = new RPCClient({endpoint: e1, identity: '1', reconnect: false});
+            const cli2 = new RPCClient({endpoint: e2, identity: '2', reconnect: false});
+
+            await cli1.connect();
+            await cli2.connect();
+
+            const droppedProm = Promise.all([
+                once(cli1, 'close'),
+                once(cli2, 'close'),
+            ]);
+
+            server.close({code: 4050});
+            await droppedProm;
+
+        });
+
     });
 
     // 
-    // should close connections when receiving malformed messages
-    // should not allow new connections after close (before http close)
-    // should attach to an existing http server
-    // should allow creating multiple http servers via listen() and close() only affects those closed?
-    // should attach auth and request properties to client
-    // should disconnect client if auth failed
     // should regularly ping clients
     // should disconnect client with code 1002 if protocol required but not provided
 
