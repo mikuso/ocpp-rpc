@@ -705,7 +705,7 @@ describe('RPCClient', function(){
             await cli.connect();
             close({code: 4050});
             const [dc] = await once(cli, 'close');
-            assert(dc.code, 4050);
+            assert.equal(dc.code, 4050);
 
         });
 
