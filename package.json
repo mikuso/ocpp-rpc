@@ -9,10 +9,10 @@
   "engines": {
     "node": ">=15.9.0"
   },
-  "keywords": ["ocpp", "rpc", "websocket rpc", "wamp", "websockets", "ocpp1.6", "ocpp2.0.1", "ocpp1.6-j"],
+  "keywords": ["ocpp", "rpc", "websocket rpc", "wamp", "websockets", "ocpp-j", "ocpp1.6", "ocpp2.0.1", "ocpp1.6j", "ocpp2.0.1j", "rpc server", "rpc client", "ocpp rpc", "ocpp websockets"],
   "author": {
-    "name" : "Gareth Hughes",
-    "url" : "https://github.com/mikuso"
+    "name": "Gareth Hughes",
+    "url": "https://github.com/mikuso"
   },
   "bugs": {
     "url": "https://github.com/mikuso/ocpp-rpc/issues"
