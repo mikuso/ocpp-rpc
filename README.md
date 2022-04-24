@@ -1,5 +1,12 @@
 # OCPP-RPC
 
+[![Coverage Status](https://coveralls.io/repos/github/mikuso/ocpp-rpc/badge.svg?branch=master)](https://coveralls.io/github/mikuso/ocpp-rpc?branch=master)
+![GitHub Workflow Status](https://img.shields.io/github/workflow/status/mikuso/ocpp-rpc/Test%20Coveralls)
+[![GitHub issues](https://img.shields.io/github/issues/mikuso/ocpp-rpc)](https://github.com/mikuso/ocpp-rpc/issues)
+[![GitHub license](https://img.shields.io/github/license/mikuso/ocpp-rpc)](https://github.com/mikuso/ocpp-rpc/blob/master/LICENSE.md)
+[![GitHub stars](https://img.shields.io/github/stars/mikuso/ocpp-rpc)](https://github.com/mikuso/ocpp-rpc/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/mikuso/ocpp-rpc)](https://github.com/mikuso/ocpp-rpc/network)
+
 A client & server implementation of the WAMP-like RPC-over-websocket system defined in the [OCPP-J protcols](https://www.openchargealliance.org/protocols/) (e.g. [OCPP1.6J](https://www.openchargealliance.org/protocols/ocpp-16/) and [OCPP2.0.1J](https://www.openchargealliance.org/protocols/ocpp-201/)).
 
 Requires Node.js >= 15.9.0 (or >= 17.2.0 for `AbortController#abort([reason])` support)
