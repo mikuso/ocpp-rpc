@@ -119,7 +119,7 @@ See [/examples](./examples) for more examples.
   * [Event: 'closing'](#event-closing)
   * [server.auth(callback)](#serverauthcallback)
   * [server.handleUpgrade(request)](#serverhandleupgraderequest-socket-head)
-  * [server.listen(port[, host])](#serverlistenport-host)
+  * [server.listen(port[, host[, options]])](#serverlistenport-host-options)
   * [server.close([options])](#servercloseoptions)
 
 * [Class: RPCClient](#class-rpcclient)
@@ -145,7 +145,7 @@ See [/examples](./examples) for more examples.
   * [client.call(method[, params[, options]])](#callmethod-params-options)
   * [client.sendRaw(message)](#clientsendrawmessage)
 
-* [Class: RPCServerClient](#class-rpcserverclient)
+* [Class: RPCServerClient](#class-rpcserverclient--rpcclient)
   * [client.handshake](#)
   * [client.session](#)
 
@@ -286,7 +286,7 @@ Emitted after `client.close()` completes.
 
 #### Event: 'closing'
 
-Emitted when the client is closing. This event is distinct from `disconnect`.
+Emitted when the client is closing and does not plan to reconnect.
 
 #### Event: 'connecting'
 
