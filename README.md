@@ -154,14 +154,12 @@ cli.connect();
 #### new RPCServer(options)
 
 - `options` {Object}
-  - `wssOptions` {Object} - Additional [WebSocketServer options](https://github.com/websockets/ws/blob/master/doc/ws.md#new-websocketserveroptions-callback).
+  - `protocols` {Array<String>} - Array of subprotocols supported by this server. Can be overridden in an [auth](#serverauthcallback) callback. Defaults to `[]`.
   - `callTimeoutMs` {Number} - Milliseconds to wait before unanswered outbound calls are rejected automatically. Defaults to `Infinity`.
   - `pingIntervalMs` {Number} - Milliseconds between WebSocket pings to connected clients. Defaults to `30000`.
-  - `endpoint` {String} - The RPC endpoint URL. (begins with `ws://` or `wss://`).
-  - `identity` {String} - The self-reported identity of this RPC client.
-  - `protocols` {Array<String>} - Array of subprotocols supported by this server. Can be overridden in an [auth](#serverauthcallback) callback. Defaults to `[]`.
   - `respondWithDetailedErrors` {Boolean} - Specifies whether to send detailed errors (including stack trace) to remote party upon an error being thrown by a handler. Defaults to `false`.
   - `callConcurrency` {Number} - The number of concurrent in-flight outbound calls permitted at any one time. Additional calls are queued. There is no limit on inbound calls. Defaults to `1`.
+  - `wssOptions` {Object} - Additional [WebSocketServer options](https://github.com/websockets/ws/blob/master/doc/ws.md#new-websocketserveroptions-callback).
 
 #### Event: 'client'
 
