@@ -36,6 +36,51 @@ describe('RPCClient', function(){
         return {server, httpServer, port, endpoint, close};
     }
 
+    describe('events', function(){
+
+        it('should emit call and resposne events', async () => {
+
+            const {endpoint, close} = await createServer({}, {
+                withClient: cli => {
+                    cli.call('Test').catch(()=>{});
+                }
+            });
+            const cli = new RPCClient({
+                endpoint,
+                identity: 'X',
+            });
+
+            const test = {
+                in: {},
+                out: {},
+            };
+
+            cli.on('call', call => {
+                test[call.outbound?'out':'in'].call = call;
+            });
+            cli.on('response', response => {
+                test[response.outbound?'out':'in'].response = response;
+            });
+
+            await cli.connect();
+            await cli.call('Sleep', {ms: 25});
+            await cli.close();
+            await close();
+
+            assert.ok(test.in.call);
+            assert.ok(test.in.response);
+            assert.ok(test.out.call);
+            assert.ok(test.out.response);
+            assert.equal(test.in.call.payload[1], test.out.response.payload[1]);
+            assert.equal(test.out.call.payload[1], test.in.response.payload[1]);
+
+        });
+
+    // test 'call' event
+    // test 'response' event
+
+    });
+
     describe('#connect', function(){
 
         it('should connect to an RPCServer', async () => {
@@ -1151,8 +1196,5 @@ describe('RPCClient', function(){
         });
 
     });
-
-    // test 'call' event
-    // test 'response' event
 
 });
