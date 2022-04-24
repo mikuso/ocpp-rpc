@@ -2,7 +2,7 @@ const assert = require('assert/strict');
 const http = require('http');
 const { once } = require('events');
 const RPCClient = require("../lib/client");
-const { TimeoutError } = require('../lib/errors');
+const { TimeoutError, UnexpectedHttpResponse } = require('../lib/errors');
 const RPCServer = require("../lib/server");
 const { setTimeout } = require('timers/promises');
 const {CLOSING, CLOSED, CONNECTING} = RPCClient;
@@ -95,19 +95,23 @@ describe('RPCServer', function(){
 
             try {
                 
-                let authParams;
-                server.auth(params => {
-                    authParams = params;
-                    return true;
+                let hs;
+                server.auth((accept, reject, handshake) => {
+                    hs = handshake;
+                    accept();
                 });
 
-                const clientProm = once(server, 'client');
+                const serverClientProm = once(server, 'client');
                 await cli.connect();
-                const [client] = await clientProm;
-                assert.equal(client.identity, identity);
-                assert.equal(authParams.identity, identity);
-                assert.equal(authParams.endpoint, extraPath);
-                assert.equal(authParams.protocol, 'a');
+                const [serverClient] = await serverClientProm;
+
+                assert.equal(serverClient.identity, identity);
+                assert.equal(hs.identity, identity);
+                assert.equal(hs.endpoint, extraPath);
+                assert.equal(serverClient.protocol, 'a');
+
+                assert.equal(cli.protocol, serverClient.protocol);
+                assert.equal(cli.identity, serverClient.identity);
 
             } finally {
                 await cli.close();
@@ -116,39 +120,36 @@ describe('RPCServer', function(){
 
         });
 
-        it('should attach auth and request properties to client', async () => {
+        it('should attach session properties to client', async () => {
 
-            let authParams;
-            let connectedClient;
+            let serverClient;
             const extraPath = '/extra/path';
             const identity = 'X';
             const proto = 'a';
+            const sessionData = {a: 123, b: {c: 456}};
 
-            const {endpoint, close, server} = await createServer({protocols: [proto, 'b']}, {
+            const {endpoint, close, server} = await createServer({protocols: ['x', 'b', proto]}, {
                 withClient: client => {
-                    connectedClient = client;
+                    serverClient = client;
                 }
             });
             
-            server.auth(params => {
-                authParams = params;
-                return params;
+            server.auth((accept, reject, handshake) => {
+                accept(sessionData, proto);
             });
 
             const cli = new RPCClient({
                 endpoint: endpoint + extraPath,
                 identity,
-                protocols: [proto, 'c'],
+                protocols: ['x', 'c', proto],
             });
 
             try {
                 
                 await cli.connect();
-                assert.deepEqual(connectedClient.auth, authParams);
-                assert.equal(authParams.identity, identity);
-                assert.equal(authParams.protocol, proto);
-                assert.equal(authParams.endpoint, extraPath);
-                assert.equal(connectedClient.request.url, extraPath + '/' + identity);
+                assert.deepEqual(serverClient.session, sessionData);
+                assert.equal(serverClient.protocol, proto);
+                assert.equal(cli.protocol, proto);
 
             } finally {
                 await cli.close();
@@ -160,22 +161,16 @@ describe('RPCServer', function(){
         it('should disconnect client if auth failed', async () => {
 
             const {endpoint, close, server} = await createServer();
-            server.auth(() => false);
+            server.auth((accept, reject) => {
+                reject(500);
+            });
             const cli = new RPCClient({endpoint, identity: 'X'});
-
-
     
-            cli.on('open', ({response}) => console.log('@open', response.headers));
-            cli.on('close', (...args) => console.log('@close', args));
-            cli.on('connecting', (...args) => console.log('@connecting', args));
-            cli.on('disconnect', (...args) => console.log('@disconnect', args));
-            cli.on('protocol', (...args) => console.log('@protocol', args));
-            cli.on('closing', (...args) => console.log('@closing', args));
-        
-
             const err = await cli.connect().catch(e=>e);
-            console.log({err});
+            assert.ok(err instanceof UnexpectedHttpResponse);
+            assert.equal(err.code, 500);
 
+            close();
 
         });
 
@@ -302,8 +297,8 @@ describe('RPCServer', function(){
 
     });
 
-    // 
+    // abortsignal passed to listen
     // should regularly ping clients
-    // should disconnect client with code 1002 if protocol required but not provided
+    // non-websocket clients are rejected with 404 response
 
 });
