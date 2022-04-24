@@ -40,9 +40,10 @@ npm install ocpp-rpc
   * [new RPCServer(options)](#new-rpcserveroptions)
   * [Event: 'client'](#event-client)
   * [Event: 'error'](#event-error)
-  * [Event: 'closing'](#event-closing)
   * [Event: 'close'](#event-close)
+  * [Event: 'closing'](#event-closing)
   * [server.auth(callback)](#serverauthcallback)
+  * [server.handleUpgrade(request)](#serverhandleupgraderequest-socket-head)
   * [server.listen(port[, host])](#serverlistenport-host)
   * [server.close([options])](#servercloseoptions)
 
@@ -132,6 +133,22 @@ The callback function is called with the following three arguments:
   * `remoteAddress` {String} - The remote IP address of the socket.
   * `headers` {Object} - The HTTP headers sent in the upgrade request.
   * `request` {http.IncomingMessage} - The full HTTP request received by the underlying webserver.
+
+#### server.handleUpgrade(request, socket, head)
+
+* `request` {http.IncomingMessage}
+* `socket` {stream.Duplex} - Network socket between the server and client
+* `head` {Buffer} - The first packet of the upgraded stream (may be empty)
+
+Converts an HTTP upgrade request into a WebSocket client to be handled by this RPCServer. This method is bound to the server instance, so it is suitable to pass directly as an `http.Server`'s `'upgrade'` event handler.
+
+Example:
+
+```js
+const rpcServer = new RPCServer();
+const httpServer = http.createServer();
+httpServer.on('upgrade', rpcServer.handleUpgrade);
+```
 
 #### server.listen([port[, host[, options]]])
 
