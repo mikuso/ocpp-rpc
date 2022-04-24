@@ -2,7 +2,7 @@ const assert = require('assert/strict');
 const http = require('http');
 const { once } = require('events');
 const RPCClient = require("../lib/client");
-const { TimeoutError } = require('../lib/errors');
+const { TimeoutError, RPCFrameworkError } = require('../lib/errors');
 const RPCServer = require("../lib/server");
 const { setTimeout } = require('timers/promises');
 const {CLOSING, CLOSED, CONNECTING} = RPCClient;
@@ -662,6 +662,31 @@ describe('RPCClient', function(){
 
 
     describe('#call', function() {
+
+        it('should reject when method is not a string', async () => {
+
+            const {endpoint, close, server} = await createServer();
+            const cli = new RPCClient({
+                endpoint,
+                identity: 'X',
+            });
+
+            try {
+                await cli.connect();
+
+                await assert.rejects(cli.call(1));
+                await assert.rejects(cli.call([]));
+                await assert.rejects(cli.call({}));
+
+                const err = await cli.call(1).catch(e=>e);
+                assert.ok(err instanceof RPCFrameworkError);
+
+            } finally {
+                await cli.close();
+                close();
+            }
+
+        });
 
         it('should timeout after client callTimeoutMs option', async () => {
 
