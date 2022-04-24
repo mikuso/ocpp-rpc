@@ -107,8 +107,6 @@ cli.handle('Say', ({params}) => {
 cli.connect();
 ```
 
-See [/examples](./examples) for more examples.
-
 ## API
 
 * [Class: RPCServer](#class-rpcserver)
