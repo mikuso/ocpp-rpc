@@ -354,10 +354,26 @@ describe('RPCServer', function(){
             }
         });
 
-        
+
+        it('should reject non-websocket requests with a 404', async () => {
+            
+            const {port, close, server} = await createServer();
+
+            try {
+                
+                const req = http.request('http://localhost:'+port);
+                req.end();
+
+                const [res] = await once(req, 'response');
+                assert.equal(res.statusCode, 404);
+                
+            } catch (err) {
+                console.log({err});
+            } finally {
+                close();
+            }
+        });
 
     });
-
-    // non-websocket clients are rejected with 404 response
 
 });
