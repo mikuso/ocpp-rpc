@@ -155,10 +155,10 @@ cli.connect();
 
 - `options` {Object}
   - `protocols` {Array<String>} - Array of subprotocols supported by this server. Can be overridden in an [auth](#serverauthcallback) callback. Defaults to `[]`.
-  - `callTimeoutMs` {Number} - Milliseconds to wait before unanswered outbound calls are rejected automatically. Defaults to `Infinity`.
+  - `callTimeoutMs` {Number} - Milliseconds to wait before unanswered outbound calls are rejected automatically. Defaults to `60000`.
   - `pingIntervalMs` {Number} - Milliseconds between WebSocket pings to connected clients. Defaults to `30000`.
   - `respondWithDetailedErrors` {Boolean} - Specifies whether to send detailed errors (including stack trace) to remote party upon an error being thrown by a handler. Defaults to `false`.
-  - `callConcurrency` {Number} - The number of concurrent in-flight outbound calls permitted at any one time. Additional calls are queued. There is no limit on inbound calls. Defaults to `1`.
+  - `callConcurrency` {Number} - The number of concurrent in-flight outbound calls permitted at any one time. Additional calls are queued. (There is no limit on inbound calls.) Defaults to `1`.
   - `wssOptions` {Object} - Additional [WebSocketServer options](https://github.com/websockets/ws/blob/master/doc/ws.md#new-websocketserveroptions-callback).
 
 #### Event: 'client'
@@ -198,12 +198,27 @@ The callback function is called with the following three arguments:
   * `message` {String} - An optional message to send as the response body. Defaults to `''`.
 
 * `handshake` {Object} - A handshake object
-  * `protocols` {Set} - A set of subprotocols supported by the client.
+  * `protocols` {Set} - A set of subprotocols purportedly supported by the client.
   * `identity` {String} - The identity portion of the connection URL, decoded.
-  * `endpoint` {String} - The endpoint portion of the connection URL. This is the part of the path before the identity.
+  * `endpoint` {String} - The endpoint path portion of the connection URL. This is the part of the path before the identity.
+  * `query` {URLSearchParams} - The query string parsed as [URLSearchParams](https://developer.mozilla.org/en-US/docs/Web/API/URLSearchParams).
   * `remoteAddress` {String} - The remote IP address of the socket.
   * `headers` {Object} - The HTTP headers sent in the upgrade request.
   * `request` {http.IncomingMessage} - The full HTTP request received by the underlying webserver.
+
+
+Example:
+
+```js
+const rpcServer = new RPCServer();
+rpcServer.auth((accept, reject, handshake) => {
+    if (handshake.identity === 'TEST') {
+        accept();
+    } else {
+        reject(401, "I don't recognise you");
+    }
+});
+```
 
 #### server.handleUpgrade(request, socket, head)
 
@@ -212,6 +227,8 @@ The callback function is called with the following three arguments:
 * `head` {Buffer} - The first packet of the upgraded stream (may be empty)
 
 Converts an HTTP upgrade request into a WebSocket client to be handled by this RPCServer. This method is bound to the server instance, so it is suitable to pass directly as an `http.Server`'s `'upgrade'` event handler.
+
+This is typically only needed if you are creating your own HTTP server. HTTP servers created by [`listen()`](#serverlistenport-host-options) have their `'upgrade'` event attached to this method automatically.
 
 Example:
 
@@ -237,8 +254,8 @@ Returns a Promise which resolves to an instance of `http.Server`.
 * `options` {Object}
   * `code` {Number} - The [WebSocket close code](https://developer.mozilla.org/en-US/docs/Web/API/CloseEvent/code) to pass to all connected clients. Defaults to `1000`.
   * `reason` {String} - The reason for closure to pass to all connected clients. Defaults to `''`.
-  * `awaitPending` {Boolean} - If `true`, each connected client won't be fully closed until any outstanding in-flight (inbound & outbound) calls are responded to. Additional calls will be rejected in the meantime.
-  * `force` {Boolean} - If `true`, terminates all client WebSocket connections instantly and uncleanly.
+  * `awaitPending` {Boolean} - If `true`, each connected client won't be fully closed until any outstanding in-flight (inbound & outbound) calls are responded to. Additional calls will be rejected in the meantime. Defaults to `false`.
+  * `force` {Boolean} - If `true`, terminates all client WebSocket connections instantly and uncleanly. Defaults to `false`.
 
 This blocks new clients from connecting, calls [`client.close()`](#clientcloseoptions) on all connected clients, and then finally closes any listening HTTP servers which were created using [`server.listen()`](#serverlistenport-host-options).
 
@@ -393,8 +410,8 @@ Not intended for general use.
 * `options` {Object}
   * `code` {Number} - The [WebSocket close code](https://developer.mozilla.org/en-US/docs/Web/API/CloseEvent/code). Defaults to `1000`.
   * `reason` {String} - The reason for closure. Defaults to `''`.
-  * `awaitPending` {Boolean} - If `true`, the connection won't be fully closed until any outstanding in-flight (inbound & outbound) calls are responded to. Additional calls will be rejected in the meantime.
-  * `force` {Boolean} - If `true`, terminates the WebSocket connection instantly and uncleanly.
+  * `awaitPending` {Boolean} - If `true`, the connection won't be fully closed until any outstanding in-flight (inbound & outbound) calls are responded to. Additional calls will be rejected in the meantime. Defaults to `false`.
+  * `force` {Boolean} - If `true`, terminates the WebSocket connection instantly and uncleanly. Defaults to `false`.
 
 Close the underlying connection. Unless `awaitPending` is true, all in-flight outbound calls will be instantly rejected and any inbound calls in process will have their `signal` aborted. Unless `force` is true, `close()` will wait until all calls are settled before returning the final `code` and `reason` for closure.
 
@@ -501,6 +518,7 @@ Note: Whenever the underlying websocket loses connection, any in-flight outbound
 
 * Add support for TLS Client certs
 * Add re-configurable reconnect backoff options
+* Formally support authorization headers
 * Add support for signed (JWS) messages
 
 ## License
