@@ -1097,10 +1097,12 @@ describe('RPCClient', function(){
 
     describe('#_onMessage', function() {
 
-        it('should close connections with code 1002 when receiving malformed messages', async () => {
+        it('should close connections with code 1002 when receiving too many malformed messages', async () => {
             
             const {endpoint, close, server} = await createServer({}, {
                 withClient: async (client) => {
+                    client.sendRaw('x');
+                    client.sendRaw('x');
                     client.sendRaw('x');
                 }
             });
@@ -1108,6 +1110,7 @@ describe('RPCClient', function(){
                 endpoint,
                 identity: 'X',
                 callTimeoutMs: 50,
+                maxBadMessages: 2,
             });
 
             try {
@@ -1278,6 +1281,66 @@ describe('RPCClient', function(){
                 await once(cli, 'open');
                 await once(cli, 'ping');
 
+            } finally {
+                await cli.close();
+                close();
+            }
+
+        });
+
+    });
+
+
+    describe('#sendRaw', function() {
+
+        it("should cause a 'badMessage' event when used incorrectly", async () => {
+            
+            const {endpoint, close, server} = await createServer({}, {
+                withClient: cli => {
+                    cli.sendRaw('x');
+                }
+            });
+            const cli = new RPCClient({
+                endpoint,
+                identity: 'X',
+            });
+
+            try {
+                const badProm = once(cli, 'badMessage');
+                await cli.connect();
+                const [bad] = await badProm;
+                assert.equal(bad.toString('utf8'), 'x');
+                
+            } finally {
+                await cli.close();
+                close();
+            }
+
+        });
+
+        it("should cause sender to receive an RpcFrameworkError", async () => {
+            
+            let unexResolve;
+            let unexProm = new Promise(r => {unexResolve = r;});
+
+            const {endpoint, close, server} = await createServer({}, {
+                withClient: cli => {
+                    cli.once('unexpectedResponse', unexResolve);
+                    cli.sendRaw('x');
+                }
+            });
+            const cli = new RPCClient({
+                endpoint,
+                identity: 'X',
+            });
+
+            try {
+                await cli.connect();
+                const unexRes = await unexProm;
+
+                assert.equal(unexRes.type, 4);
+                assert.equal(unexRes.error.code, 'RpcFrameworkError');
+                
             } finally {
                 await cli.close();
                 close();

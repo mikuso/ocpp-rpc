@@ -247,7 +247,7 @@ httpServer.on('upgrade', rpcServer.handleUpgrade);
 
 Creates a simple HTTP server which only accepts websocket upgrades and returns a 404 response to any other request.
 
-Returns a Promise which resolves to an instance of `http.Server`.
+Returns a Promise which resolves to an instance of `http.Server` or rejects with an `Error` on failure.
 
 #### server.close([options])
 
@@ -258,6 +258,8 @@ Returns a Promise which resolves to an instance of `http.Server`.
   * `force` {Boolean} - If `true`, terminates all client WebSocket connections instantly and uncleanly. Defaults to `false`.
 
 This blocks new clients from connecting, calls [`client.close()`](#clientcloseoptions) on all connected clients, and then finally closes any listening HTTP servers which were created using [`server.listen()`](#serverlistenport-host-options).
+
+Returns a `Promise` which resolves when the server has completed closing.
 
 ### Class: RPCClient
 
@@ -272,17 +274,18 @@ This blocks new clients from connecting, calls [`client.close()`](#clientcloseop
   - `callTimeoutMs` {Number} - Milliseconds to wait before unanswered outbound calls are rejected automatically. Defaults to `60000`.
   - `pingIntervalMs` {Number} - Milliseconds between WebSocket pings. Defaults to `30000`.
   - `respondWithDetailedErrors` {Boolean} - Specifies whether to send detailed errors (including stack trace) to remote party upon an error being thrown by a handler. Defaults to `false`.
-  - `callConcurrency` {Number} - The number of concurrent in-flight outbound calls permitted at any one time. Additional calls are queued. There is no limit on inbound calls. Defaults to `1`.
+  - `callConcurrency` {Number} - The number of concurrent in-flight outbound calls permitted at any one time. Additional calls are queued. There is no concurrency limit imposed on inbound calls. Defaults to `1`.
   - `reconnect` {Boolean} - If `true`, the client will attempt to reconnect after losing connection to the RPCServer. Only works after making one initial successful connection. Defaults to `true`.
-  - `maxReconnects` {Number} - If `reconnect` is `true`, specifies the number of times to try reconnecting before failing an emitting a `close` event. Defaults to `Infinity`
+  - `maxReconnects` {Number} - If `reconnect` is `true`, specifies the number of times to try reconnecting before failing and emitting a `close` event. Defaults to `Infinity`
   - `backoff` {Object} - If `reconnect` is `true`, specifies the options for an [ExponentialStrategy](https://github.com/MathieuTurcotte/node-backoff#class-exponentialstrategy) backoff strategy, used for reconnects.
+  - `maxBadMessages` {Number} - The maximum number of non-conforming RPC messages which can be tolerated by the client before the client is automatically closed. Defaults to `Infinity`.
   - `wsOptions` {Object} - Additional [WebSocket options](https://github.com/websockets/ws/blob/master/doc/ws.md#new-websocketaddress-protocols-options).
 
 #### Event: 'badMessage'
 
 * `message` {Buffer} - The raw message received by the WebSocket.
 
-Emitted when a message is received by the client which does not conform to the RPC protocol. Immediately after this, the client will be closed with a code of `1002`.
+Emitted when a message is received by the client which does not conform to the RPC protocol. Immediately after this, the client will respond with a RpcFrameworkError error code. If too many bad messages are received in a row, the client will close with a close code of `1002`. The number of bad messages tolerated before closure is determined by the `maxBadMessages` option.
 
 #### Event: 'call'
 
