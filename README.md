@@ -4,7 +4,7 @@ A client & server implementation of the WAMP-like RPC-over-websocket system defi
 
 Requires Node.js >= 15.9.0 (or >= 17.2.0 for `AbortController#abort([reason])` support)
 
-This module does not currently work in browsers.
+This module is built for Node.js and does not currently work in browsers.
 
 ## Features
 
@@ -142,7 +142,7 @@ See [/examples](./examples) for more examples.
   * [client.connect()](#clientconnect)
   * [client.close([options])](#clientcloseoptions)
   * [client.handle([method,] handler)](#handlemethod-handler)
-  * [client.call(method[, params][, options])](#callmethod-params-options)
+  * [client.call(method[, params[, options]])](#callmethod-params-options)
   * [client.sendRaw(message)](#clientsendrawmessage)
 
 * [Class: RPCServerClient](#class-rpcserverclient)
@@ -386,7 +386,9 @@ Returns a `Promise` which will resolve upon successfully connecting or reject if
 
 #### client.sendRaw(message)
 
-* `message` {String} - A raw message to send across the WebSocket. Not intended for general use.
+* `message` {String} - A raw message to send across the WebSocket.
+
+Not intended for general use.
 
 #### client.close([options])
 * `options` {Object}
@@ -401,7 +403,7 @@ Returns a `Promise` which resolves to an Object with properties `code` and `reas
 
 In some circumstances, the final `code` and `reason` returned may be different from those which were requested. For instance, if `close()` is called twice, the first `code` provided is canonical. Also, if `close()` is called while in the CONNECTING state during the first connect, the `code` will always be `1001`, with the `reason` of `'Connection aborted'`.
 
-#### handle([method,] handler)
+#### client.handle([method,] handler)
 
 * `method` {String} - The name of the method to be handled. If not provided, acts as a wildcard handler which will handle any call that doesn't have a more specific handler already registered.
 * `handler` {Function} - The function to be invoked when attempting to handle a call. Can return a `Promise`.
@@ -414,7 +416,7 @@ Register a call handler. When the `handler` function is invoked, it will be pass
 If the invocation of the `handler` resolves or returns, the resolved value will be returned to the caller.
 If the invocation of the `handler` rejects or throws, an error will be passed to the caller. By default, the error will be an instance of `RPCGenericError`, although additional error types are possible ([see createRPCError](#createrpcerror)).
 
-#### call(method[, params][, options])
+#### client.call(method[, params[, options]])
 
 * `method` {String} - The name of the method to call.
 * `params` {*} - Parameters to send to the call handler.
