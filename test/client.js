@@ -1125,6 +1125,44 @@ describe('RPCClient', function(){
 
         });
 
+        it('should tolerate bad messages within the configured limits', async () => {
+            
+            const {endpoint, close, server} = await createServer({}, {
+                withClient: async (client) => {
+                    client.sendRaw('x');
+                    client.sendRaw('x');
+                    client.call('Ok');
+                    client.sendRaw('x');
+                    client.sendRaw('x');
+                    client.call('Done');
+                }
+            });
+            const cli = new RPCClient({
+                endpoint,
+                identity: 'X',
+                callTimeoutMs: 50,
+                maxBadMessages: 2,
+            });
+
+            try {
+                let resolve;
+                let prom = new Promise(r => {resolve = r;});
+
+                cli.handle('Ok', () => {});
+                cli.handle('Done', resolve);
+                await cli.connect();
+                await prom;
+                cli.close({code: 4060});
+                const [closed] = await once(cli, 'close');
+                assert.equal(closed.code, 4060);
+
+            } finally {
+                await cli.close();
+                close();
+            }
+
+        });
+
     });
 
 
