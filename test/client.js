@@ -226,7 +226,7 @@ describe('RPCClient', function(){
 
         });
 
-        it('should pass query string to server', async () => {
+        it('should pass query string to server (as object)', async () => {
             
             let shake;
             const {endpoint, close, server} = await createServer({}, {
@@ -250,6 +250,31 @@ describe('RPCClient', function(){
                 const query = new URLSearchParams(await cli.call('GetQuery'));
                 assert.equal(query.get('x-test'), 'abc');
                 assert.equal(shake.query.get('?='), '123');
+
+            } finally {
+                cli.close();
+                close();
+            }
+        });
+
+        it('should pass query string to server (as string)', async () => {
+            
+            let shake;
+            const {endpoint, close, server} = await createServer();
+            server.auth((accept, reject, handshake) => {
+                shake = handshake;
+                accept();
+            });
+
+            const cli = new RPCClient({
+                endpoint,
+                identity: 'X',
+                query: 'x-test=abc'
+            });
+
+            try {
+                await cli.connect();
+                assert.equal(shake.query.get('x-test'), 'abc');
 
             } finally {
                 cli.close();
