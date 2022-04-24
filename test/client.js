@@ -316,6 +316,34 @@ describe('RPCClient', function(){
             }
         });
 
+        it('should not allow connections during closing', async () => {
+            
+            const {endpoint, close, server} = await createServer();
+
+            const cli = new RPCClient({
+                endpoint,
+                identity: 'X',
+            });
+
+            try {
+                await cli.connect();
+
+                const [call, closed, connected] = await Promise.allSettled([
+                    cli.call('Sleep', {ms: 30}),
+                    cli.close({awaitPending: true}),
+                    cli.connect(),
+                ]);
+
+                assert.equal(call.status, 'fulfilled');
+                assert.equal(closed.status, 'fulfilled');
+                assert.equal(connected.status, 'rejected');
+
+            } finally {
+                cli.close();
+                close();
+            }
+        });
+
     });
 
 
