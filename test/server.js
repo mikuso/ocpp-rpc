@@ -295,6 +295,30 @@ describe('RPCServer', function(){
 
         });
 
+        it('should abort with signal', async () => {
+
+            const ac = new AbortController();
+            const server = new RPCServer();
+            const httpServer = await server.listen(undefined, undefined, {signal: ac.signal});
+            const port = httpServer.address().port;
+            const endpoint = 'ws://localhost:'+port;
+
+            const cli = new RPCClient({endpoint, identity: 'X', reconnect: false});
+            
+            await cli.connect();
+            const {code} = await cli.close({code: 4080});
+            assert.equal(code, 4080);
+
+            ac.abort();
+
+            const err = await cli.connect().catch(e=>e);
+
+            assert.equal(err.code, 'ECONNREFUSED');
+
+            await server.close();
+
+        });
+
     });
 
     // abortsignal passed to listen
