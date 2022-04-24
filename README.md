@@ -293,7 +293,7 @@ Emitted when a message is received by the client which does not conform to the R
   * `outbound` {Boolean} - Set to `true` if the call originated locally.
   * `payload` {Array} - The RPC call payload array.
 
-Emitted immediately before a call request is sent, or in the case of an inbound call, immediately before the call is processed.
+Emitted immediately before a call request is sent, or in the case of an inbound call, immediately before the call is processed. Useful for debugging.
 
 #### Event: 'close'
 
@@ -336,7 +336,7 @@ Emitted when the client has received a response to a ping.
 
 * `protocol` {String} - The mutually agreed websocket subprotocol.
 
-Emitted when the client protocol has been set. Once set, this cannot change. Fired no more than once.
+Emitted when the client protocol has been set. Once set, this cannot change. This event only occurs once per [`connect()`](#clientconnect).
 
 #### Event: 'response'
 
@@ -344,7 +344,7 @@ Emitted when the client protocol has been set. Once set, this cannot change. Fir
   * `outbound` {Boolean} - Set to `true` if the response originated locally.
   * `payload` {Array} - The RPC response payload array.
 
-Emitted immediately before a response request is sent, or in the case of an inbound response, immediately before the response is processed.
+Emitted immediately before a response request is sent, or in the case of an inbound response, immediately before the response is processed. Useful for debugging.
 
 #### Event: 'socketError'
 
@@ -363,7 +363,7 @@ Emitted when the underlying WebSocket instance fires an `'error'` event.
     * `description` {String} - The error description.
     * `details` {Object} - The error details.
 
-Emitted when the client receives a call result or error response for a call it does not recognise (or has already been processed).
+Emitted when the client receives a call result or error response for a call with message ID that it does not recognise (or has already processed).
 
 The message `type` can be one of the following:
 
@@ -376,7 +376,7 @@ The message `type` can be one of the following:
 
 * {String}
 
-The client identity retrieved from the connection URL.
+The decoded client identity.
 
 #### client.state
 
@@ -401,13 +401,13 @@ The agreed subprotocol. Once connected for the first time, this subprotocol beco
 
 The client will attempt to connect to the `RPCServer` specified in `options.url`.
 
-Returns a `Promise` which will resolve upon successfully connecting or reject if the connection fails.
+Returns a `Promise` which will either resolve upon successfully connecting, or reject if the connection fails.
 
 #### client.sendRaw(message)
 
-* `message` {String} - A raw message to send across the WebSocket.
+* `message` {Array|Number|Object|String|ArrayBuffer|Buffer|DataView|TypedArray} - A raw message to send across the WebSocket.
 
-Not intended for general use.
+Send arbitrary data across the websocket. Not intended for general use.
 
 #### client.close([options])
 * `options` {Object}
@@ -427,13 +427,15 @@ In some circumstances, the final `code` and `reason` returned may be different f
 * `method` {String} - The name of the method to be handled. If not provided, acts as a wildcard handler which will handle any call that doesn't have a more specific handler already registered.
 * `handler` {Function} - The function to be invoked when attempting to handle a call. Can return a `Promise`.
 
-Register a call handler. When the `handler` function is invoked, it will be passed an object with the following properties:
+Register a call handler. Only one wildcard handler and one method-specific handler can be registered at a time. Attempting to register a handler with a duplicate method will override the former.
+
+When the `handler` function is invoked, it will be passed an object with the following properties:
 * `method` {String} - The name of the method being invoked (useful for wildcard handlers).
 * `params` {*} - The `params` value passed to the call.
 * `signal` {AbortSignal} - A signal which will abort if the underlying connection is dropped (therefore, the response will never be received by the caller). You may choose whether to ignore the signal or not, but it could save you some time if you use it to abort the call early.
 
 If the invocation of the `handler` resolves or returns, the resolved value will be returned to the caller.
-If the invocation of the `handler` rejects or throws, an error will be passed to the caller. By default, the error will be an instance of `RPCGenericError`, although additional error types are possible ([see createRPCError](#createrpcerror)).
+If the invocation of the `handler` rejects or throws, an error will be passed to the caller. By default, the error will be an instance of `RPCGenericError`, although additional error types are possible ([see createRPCError](#createrpcerrortype-message-details)).
 
 #### client.call(method[, params[, options]])
 
@@ -446,7 +448,7 @@ Calls a remote method. Returns a `Promise` which either:
 * resolves to the value returned by the remote handler.
 * rejects with an error.
 
-If the underlying connection is interrupted while waiting for a response, this method will reject.
+If the underlying connection is interrupted while waiting for a response, the `Promise` will reject with an `Error`.
 
 It's tempting to set `callTimeoutMs` to `Infinity` but this could be a mistake; If the remote handler never returns a response, the RPC communications will be blocked as soon as `callConcurrency` is exhausted (which is `1` by default). (While this is still an unlikely outcome when using this module for both client *and* server components - interoperability with real world systems can sometimes be unpredictable.)
 
@@ -478,7 +480,7 @@ This property can be anything. This is the value passed to `accept()` during the
 * `message` {String} - The error's message. Defaults to `''`.
 * `details` {Object} - The details object to pass along with the error. Defaults to `{}`.
 
-Create a special type of RPC Error which can be thrown from a call handler to return a non-generic error response.
+This is a utility function to create a special type of RPC Error to be thrown from a call handler to return a non-generic error response.
 
 Returns an `Error` which corresponds to the specified type:
 
@@ -509,13 +511,12 @@ Returns an `Error` which corresponds to the specified type:
 * RPC calls & responses while in this state will be queued.
 
 **OPEN**  
-* Previously queued messages are sent to the server upon entering this state. RPC calls & responses while in this state are sent to the server after the queue is empty.
+* Previously queued messages are sent to the server upon entering this state.
+* RPC calls & responses now flow freely.
 
 **CLOSING**  
 * RPC calls while in this state are rejected.
 * RPC responses will be silently dropped.
-
-Note: Whenever the underlying websocket loses connection, any in-flight outbound RPC calls are immediately rejected, and the `AbortSignal`s passed to any in-flight inbound RPC calls are aborted.
 
 ## TODO
 
