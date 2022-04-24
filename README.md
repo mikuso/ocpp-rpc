@@ -24,15 +24,90 @@ npm install ocpp-rpc
 
 ## Examples
 
-### Creating a barebones OCPP client & server
+### Barebones OCPP1.6J server
 
 ```js
+const { RPCServer } = require('ocpp-rpc');
+
+const server = new RPCServer({
+    protocolRequired: true,
+    protocols: ['ocpp1.6'],
+});
+
+server.on('client', async (client) => {
+    client.handle(({method, params}) => {
+        console.log(`Server got ${method} from ${client.identity}:`, params);
+        throw createRPCError("NotImplemented");
+    });
+    client.handle('BootNotification', ({params}) => {
+        console.log(`Server got BootNotification from ${client.identity}:`, params);
+        return {status: "Accepted"};
+    });
+    client.handle('Heartbeat', ({params}) => {
+        console.log(`Server got Heartbeat from ${client.identity}:`, params);
+        return {currentTime: new Date().toISOString()};
+    });
+});
+
+await server.listen(3000);
+```
+
+### Barebones OCPP1.6J client
+
+```js
+const { RPCClient, createRPCError } = require('ocpp-rpc');
+
+const cli = new RPCClient({
+    endpoint: 'ws://localhost:3000',
+    identity: 'EXAMPLE',
+    protocols: ['ocpp1.6'],
+});
+
+await cli.connect();
+
+await cli.call('BootNotification', {
+    "chargePointVendor": "ocpp-rpc",
+    "chargePointModel": "ocpp-rpc",
+});
+
+await cli.call('Heartbeat', {});
+
+await cli.call('StatusNotification', {
+    connectorId: 0,
+    errorCode: "NoError",
+    status: "Available",
+});
 ```
 
 ### Use with [Express.js](https://expressjs.com/)
 
 ```js
+const {RPCServer, RPCClient} = require('ocpp-rpc');
+const express = require("express");
+
+const app = express();
+const httpServer = app.listen(3000, 'localhost');
+
+const rpcServer = new RPCServer();
+httpServer.on('upgrade', rpcServer.handleUpgrade);
+
+rpcServer.on('client', client => {
+    client.call('Say', `Hello, ${client.identity}!`);
+});
+
+const cli = new RPCClient({
+    endpoint: 'ws://localhost:3000',
+    identity: 'XYZ123'
+});
+
+cli.handle('Say', ({params}) => {
+    console.log('Server said:', params);
+})
+
+cli.connect();
 ```
+
+See [/examples](./examples) for more examples.
 
 ## API
 
