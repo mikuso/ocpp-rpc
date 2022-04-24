@@ -1,5 +1,5 @@
 const assert = require('assert');
-const { createRPCError } = require("../lib/util");
+const { createRPCError, getErrorPlainObject } = require("../lib/util");
 const errors = require('../lib/errors');
 
 describe('util', function(){
@@ -20,6 +20,24 @@ describe('util', function(){
             assert.ok(createRPCError('TypeConstraintViolation') instanceof errors.RPCTypeConstraintViolationError);
             assert.ok(createRPCError('MessageTypeNotSupported') instanceof errors.RPCMessageTypeNotSupportedError);
             assert.ok(createRPCError('RpcFrameworkError') instanceof errors.RPCFrameworkError);
+
+        });
+
+    });
+
+    describe('getErrorPlainObject', function(){
+
+        it('should fallback to simple error object if json stringification fails', () => {
+
+            const msg = "TEST";
+            const err = Error(msg);
+            err.nested = err;
+            const plain = getErrorPlainObject(err);
+            
+            assert.ok(plain);
+            assert.ok(plain instanceof Object);
+            assert.ok(!(plain instanceof Error));
+            assert.equal(plain.message, msg);
 
         });
 
