@@ -34,7 +34,7 @@ npm install ocpp-rpc
 ### Barebones OCPP1.6J server
 
 ```js
-const { RPCServer } = require('ocpp-rpc');
+const { RPCServer, createRPCError } = require('ocpp-rpc');
 
 const server = new RPCServer({
     protocolRequired: true,
@@ -62,7 +62,7 @@ await server.listen(3000);
 ### Barebones OCPP1.6J client
 
 ```js
-const { RPCClient, createRPCError } = require('ocpp-rpc');
+const { RPCClient } = require('ocpp-rpc');
 
 const cli = new RPCClient({
     endpoint: 'ws://localhost:3000',
