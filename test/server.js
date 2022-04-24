@@ -316,13 +316,48 @@ describe('RPCServer', function(){
             assert.equal(err.code, 'ECONNREFUSED');
 
             await server.close();
-
         });
+
+
+        it('should automatically ping clients', async () => {
+            
+            const pingIntervalMs = 40;
+            let pingResolve;
+            let pingPromise = new Promise(r => {pingResolve = r;})
+
+            const {endpoint, close, server} = await createServer({
+                pingIntervalMs,
+            }, {
+                withClient: async (client) => {
+                    const pingRes = await once(client, 'ping');
+                    pingResolve(pingRes[0]);
+                }
+            });
+            const cli = new RPCClient({
+                endpoint,
+                identity: 'X',
+            });
+
+            try {
+                const start = Date.now();
+                await cli.connect();
+                const ping = await pingPromise;
+                const fin = Date.now() - start;
+                
+                assert.ok(fin >= pingIntervalMs);
+                assert.ok(fin <= pingIntervalMs * 2);
+                assert.ok(ping.rtt <= pingIntervalMs * 2);
+                
+            } finally {
+                await cli.close();
+                close();
+            }
+        });
+
+        
 
     });
 
-    // abortsignal passed to listen
-    // should regularly ping clients
     // non-websocket clients are rejected with 404 response
 
 });
