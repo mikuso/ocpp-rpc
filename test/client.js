@@ -76,9 +76,6 @@ describe('RPCClient', function(){
 
         });
 
-    // test 'call' event
-    // test 'response' event
-
     });
 
     describe('#connect', function(){
