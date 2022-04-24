@@ -316,7 +316,7 @@ describe('RPCClient', function(){
             }
         });
 
-        it('should not allow connections during closing', async () => {
+        it('should reject while closing', async () => {
             
             const {endpoint, close, server} = await createServer();
 
@@ -337,6 +337,48 @@ describe('RPCClient', function(){
                 assert.equal(call.status, 'fulfilled');
                 assert.equal(closed.status, 'fulfilled');
                 assert.equal(connected.status, 'rejected');
+
+            } finally {
+                cli.close();
+                close();
+            }
+        });
+
+        it('should do nothing if already connected', async () => {
+            
+            const {endpoint, close, server} = await createServer();
+
+            const cli = new RPCClient({
+                endpoint,
+                identity: 'X',
+            });
+
+            try {
+                await assert.doesNotReject(cli.connect());
+                await assert.doesNotReject(cli.connect());
+            } finally {
+                cli.close();
+                close();
+            }
+        });
+
+        it('should resolve to the same result when called simultaneously', async () => {
+            
+            const {endpoint, close, server} = await createServer();
+
+            const cli = new RPCClient({
+                endpoint,
+                identity: 'X',
+            });
+
+            try {
+                const c1 = cli.connect();
+                const c2 = cli.connect();
+
+                await c1;
+                await c2;
+
+                assert.deepEqual(c1, c2);
 
             } finally {
                 cli.close();

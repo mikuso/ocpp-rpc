@@ -328,7 +328,8 @@ Emitted when the underlying WebSocket has disconnected. If the client is configu
 
 #### Event: 'open'
 
-* `response` {http.ServerResponse} - The response to the client's upgrade request.
+* `result` {Object}
+  * `response` {http.ServerResponse} - The response to the client's upgrade request.
 
 Emitted when the client is connected to the server and ready to send & receive calls.
 
@@ -408,7 +409,10 @@ The agreed subprotocol. Once connected for the first time, this subprotocol beco
 
 The client will attempt to connect to the `RPCServer` specified in `options.url`.
 
-Returns a `Promise` which will either resolve upon successfully connecting, or reject if the connection fails.
+Returns a `Promise` which will either resolve to a `result` object upon successfully connecting, or reject if the connection fails.
+
+* `result` {Object}
+  * `response` {http.ServerResponse} - The response to the client's upgrade request.
 
 #### client.sendRaw(message)
 
