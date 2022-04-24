@@ -1152,4 +1152,7 @@ describe('RPCClient', function(){
 
     });
 
+    // test 'call' event
+    // test 'response' event
+
 });

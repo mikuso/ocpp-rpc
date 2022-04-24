@@ -1,6 +1,6 @@
 # OCPP-RPC
 
-A client & server implementation of the WAMP-like RPC-over-websocket system defined in the [OCPP protcols](https://www.openchargealliance.org/protocols/) (e.g. [OCPP1.6-J](https://www.openchargealliance.org/protocols/ocpp-16/) and [OCPP2.0.1](https://www.openchargealliance.org/protocols/ocpp-201/)).
+A client & server implementation of the WAMP-like RPC-over-websocket system defined in the [OCPP-J protcols](https://www.openchargealliance.org/protocols/) (e.g. [OCPP1.6J](https://www.openchargealliance.org/protocols/ocpp-16/) and [OCPP2.0.1J](https://www.openchargealliance.org/protocols/ocpp-201/)).
 
 Requires Node.js >= 15.9.0 (or >= 17.2.0 for `AbortController#abort([reason])` support)
 
@@ -49,6 +49,7 @@ npm install ocpp-rpc
 * [Class: RPCClient](#class-rpcclient)
   * [new RPCClient(options)](#new-rpcclientoptions)
   * [Event: 'badMessage'](#event-badmessage)
+  * [Event: 'call'](#event-call)
   * [Event: 'close'](#event-close-1)
   * [Event: 'closing'](#event-closing-1)
   * [Event: 'connecting'](#event-connecting)
@@ -56,6 +57,7 @@ npm install ocpp-rpc
   * [Event: 'open'](#event-open)
   * [Event: 'ping'](#event-ping)
   * [Event: 'protocol'](#event-protocol)
+  * [Event: 'response'](#event-response)
   * [Event: 'socketError'](#event-socketerror)
   * [Event: 'unexpectedResponse'](#event-unexpectedresponse)
   * [client.identity](#clientid)
@@ -174,6 +176,14 @@ This blocks new clients from connecting, calls [`client.close()`](#clientcloseop
 
 Emitted when a message is received by the client which does not conform to the RPC protocol. Immediately after this, the client will be closed with a code of `1002`.
 
+#### Event: 'call'
+
+* `call` {Object}
+  * `outbound` {Boolean} - Set to `true` if the call originated locally.
+  * `payload` {Array} - The RPC call payload array.
+
+Emitted immediately before a call request is sent, or in the case of an inbound call, immediately before the call is processed.
+
 #### Event: 'close'
 
 * `event` {Object}
@@ -216,6 +226,14 @@ Emitted when the client has received a response to a ping.
 * `protocol` {String} - The mutually agreed websocket subprotocol.
 
 Emitted when the client protocol has been set. Once set, this cannot change. Fired no more than once.
+
+#### Event: 'response'
+
+* `response` {Object}
+  * `outbound` {Boolean} - Set to `true` if the response originated locally.
+  * `payload` {Array} - The RPC response payload array.
+
+Emitted immediately before a response request is sent, or in the case of an inbound response, immediately before the response is processed.
 
 #### Event: 'socketError'
 
