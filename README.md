@@ -134,18 +134,18 @@ cli.connect();
   * [Event: 'response'](#event-response)
   * [Event: 'socketError'](#event-socketerror)
   * [Event: 'unexpectedResponse'](#event-unexpectedresponse)
-  * [client.identity](#clientid)
+  * [client.identity](#clientidentity)
   * [client.state](#clientstate)
   * [client.protocol](#clientprotocol)
   * [client.connect()](#clientconnect)
   * [client.close([options])](#clientcloseoptions)
-  * [client.handle([method,] handler)](#handlemethod-handler)
-  * [client.call(method[, params[, options]])](#callmethod-params-options)
+  * [client.handle([method,] handler)](#clienthandlemethod-handler)
+  * [client.call(method[, params[, options]])](#clientcallmethod-params-options)
   * [client.sendRaw(message)](#clientsendrawmessage)
 
 * [Class: RPCServerClient](#class-rpcserverclient--rpcclient)
-  * [client.handshake](#)
-  * [client.session](#)
+  * [client.handshake](#clienthandshake)
+  * [client.session](#clientsession)
 
 * [createRPCError(type[, message[, details]])](#createrpcerrortype-message-details)
 
@@ -456,9 +456,9 @@ This property can be anything. This is the value passed to `accept()` during the
 * `message` {String} - The error's message. Defaults to `''`.
 * `details` {Object} - The details object to pass along with the error. Defaults to `{}`.
 
-Create a special type of RPC Error which is recognised by this protocol to provide more specific error types.
+Create a special type of RPC Error which can be thrown from a call handler to return a non-generic error response.
 
-Returns the corresponding `Error` object.
+Returns an `Error` which corresponds to the specified type:
 
 | Type                         | Description                                                                                                           |
 | ---------------------------- | --------------------------------------------------------------------------------------------------------------------- |
