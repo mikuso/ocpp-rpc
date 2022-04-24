@@ -226,6 +226,71 @@ describe('RPCClient', function(){
 
         });
 
+        it('should pass query string to server', async () => {
+            
+            let shake;
+            const {endpoint, close, server} = await createServer({}, {
+                withClient: client => {
+                    client.handle('GetQuery', () => client.handshake.query.toString());
+                }
+            });
+            server.auth((accept, reject, handshake) => {
+                shake = handshake;
+                accept();
+            });
+
+            const cli = new RPCClient({
+                endpoint,
+                identity: 'X',
+                query: {'x-test': 'abc', '?=': '123'},
+            });
+
+            try {
+                await cli.connect();
+                const query = new URLSearchParams(await cli.call('GetQuery'));
+                assert.equal(query.get('x-test'), 'abc');
+                assert.equal(shake.query.get('?='), '123');
+
+            } finally {
+                cli.close();
+                close();
+            }
+        });
+
+        it('should pass headers to server', async () => {
+            
+            let shake;
+            const {endpoint, close, server} = await createServer({}, {
+                withClient: client => {
+                    client.handle('GetHeaders', () => client.handshake.headers);
+                }
+            });
+            server.auth((accept, reject, handshake) => {
+                shake = handshake;
+                accept();
+            });
+
+            const cli = new RPCClient({
+                endpoint,
+                identity: 'X',
+                headers: {
+                    'x-test': 'abc',
+                    'authorization': 'Token xxx',
+                }
+            });
+
+            try {
+                await cli.connect();
+                const headers = await cli.call('GetHeaders');
+                assert.equal(headers['x-test'], 'abc');
+                assert.equal(shake.headers['authorization'], 'Token xxx');
+
+            } finally {
+                cli.close();
+                close();
+            }
+        });
+
     });
 
 

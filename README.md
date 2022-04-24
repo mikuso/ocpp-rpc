@@ -249,16 +249,19 @@ This blocks new clients from connecting, calls [`client.close()`](#clientcloseop
 #### new RPCClient(options)
 
 - `options` {Object}
-  - `wsOptions` {Object} - Additional [WebSocket options](https://github.com/websockets/ws/blob/master/doc/ws.md#new-websocketaddress-protocols-options).
+  - `endpoint` {String} - The RPC server's endpoint (a websocket URL). **Required**.
+  - `identity` {String} - The RPC client's identity. Will be automatically encoded. **Required**.
+  - `protocols` {Array<String>} - Array of subprotocols supported by this client. Defaults to `[]`.
+  - `headers` {Object} - Additional HTTP headers to send along with the websocket upgrade request. Defaults to `{}`.
+  - `query` {Object|String} - An optional query string or object to append as the query string of the connection URL. Defaults to `''`.
   - `callTimeoutMs` {Number} - Milliseconds to wait before unanswered outbound calls are rejected automatically. Defaults to `60000`.
   - `pingIntervalMs` {Number} - Milliseconds between WebSocket pings. Defaults to `30000`.
-  - `url` {String} - The WebSocket URL to connect to.
-  - `protocols` {Array<String>} - Array of subprotocols supported by this client. Defaults to `[]`.
   - `respondWithDetailedErrors` {Boolean} - Specifies whether to send detailed errors (including stack trace) to remote party upon an error being thrown by a handler. Defaults to `false`.
   - `callConcurrency` {Number} - The number of concurrent in-flight outbound calls permitted at any one time. Additional calls are queued. There is no limit on inbound calls. Defaults to `1`.
   - `reconnect` {Boolean} - If `true`, the client will attempt to reconnect after losing connection to the RPCServer. Only works after making one initial successful connection. Defaults to `true`.
   - `maxReconnects` {Number} - If `reconnect` is `true`, specifies the number of times to try reconnecting before failing an emitting a `close` event. Defaults to `Infinity`
   - `backoff` {Object} - If `reconnect` is `true`, specifies the options for an [ExponentialStrategy](https://github.com/MathieuTurcotte/node-backoff#class-exponentialstrategy) backoff strategy, used for reconnects.
+  - `wsOptions` {Object} - Additional [WebSocket options](https://github.com/websockets/ws/blob/master/doc/ws.md#new-websocketaddress-protocols-options).
 
 #### Event: 'badMessage'
 
@@ -438,7 +441,8 @@ The RPCServerClient is a subclass of RPCClient. This represents an RPCClient fro
 * {Object}
   * `protocols` {Set} - A set of subprotocols purportedly supported by the client.
   * `identity` {String} - The identity portion of the connection URL, decoded.
-  * `endpoint` {String} - The endpoint portion of the connection URL. This is the part of the path before the identity.
+  * `endpoint` {String} - The endpoint path portion of the connection URL. This is the part of the path before the identity.
+  * `query` {URLSearchParams} - The query string parsed as [URLSearchParams](https://developer.mozilla.org/en-US/docs/Web/API/URLSearchParams).
   * `remoteAddress` {String} - The remote IP address of the socket.
   * `headers` {Object} - The HTTP headers sent in the upgrade request.
   * `request` {http.IncomingMessage} - The full HTTP request received by the underlying webserver.
