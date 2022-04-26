@@ -37,6 +37,8 @@
   "homepage": "https://github.com/mikuso/ocpp-rpc#readme",
   "license": "MIT",
   "dependencies": {
+    "ajv": "^8.11.0",
+    "ajv-formats": "^2.1.1",
     "backoff": "^2.5.0",
     "ws": "^8.5.0"
   },
