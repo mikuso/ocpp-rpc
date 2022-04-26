@@ -14,7 +14,8 @@ describe('util', function(){
             assert.ok(createRPCError('InternalError') instanceof errors.RPCInternalError);
             assert.ok(createRPCError('ProtocolError') instanceof errors.RPCProtocolError);
             assert.ok(createRPCError('SecurityError') instanceof errors.RPCSecurityError);
-            assert.ok(createRPCError('FormationViolation') instanceof errors.RPCFormationViolationError);
+            assert.ok(createRPCError('FormationViolation') instanceof errors.RPCFormatViolationError);
+            assert.ok(createRPCError('FormatViolation') instanceof errors.RPCFormatViolationError);
             assert.ok(createRPCError('PropertyConstraintViolation') instanceof errors.RPCPropertyConstraintViolationError);
             assert.ok(createRPCError('OccurenceConstraintViolation') instanceof errors.RPCOccurenceConstraintViolationError);
             assert.ok(createRPCError('TypeConstraintViolation') instanceof errors.RPCTypeConstraintViolationError);
