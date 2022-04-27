@@ -5,6 +5,7 @@ const RPCClient = require("../lib/client");
 const { TimeoutError, RPCFrameworkError } = require('../lib/errors');
 const RPCServer = require("../lib/server");
 const { setTimeout } = require('timers/promises');
+const { getSchemaValidator } = require('../lib/util');
 const {CLOSING, CLOSED, CONNECTING} = RPCClient;
 
 describe('RPCClient', function(){
@@ -28,6 +29,9 @@ describe('RPCClient', function(){
                 const err = Error("Rejecting");
                 Object.assign(err, params);
                 throw err;
+            });
+            client.handle('Heartbeat', () => {
+                return {currentTime: new Date().toISOString()};
             });
             if (extra.withClient) {
                 extra.withClient(client);
@@ -662,6 +666,100 @@ describe('RPCClient', function(){
 
 
     describe('#call', function() {
+
+        it('should reject on call schema validation failure', async () => {
+            
+            const validator = getSchemaValidator([
+                {
+                    "$schema": "http://json-schema.org/draft-07/schema",
+                    "$id": "urn:Echo.req",
+                    "type": "object",
+                    "properties": {
+                        "val": {
+                            "type": "string"
+                        }
+                    },
+                    "additionalProperties": false,
+                    "required": ["val"]
+                },
+                {
+                    "$schema": "http://json-schema.org/draft-07/schema",
+                    "$id": "urn:Echo.conf",
+                    "type": "object",
+                    "properties": {
+                        "val": {
+                            "type": "string"
+                        }
+                    },
+                    "additionalProperties": false,
+                    "required": ["val"]
+                }
+            ]);
+
+            const {endpoint, close, server} = await createServer({}, {withClient: cli => {
+                cli.useSchemaValidator(validator);
+            }});
+            const cli = new RPCClient({
+                endpoint,
+                identity: 'X',
+            });
+
+            cli.useSchemaValidator(validator);
+
+            try {
+                await cli.connect();
+
+                const [goodCall, badCall] = await Promise.allSettled([
+                    cli.call('Echo', {val: '123'}),
+                    cli.call('Echo', {val: 123}),
+                ]);
+
+                assert.equal(goodCall.status, 'fulfilled');
+                assert.equal(goodCall.value.val, '123');
+                assert.equal(badCall.status, 'rejected');
+                assert.equal(badCall.reason.rpcErrorCode, 'TypeConstraintViolation');
+
+            } finally {
+                await cli.close();
+                close();
+            }
+
+        });
+
+        it('should reject call validation failure with FormationViolation on ocpp1.6', async () => {
+            
+            const {endpoint, close, server} = await createServer({
+                protocols: ['ocpp1.6'],
+            }, {withClient: cli => {
+                cli.useSchemaValidator(cli.protocol);
+            }});
+            const cli = new RPCClient({
+                endpoint,
+                identity: 'X',
+                protocols: ['ocpp1.6'],
+            });
+
+            cli.useSchemaValidator(cli.protocol);
+
+            try {
+                await cli.connect();
+
+                await assert.doesNotReject(cli.call('Heartbeat', {}));
+                
+                const c1 = await cli.call('Heartbeat', {a:1}).catch(e=>e);
+                assert.equal(c1.rpcErrorCode, 'PropertyConstraintViolation');
+                
+                const c2 = await cli.call('Heartbeat', 1).catch(e=>e);
+                assert.equal(c2.rpcErrorCode, 'TypeConstraintViolation');
+
+            } catch (err) {
+                console.log(err);
+            } finally {
+                await cli.close();
+                close();
+            }
+
+        });
 
         it('should reject when method is not a string', async () => {
 
