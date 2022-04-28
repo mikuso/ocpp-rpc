@@ -257,6 +257,9 @@ Once created, the `Validator` is immutable and can be reused as many times as is
   - `pingIntervalMs` {Number} - Milliseconds between WebSocket pings to connected clients. Defaults to `30000`.
   - `respondWithDetailedErrors` {Boolean} - Specifies whether to send detailed errors (including stack trace) to remote party upon an error being thrown by a handler. Defaults to `false`.
   - `callConcurrency` {Number} - The number of concurrent in-flight outbound calls permitted at any one time. Additional calls are queued. (There is no limit on inbound calls.) Defaults to `1`.
+  - `strictMode` {Boolean} - Enable strict validation of calls & responses. Defaults to `false`. (See [Strict Validation](#strictvalidation) to understand how this works.)
+  - `strictModeValidators` {Array<Validator>} - Optional additional validators to be used in conjunction with `strictMode`. (See [Strict Validation](#adding-additional-validation-schemas) to understand how this works.)
+  - `maxBadMessages` {Number} - The maximum number of [non-conforming RPC messages](#event-rpcerror) which can be tolerated by the server before the client is automatically closed. Defaults to `Infinity`.
   - `wssOptions` {Object} - Additional [WebSocketServer options](https://github.com/websockets/ws/blob/master/doc/ws.md#new-websocketserveroptions-callback).
 
 #### Event: 'client'
@@ -372,28 +375,41 @@ Returns a `Promise` which resolves when the server has completed closing.
   - `callTimeoutMs` {Number} - Milliseconds to wait before unanswered outbound calls are rejected automatically. Defaults to `60000`.
   - `pingIntervalMs` {Number} - Milliseconds between WebSocket pings. Defaults to `30000`.
   - `strictMode` {Boolean} - Enable strict validation of calls & responses. Defaults to `false`. (See [Strict Validation](#strictvalidation) to understand how this works.)
-  - `strictModeValidators` {Array<Validator>} - Additional validators to be used in conjunction with `strictMode`. (See [Strict Validation](#adding-additional-validation-schemas) to understand how this works.)
+  - `strictModeValidators` {Array<Validator>} - Optional additional validators to be used in conjunction with `strictMode`. (See [Strict Validation](#adding-additional-validation-schemas) to understand how this works.)
   - `respondWithDetailedErrors` {Boolean} - Specifies whether to send detailed errors (including stack trace) to remote party upon an error being thrown by a handler. Defaults to `false`.
   - `callConcurrency` {Number} - The number of concurrent in-flight outbound calls permitted at any one time. Additional calls are queued. There is no concurrency limit imposed on inbound calls. Defaults to `1`.
   - `reconnect` {Boolean} - If `true`, the client will attempt to reconnect after losing connection to the RPCServer. Only works after making one initial successful connection. Defaults to `true`.
   - `maxReconnects` {Number} - If `reconnect` is `true`, specifies the number of times to try reconnecting before failing and emitting a `close` event. Defaults to `Infinity`
   - `backoff` {Object} - If `reconnect` is `true`, specifies the options for an [ExponentialStrategy](https://github.com/MathieuTurcotte/node-backoff#class-exponentialstrategy) backoff strategy, used for reconnects.
-  - `maxBadMessages` {Number} - The maximum number of non-conforming RPC messages which can be tolerated by the client before the client is automatically closed. Defaults to `Infinity`.
+  - `maxBadMessages` {Number} - The maximum number of [non-conforming RPC messages](#event-rpcerror) which can be tolerated by the client before the client is automatically closed. Defaults to `Infinity`.
   - `wsOptions` {Object} - Additional [WebSocket options](https://github.com/websockets/ws/blob/master/doc/ws.md#new-websocketaddress-protocols-options).
 
-#### Event: 'badMessage'
+#### Event: 'rpcError'
 
-* `message` {Buffer} - The raw message received by the WebSocket.
+* `event` {Object}
+  * `payload` {Buffer} - The message payload which triggered the error.
+  * `outbound` {Boolean} - This will be `true` if the offending message originated locally.
+  * `error` {RPCError|RequestValidationError|ResponseValidationError} - An error describing what went wrong.
 
-Emitted when a message is received by the client which does not conform to the RPC protocol. Immediately after this, the client will respond with a RpcFrameworkError error code. If too many bad messages are received in a row, the client will close with a close code of `1002`. The number of bad messages tolerated before closure is determined by the `maxBadMessages` option.
+This event is emitted when:
+
+* A "bad message" is received by the client. A "bad message" is simply one which does not conform to the RPC protocol.  
+  In this case, the client will automatically respond with a `"RpcFrameworkError"` or similar error code (depending on the violation).
+
+* In [strict mode](#strict-validation), an inbound or outbound call or response does not satisfy the subprotocol schema validator.  
+  In this case, the client will behave as per [Effects of `strictMode`](#effects-of-strictmode). No `'call'` or `'response'` event will be emitted.
+
+(To be clear, this event will **not** be emitted for simply receiving an error response. The error response itself must actually be non-conforming in order to generate an `'rpcError'` event.)
+
+If too many bad messages are received in succession, the client will be closed with a close code of `1002`. The number of bad messages tolerated before automatic closure is determined by the `maxBadMessages` option. After receiving a valid (non-bad) message, the "bad message" counter will be reset.
 
 #### Event: 'call'
 
 * `call` {Object}
-  * `outbound` {Boolean} - Set to `true` if the call originated locally.
+  * `outbound` {Boolean} - This will be `true` if the call originated locally.
   * `payload` {Array} - The RPC call payload array.
 
-Emitted immediately before a call request is sent, or in the case of an inbound call, immediately before the call is processed. Useful for debugging.
+Emitted immediately before a call request is sent, or in the case of an inbound call, immediately before the call is processed. Useful for logging or debugging.
 
 #### Event: 'close'
 
@@ -419,6 +435,14 @@ Emitted when the client is trying to establish a new WebSocket connection. If su
 
 Emitted when the underlying WebSocket has disconnected. If the client is configured to reconnect, this should be followed by a `'connecting'` event, otherwise a `'closing'` event.
 
+#### Event: 'message'
+
+* `event` {Object}
+  * `payload` {Buffer} - The message payload buffer.
+  * `outbound` {Boolean} - This will be `true` if the message originated locally.
+
+Emitted whenever a message is sent or received over client's WebSocket. Useful for logging or debugging.
+
 #### Event: 'open'
 
 * `result` {Object}
@@ -442,10 +466,10 @@ Emitted when the client protocol has been set. Once set, this cannot change. Thi
 #### Event: 'response'
 
 * `response` {Object}
-  * `outbound` {Boolean} - Set to `true` if the response originated locally.
+  * `outbound` {Boolean} - This will be `true` if the response originated locally.
   * `payload` {Array} - The RPC response payload array.
 
-Emitted immediately before a response request is sent, or in the case of an inbound response, immediately before the response is processed. Useful for debugging.
+Emitted immediately before a response request is sent, or in the case of an inbound response, immediately before the response is processed. Useful for logging or debugging.
 
 #### Event: 'socketError'
 
