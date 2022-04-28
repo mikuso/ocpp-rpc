@@ -21,6 +21,7 @@ This module is built for Node.js and does not currently work in browsers.
 * **Clean closing of websockets** - Supports sending & receiving close codes & reasons.
 * **Embraces abort signals** - `AbortSignal`s can be passed to most async methods.
 * **Authentication** - Optional authentication step for initiating session data and filtering incoming clients.
+* **Strict Validation** - Optionally enforce subprotocol schemas to prevent invalid calls & responses.
 * **Optional HTTP server** - Bring your own HTTP server if you want to, or let `RPCServer` create one for you.
 
 ## Installing
@@ -114,6 +115,95 @@ cli.handle('Say', ({params}) => {
 cli.connect();
 ```
 
+## Strict Validation
+
+RPC clients can operate in "strict mode", validating calls & responses according to subprotocol schemas. The goal of strict mode is to eliminate the possibility of invalid data structures being sent through RPC.
+
+To enable strict mode, pass `strictMode: true` in the options to the [`RPCServer`](#new-rpcserveroptions) or [`RPCClient`](#new-rpcclientoptions) constructor. Alternately, you can limit strict mode to specific protocols by passing an array for `strictMode` instead. The schema used for validation is determined by whichever subprotocol is agreed between client and server.
+
+Examples:
+
+```js
+// enable strict mode for all subprotocols
+const server = new RPCServer({
+    protocols: ['ocpp1.6', 'ocpp2.0.1'],
+    strictMode: true,
+});
+```
+
+```js
+// only enable strict mode for ocpp1.6
+const server = new RPCServer({
+    protocols: ['ocpp1.6', 'proprietary0.1'],
+    strictMode: ['ocpp1.6'],
+});
+```
+
+### Effects of `strictMode`
+
+As a caller, `strictMode` has the following effects:
+* If your method or params fail validation, your call will reject immediately with a `RequestValidationError`. The call will not be sent.
+* If a response to your call fails validation, the call will reject with a `ResponseValidationError`.
+
+As a callee, `strictMode` has the following effects:
+* If an inbound call's params fail validation, the call will not be passed to a handler. Instead, an error response will be automatically issued to the caller with an appropriate RPC error. An `'rpcError'` event will be emitted.
+* If your response to a call fails validation, the response will be discarded and an `"InternalError"` RPC error will be sent instead. An `'rpcError'` event will be emitted.
+
+### Supported validation schemas
+
+This module natively supports the following validation schemas:
+
+| Subprotocol |
+| ----------- |
+| ocpp1.6     |
+| ocpp2.0.1   |
+
+### Adding additional validation schemas
+
+If you want to use `strictMode` with a subprotocol which is not included in the list above, you will need to add the appropriate schemas yourself. To do this, you must create a `Validator` for each subprotocol(s) and pass them to the RPC constructor using the `strictModeValidators` option.  (It is also possible to override the built-in validators this way.)
+
+To create a Validator, you should pass the name of the subprotocol and a well-formed json schema to [`createValidator()`](#createvalidatorsubprotocol-schema). An example of a well-formed schema can be found at [`./lib/schemas/ocpp1.6json`](./lib/schemas/ocpp1.6json) or in the example below.
+
+Example:
+
+```js
+// define a validator for subprotocol 'echo1.0'
+const echoValidator = createValidator('echo1.0', [
+    {
+        $schema: "http://json-schema.org/draft-07/schema",
+        $id: "urn:Echo.req",
+        type: "object",
+        properties: {
+            val: {
+                type: "string"
+            }
+        },
+        additionalProperties: false,
+        required: ["val"]
+    },
+    {
+        $schema: "http://json-schema.org/draft-07/schema",
+        $id: "urn:Echo.conf",
+        type: "object",
+        properties: {
+            val: {
+                type: "string"
+            }
+        },
+        additionalProperties: false,
+        required: ["val"]
+    }
+]);
+
+const server = new RPCServer({
+    protocols: ['echo1.0'],
+    strictModeValidators: [echoValidator],
+    strictMode: true,
+});
+```
+
+Once created, the `Validator` is immutable and can be reused as many times as is required.
+
 ## API
 
 * [Class: RPCServer](#class-rpcserver)
@@ -154,6 +244,7 @@ cli.connect();
   * [client.handshake](#clienthandshake)
   * [client.session](#clientsession)
 
+* [createValidator(subprotocol, schema)]()
 * [createRPCError(type[, message[, details]])](#createrpcerrortype-message-details)
 
 ### Class: RPCServer
@@ -280,6 +371,8 @@ Returns a `Promise` which resolves when the server has completed closing.
   - `query` {Object|String} - An optional query string or object to append as the query string of the connection URL. Defaults to `''`.
   - `callTimeoutMs` {Number} - Milliseconds to wait before unanswered outbound calls are rejected automatically. Defaults to `60000`.
   - `pingIntervalMs` {Number} - Milliseconds between WebSocket pings. Defaults to `30000`.
+  - `strictMode` {Boolean} - Enable strict validation of calls & responses. Defaults to `false`. (See [Strict Validation](#strictvalidation) to understand how this works.)
+  - `strictModeValidators` {Array<Validator>} - Additional validators to be used in conjunction with `strictMode`. (See [Strict Validation](#adding-additional-validation-schemas) to understand how this works.)
   - `respondWithDetailedErrors` {Boolean} - Specifies whether to send detailed errors (including stack trace) to remote party upon an error being thrown by a handler. Defaults to `false`.
   - `callConcurrency` {Number} - The number of concurrent in-flight outbound calls permitted at any one time. Additional calls are queued. There is no concurrency limit imposed on inbound calls. Defaults to `1`.
   - `reconnect` {Boolean} - If `true`, the client will attempt to reconnect after losing connection to the RPCServer. Only works after making one initial successful connection. Defaults to `true`.
@@ -485,6 +578,13 @@ This property holds information collected during the WebSocket connection handsh
 * {*}
 
 This property can be anything. This is the value passed to `accept()` during the authentication callback.
+
+### createValidator(subprotocol, schema)
+
+* `subprotocol` {String} - The name of the subprotocol that this schema can validate.
+* `schema` {Array} - An array of json schemas.
+
+Returns a `Validator` object which can be used for [strict mode](#strict-validation).
 
 ### createRPCError(type[, message[, details]])
 * `type` {String} - One of the supported error types (see below).
