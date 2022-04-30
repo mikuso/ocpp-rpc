@@ -46,8 +46,8 @@ npm install ocpp-rpc
 const { RPCServer, createRPCError } = require('ocpp-rpc');
 
 const server = new RPCServer({
-    protocolRequired: true,
     protocols: ['ocpp1.6'],
+    strictMode: true,
 });
 
 server.on('client', async (client) => {
@@ -77,6 +77,7 @@ const cli = new RPCClient({
     endpoint: 'ws://localhost:3000',
     identity: 'EXAMPLE',
     protocols: ['ocpp1.6'],
+    strictMode: true,
 });
 
 await cli.connect();
@@ -154,8 +155,8 @@ As a caller, `strictMode` has the following effects:
 * If a response to your call fails validation, the call will reject with a `ResponseValidationError`.
 
 As a callee, `strictMode` has the following effects:
-* If an inbound call's params fail validation, the call will not be passed to a handler. Instead, an error response will be automatically issued to the caller with an appropriate RPC error. A [`'messageValidationFailure'`](#event-messagevalidationfailure) event will be emitted.
-* If your response to a call fails validation, the response will be discarded and an `"InternalError"` RPC error will be sent instead. A [`'messageValidationFailure'`](#event-messagevalidationfailure) event will be emitted.
+* If an inbound call's params fail validation, the call will not be passed to a handler. Instead, an error response will be automatically issued to the caller with an appropriate RPC error. A [`'strictValidationFailure'`](#event-strictvalidationfailure) event will be emitted.
+* If your response to a call fails validation, the response will be discarded and an `"InternalError"` RPC error will be sent instead. A [`'strictValidationFailure'`](#event-strictvalidationfailure) event will be emitted.
 
 ### Supported validation schemas
 
@@ -224,6 +225,7 @@ Once created, the `Validator` is immutable and can be reused as many times as is
 * [Class: RPCClient](#class-rpcclient)
   * [new RPCClient(options)](#new-rpcclientoptions)
   * [Event: 'badMessage'](#event-badmessage)
+  * [Event: 'strictValidationFailure'](#event-strictvalidationfailure)
   * [Event: 'call'](#event-call)
   * [Event: 'close'](#event-close-1)
   * [Event: 'closing'](#event-closing-1)
@@ -391,25 +393,26 @@ Returns a `Promise` which resolves when the server has completed closing.
 #### Event: 'badMessage'
 
 * `event` {Object}
-  * `payload` {Buffer} - The message payload which triggered the error.
-  * `error` {Error} - An error describing what went wrong.
+  * `payload` {Buffer} - The raw discarded "bad" message payload.
+  * `error` {Error} - An error describing what went wrong when handling the payload.
+  * `response` {Array|null} - A copy of the response sent in reply to the bad message (if applicable).
 
-This event is emitted when a "bad message" is received by the client. A "bad message" is simply one which does not conform to the RPC protocol. After emitting this event, the client will automatically respond with a `"RpcFrameworkError"` or similar error code (depending on the violation).
+This event is emitted when a "bad message" is received. A "bad message" is simply one which does not structurally conform to the RPC protocol or violates some other principle of the framework (such as a response to a call which was not made). If appropriate, the client will respond with a `"RpcFrameworkError"` or similar error code (depending upon the violation) as required by the spec.
 
-(To be clear, this event will **not** simply be emitted upon receipt of an error response or invalid call. The message itself must actually be non-conforming to the spec to be considered "bad")
+(To be clear, this event will **not** simply be emitted upon receipt of an error response or invalid call. The message itself must actually be non-conforming to the spec to be considered "bad".)
 
-If too many bad messages are received in succession, the client will be closed with a close code of `1002`. The number of bad messages tolerated before automatic closure is determined by the `maxBadMessages` option. After receiving a valid (non-bad) message, the "bad message" counter will be reset.
+If too many bad messages are received in succession, the client will be closed with a close code of `1002`. The number of bad messages tolerated before automatic closure is determined by the `maxBadMessages` option. After receiving a valid (non-bad) message, the "bad message" counter will be reset. 
 
-#### Event: 'messageValidationFailure'
+#### Event: 'strictValidationFailure'
 
 * `event` {Object}
   * `messageId` {String} - The RPC message ID
   * `type` {String} - Either `call` or `response`.
   * `payload` {Array} - The full RPC message payload which triggered the error.
   * `outbound` {Boolean} - This will be `true` if the offending message originated locally.
-  * `error` {Error} - An error describing what went wrong.
+  * `error` {Error} - An error describing what went wrong when validating the payload.
 
-This event is emitted in [strict mode](#strict-validation) when an inbound or outbound call or response does not satisfy the subprotocol schema validator. See the [Effects of `strictMode`](#effects-of-strictmode) to understand what happens to the invalid message. No `'call'` or `'response'` event will be emitted.
+This event is emitted in [strict mode](#strict-validation) when an inbound or outbound call or response does not satisfy the subprotocol schema validator. See the [Effects of `strictMode`](#effects-of-strictmode) to understand what happens in response to the invalid message. No corresponding `'call'` or `'response'` event will be emitted.
 
 #### Event: 'call'
 
@@ -419,6 +422,8 @@ This event is emitted in [strict mode](#strict-validation) when an inbound or ou
   * `payload` {Array} - The RPC call payload array.
 
 Emitted immediately before a call request is sent, or in the case of an inbound call, immediately before the call is processed. Useful for logging or debugging.
+
+If you want to handle (and respond) to the call, you should register a handler using [client.handle()](#clienthandlemethod-handler) instead.
 
 #### Event: 'close'
 
@@ -486,26 +491,6 @@ Emitted immediately before a response request is sent, or in the case of an inbo
 * `error` {Error}
 
 Emitted when the underlying WebSocket instance fires an `'error'` event.
-
-#### Event: 'unexpectedResponse'
-
-* `message` {Object}
-  * `type` {Number}
-  * `id` {String} - The message ID unique to this session.
-  * `result` {Object|null} - If the message is a result type, this contains the result.
-  * `error` {Object|null} - If the message is an error type, this contains the error.
-    * `code` {Number} - The error code.
-    * `description` {String} - The error description.
-    * `details` {Object} - The error details.
-
-Emitted when the client receives a call result or error response for a call with message ID that it does not recognise (or has already processed).
-
-The message `type` can be one of the following:
-
-| Value | Message Type |
-| ----- | ------------ |
-| 3     | Result       |
-| 4     | Error        |
 
 #### client.identity
 
