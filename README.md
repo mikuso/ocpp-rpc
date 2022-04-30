@@ -119,7 +119,7 @@ cli.connect();
 
 RPC clients can operate in "strict mode", validating calls & responses according to subprotocol schemas. The goal of strict mode is to eliminate the possibility of invalid data structures being sent through RPC.
 
-To enable strict mode, pass `strictMode: true` in the options to the [`RPCServer`](#new-rpcserveroptions) or [`RPCClient`](#new-rpcclientoptions) constructor. Alternately, you can limit strict mode to specific protocols by passing an array for `strictMode` instead. The schema used for validation is determined by whichever subprotocol is agreed between client and server.
+To enable strict mode, pass `strictMode: true` in the options to the [`RPCServer`](#new-rpcserveroptions) or [`RPCClient`](#new-rpcclientoptions) constructor. Alternately, you can limit strict mode to specific protocols by passing an array for `strictMode` instead. The schema ultimately used for validation is determined by whichever subprotocol is agreed between client and server.
 
 Examples:
 
@@ -146,8 +146,8 @@ As a caller, `strictMode` has the following effects:
 * If a response to your call fails validation, the call will reject with a `ResponseValidationError`.
 
 As a callee, `strictMode` has the following effects:
-* If an inbound call's params fail validation, the call will not be passed to a handler. Instead, an error response will be automatically issued to the caller with an appropriate RPC error. An `'rpcError'` event will be emitted.
-* If your response to a call fails validation, the response will be discarded and an `"InternalError"` RPC error will be sent instead. An `'rpcError'` event will be emitted.
+* If an inbound call's params fail validation, the call will not be passed to a handler. Instead, an error response will be automatically issued to the caller with an appropriate RPC error. A [`'messageValidationFailure'`](#event-messagevalidationfailure) event will be emitted.
+* If your response to a call fails validation, the response will be discarded and an `"InternalError"` RPC error will be sent instead. A [`'messageValidationFailure'`](#event-messagevalidationfailure) event will be emitted.
 
 ### Supported validation schemas
 
@@ -384,28 +384,33 @@ Returns a `Promise` which resolves when the server has completed closing.
   - `maxBadMessages` {Number} - The maximum number of [non-conforming RPC messages](#event-rpcerror) which can be tolerated by the client before the client is automatically closed. Defaults to `Infinity`.
   - `wsOptions` {Object} - Additional [WebSocket options](https://github.com/websockets/ws/blob/master/doc/ws.md#new-websocketaddress-protocols-options).
 
-#### Event: 'rpcError'
+#### Event: 'badMessage'
 
 * `event` {Object}
   * `payload` {Buffer} - The message payload which triggered the error.
-  * `outbound` {Boolean} - This will be `true` if the offending message originated locally.
-  * `error` {RPCError|RequestValidationError|ResponseValidationError} - An error describing what went wrong.
+  * `error` {Error} - An error describing what went wrong.
 
-This event is emitted when:
+This event is emitted when a "bad message" is received by the client. A "bad message" is simply one which does not conform to the RPC protocol. After emitting this event, the client will automatically respond with a `"RpcFrameworkError"` or similar error code (depending on the violation).
 
-* A "bad message" is received by the client. A "bad message" is simply one which does not conform to the RPC protocol.  
-  In this case, the client will automatically respond with a `"RpcFrameworkError"` or similar error code (depending on the violation).
-
-* In [strict mode](#strict-validation), an inbound or outbound call or response does not satisfy the subprotocol schema validator.  
-  In this case, the client will behave as per [Effects of `strictMode`](#effects-of-strictmode). No `'call'` or `'response'` event will be emitted.
-
-(To be clear, this event will **not** be emitted for simply receiving an error response. The error response itself must actually be non-conforming in order to generate an `'rpcError'` event.)
+(To be clear, this event will **not** simply be emitted upon receipt of an error response or invalid call. The message itself must actually be non-conforming to the spec to be considered "bad")
 
 If too many bad messages are received in succession, the client will be closed with a close code of `1002`. The number of bad messages tolerated before automatic closure is determined by the `maxBadMessages` option. After receiving a valid (non-bad) message, the "bad message" counter will be reset.
+
+#### Event: 'messageValidationFailure'
+
+* `event` {Object}
+  * `messageId` {String} - The RPC message ID
+  * `type` {String} - Either `call` or `response`.
+  * `payload` {Array} - The full RPC message payload which triggered the error.
+  * `outbound` {Boolean} - This will be `true` if the offending message originated locally.
+  * `error` {Error} - An error describing what went wrong.
+
+This event is emitted in [strict mode](#strict-validation) when an inbound or outbound call or response does not satisfy the subprotocol schema validator. See the [Effects of `strictMode`](#effects-of-strictmode) to understand what happens to the invalid message. No `'call'` or `'response'` event will be emitted.
 
 #### Event: 'call'
 
 * `call` {Object}
+  * `messageId` {String} - The RPC message ID
   * `outbound` {Boolean} - This will be `true` if the call originated locally.
   * `payload` {Array} - The RPC call payload array.
 
@@ -438,6 +443,7 @@ Emitted when the underlying WebSocket has disconnected. If the client is configu
 #### Event: 'message'
 
 * `event` {Object}
+  * `messageId` {String|null} - The RPC message ID. If the message ID cannot be decoded, this will be null.
   * `payload` {Buffer} - The message payload buffer.
   * `outbound` {Boolean} - This will be `true` if the message originated locally.
 
