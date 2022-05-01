@@ -24,6 +24,12 @@ describe('util', function(){
 
         });
 
+        it('should create generic error if code not found', () => {
+
+            assert.ok(createRPCError('_NOTFOUND_') instanceof errors.RPCGenericError);
+
+        });
+
     });
 
     describe('getErrorPlainObject', function(){
