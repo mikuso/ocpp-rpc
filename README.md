@@ -205,6 +205,11 @@ const server = new RPCServer({
     strictModeValidators: [echoValidator],
     strictMode: true,
 });
+
+/*
+client.call('Echo', {val: 'foo'}); // returns {val: foo}
+client.call('Echo', ['bar']); // throws RPCError
+*/
 ```
 
 Once created, the `Validator` is immutable and can be reused as many times as is required.
