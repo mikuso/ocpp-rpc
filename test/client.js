@@ -2,7 +2,7 @@ const assert = require('assert/strict');
 const http = require('http');
 const { once } = require('events');
 const RPCClient = require("../lib/client");
-const { TimeoutError, RPCFrameworkError } = require('../lib/errors');
+const { TimeoutError, RPCFrameworkError, RequestValidationError, ResponseValidationError } = require('../lib/errors');
 const RPCServer = require("../lib/server");
 const { setTimeout } = require('timers/promises');
 const { createValidator } = require('../lib/validator');
@@ -977,7 +977,7 @@ describe('RPCClient', function(){
 
     describe('#call', function() {
 
-        it('should reject on call schema validation failure', async () => {
+        it("should reject with 'RequestValidationError' after invalid payload with strictMode", async () => {
             
             const {endpoint, close, server} = await createServer({
                 protocols: ['echo1.0']
@@ -1002,10 +1002,11 @@ describe('RPCClient', function(){
                 assert.equal(c1.status, 'fulfilled');
                 assert.equal(c1.value.val, '123');
                 assert.equal(c2.status, 'rejected');
-                assert.equal(c2.reason.rpcErrorCode, 'TypeConstraintViolation');
+                assert.ok(c2.reason instanceof RequestValidationError);
+                assert.equal(c2.reason.error.rpcErrorCode, 'TypeConstraintViolation');
                 assert.equal(c3.status, 'rejected');
-                console.log({c3});
-                assert.equal(c3.reason.rpcErrorCode, 'Missing call schema');
+                assert.ok(c3.reason instanceof RequestValidationError);
+                assert.equal(c3.reason.error.rpcErrorCode, 'InternalError');
 
             } finally {
                 await cli.close();
@@ -1015,12 +1016,19 @@ describe('RPCClient', function(){
         });
 
         
-        it('should reject on response schema validation failure', async () => {
-            
+        it("should reject with 'ResponseValidationError' after invalid response with strictMode", async () => {
             const {endpoint, close, server} = await createServer({
                 protocols: ['echo1.0']
             }, {withClient: cli => {
-                cli.handle('Echo', () => ({bad: true}));
+                cli.handle('Echo', async ({params}) => {
+                    switch (params.val) {
+                        case '1': return {bad: true};
+                        case '2': return 123;
+                        case '3': return [1,2,3];
+                        case '4': return null;
+                        case '5': return {val: params.val};
+                    }
+                });
             }});
             const cli = new RPCClient({
                 endpoint,
@@ -1033,19 +1041,29 @@ describe('RPCClient', function(){
             try {
                 await cli.connect();
 
-                const [c1] = await Promise.allSettled([
-                    cli.call('Echo', {val: '123'}),
+                const [c1, c2, c3, c4, c5] = await Promise.allSettled([
+                    cli.call('Echo', {val: '1'}),
+                    cli.call('Echo', {val: '2'}),
+                    cli.call('Echo', {val: '3'}),
+                    cli.call('Echo', {val: '4'}),
+                    cli.call('Echo', {val: '5'}),
                 ]);
 
                 assert.equal(c1.status, 'rejected');
-                console.log({c1});
-                assert.equal(c1.reason.rpcErrorCode, 'Bad call response');
+                assert.ok(c1.reason instanceof ResponseValidationError);
+                assert.equal(c2.status, 'rejected');
+                assert.ok(c2.reason instanceof ResponseValidationError);
+                assert.equal(c3.status, 'rejected');
+                assert.ok(c3.reason instanceof ResponseValidationError);
+                assert.equal(c4.status, 'rejected');
+                assert.ok(c4.reason instanceof ResponseValidationError);
+                assert.equal(c5.status, 'fulfilled');
+                assert.equal(c5.value.val, '5');
 
             } finally {
                 await cli.close();
                 close();
             }
-
         });
 
         it('should reject call validation failure with FormationViolation on ocpp1.6', async () => {
