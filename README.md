@@ -151,12 +151,12 @@ const server = new RPCServer({
 ### Effects of `strictMode`
 
 As a caller, `strictMode` has the following effects:
-* If your method or params fail validation, your call will reject immediately with a `RequestValidationError`. The call will not be sent.
-* If a response to your call fails validation, the call will reject with a `ResponseValidationError`.
+* If your method or params fail validation, your call will reject immediately with an [`RPCError`](#rpcerror). The call will not be sent.
+* If a response to your call fails validation, the call will reject with an [`RPCError`](#rpcerror).
 
 As a callee, `strictMode` has the following effects:
-* If an inbound call's params fail validation, the call will not be passed to a handler. Instead, an error response will be automatically issued to the caller with an appropriate RPC error. A [`'strictValidationFailure'`](#event-strictvalidationfailure) event will be emitted.
-* If your response to a call fails validation, the response will be discarded and an `"InternalError"` RPC error will be sent instead. A [`'strictValidationFailure'`](#event-strictvalidationfailure) event will be emitted.
+* If an inbound call's params fail validation, the call will not be passed to a handler. Instead, an error response will be automatically issued to the caller with an appropriate RPC error. A [`'strictValidationFailure'`](#event-strictvalidationfailure) event will be emitted with an [`RPCError`](#rpcerror).
+* If your response to a call fails validation, the response will be discarded and an `"InternalError"` RPC error will be sent instead. A [`'strictValidationFailure'`](#event-strictvalidationfailure) event will be emitted with an [`RPCError`](#rpcerror).
 
 ### Supported validation schemas
 
@@ -249,6 +249,10 @@ Once created, the `Validator` is immutable and can be reused as many times as is
 * [Class: RPCServerClient](#class-rpcserverclient--rpcclient)
   * [client.handshake](#clienthandshake)
   * [client.session](#clientsession)
+
+* [Class: RPCError](#class-rpcerror--error)
+  * [err.rpcErrorCode](#errrpcerrorcode)
+  * [err.details](#errdetails)
 
 * [createValidator(subprotocol, schema)]()
 * [createRPCError(type[, message[, details]])](#createrpcerrortype-message-details)
@@ -405,14 +409,9 @@ If too many bad messages are received in succession, the client will be closed w
 
 #### Event: 'strictValidationFailure'
 
-* `event` {Object}
-  * `messageId` {String} - The RPC message ID
-  * `type` {String} - Either `call` or `response`.
-  * `payload` {Array} - The full RPC message payload which triggered the error.
-  * `outbound` {Boolean} - This will be `true` if the offending message originated locally.
-  * `error` {Error} - An error describing what went wrong when validating the payload.
+* `error` [{RPCError}](#rpcerror)
 
-This event is emitted in [strict mode](#strict-validation) when an inbound or outbound call or response does not satisfy the subprotocol schema validator. See the [Effects of `strictMode`](#effects-of-strictmode) to understand what happens in response to the invalid message. No corresponding `'call'` or `'response'` event will be emitted.
+This event is emitted in [strict mode](#strict-validation) when an inbound call or outbound response does not satisfy the subprotocol schema validator. See [Effects of `strictMode`](#effects-of-strictmode) to understand what happens in response to the invalid message.
 
 #### Event: 'call'
 
@@ -567,6 +566,7 @@ If the invocation of the `handler` rejects or throws, an error will be passed to
 * `params` {*} - Parameters to send to the call handler.
 * `options` {Object}
   * `callTimeoutMs` {Number} - Milliseconds before unanswered call is rejected. Defaults to the same value as the option passed to the client/server constructor.
+  * `signal` {AbortSignal} - `AbortSignal` to abort the call.
 
 Calls a remote method. Returns a `Promise` which either:
 * resolves to the value returned by the remote handler.
@@ -606,14 +606,34 @@ This property can be anything. This is the value passed to `accept()` during the
 
 Returns a `Validator` object which can be used for [strict mode](#strict-validation).
 
+### Class: RPCError : Error
+
+An error representing a violation of the RPC protocol.
+
+Throwing an RPCError from within a registered handler will pass the RPCError back to the caller.
+
+To create an RPCError, it is recommended to use the utility method [`createRPCError()`](#createrpcerrortype-message-details).
+
+#### err.rpcErrorCode
+
+* {String}
+
+The OCPP-J RPC error code.
+
+#### err.details
+
+* {Object}
+
+An object containing additional error details.
+
 ### createRPCError(type[, message[, details]])
 * `type` {String} - One of the supported error types (see below).
-* `message` {String} - The error's message. Defaults to `''`.
+* `message` {String} - The error's message.
 * `details` {Object} - The details object to pass along with the error. Defaults to `{}`.
 
 This is a utility function to create a special type of RPC Error to be thrown from a call handler to return a non-generic error response.
 
-Returns an `Error` which corresponds to the specified type:
+Returns an [`RPCError`](#rpcerror) which corresponds to the specified type:
 
 | Type                         | Description                                                                                                           |
 | ---------------------------- | --------------------------------------------------------------------------------------------------------------------- |
@@ -648,13 +668,6 @@ Returns an `Error` which corresponds to the specified type:
 **CLOSING**  
 * RPC calls while in this state are rejected.
 * RPC responses will be silently dropped.
-
-## TODO
-
-* Add support for TLS Client certs
-* Add re-configurable reconnect backoff options
-* Formally support authorization headers
-* Add support for signed (JWS) messages
 
 ## License
 

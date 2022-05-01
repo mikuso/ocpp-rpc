@@ -2,10 +2,11 @@ const assert = require('assert/strict');
 const http = require('http');
 const { once } = require('events');
 const RPCClient = require("../lib/client");
-const { TimeoutError, RPCFrameworkError, RequestValidationError, ResponseValidationError } = require('../lib/errors');
+const { TimeoutError, RPCFrameworkError, RPCError, RPCProtocolError, RPCTypeConstraintViolationError, RPCOccurenceConstraintViolationError, RPCPropertyConstraintViolationError } = require('../lib/errors');
 const RPCServer = require("../lib/server");
 const { setTimeout } = require('timers/promises');
 const { createValidator } = require('../lib/validator');
+const { createRPCError } = require('../lib/util');
 const {CLOSING, CLOSED, CONNECTING} = RPCClient;
 
 describe('RPCClient', function(){
@@ -977,7 +978,7 @@ describe('RPCClient', function(){
 
     describe('#call', function() {
 
-        it("should reject with 'RequestValidationError' after invalid payload with strictMode", async () => {
+        it("should reject with 'RPCError' after invalid payload with strictMode", async () => {
             
             const {endpoint, close, server} = await createServer({
                 protocols: ['echo1.0']
@@ -1002,11 +1003,11 @@ describe('RPCClient', function(){
                 assert.equal(c1.status, 'fulfilled');
                 assert.equal(c1.value.val, '123');
                 assert.equal(c2.status, 'rejected');
-                assert.ok(c2.reason instanceof RequestValidationError);
-                assert.equal(c2.reason.error.rpcErrorCode, 'TypeConstraintViolation');
+                assert.ok(c2.reason instanceof RPCTypeConstraintViolationError);
+                assert.equal(c2.reason.rpcErrorCode, 'TypeConstraintViolation');
                 assert.equal(c3.status, 'rejected');
-                assert.ok(c3.reason instanceof RequestValidationError);
-                assert.equal(c3.reason.error.rpcErrorCode, 'InternalError');
+                assert.ok(c3.reason instanceof RPCProtocolError);
+                assert.equal(c3.reason.rpcErrorCode, 'ProtocolError');
 
             } finally {
                 await cli.close();
@@ -1016,7 +1017,7 @@ describe('RPCClient', function(){
         });
 
         
-        it("should reject with 'ResponseValidationError' after invalid response with strictMode", async () => {
+        it("should reject with 'RPCProtocolError' after invalid response with strictMode", async () => {
             const {endpoint, close, server} = await createServer({
                 protocols: ['echo1.0']
             }, {withClient: cli => {
@@ -1050,13 +1051,13 @@ describe('RPCClient', function(){
                 ]);
 
                 assert.equal(c1.status, 'rejected');
-                assert.ok(c1.reason instanceof ResponseValidationError);
+                assert.ok(c1.reason instanceof RPCOccurenceConstraintViolationError);
                 assert.equal(c2.status, 'rejected');
-                assert.ok(c2.reason instanceof ResponseValidationError);
+                assert.ok(c2.reason instanceof RPCTypeConstraintViolationError);
                 assert.equal(c3.status, 'rejected');
-                assert.ok(c3.reason instanceof ResponseValidationError);
+                assert.ok(c3.reason instanceof RPCTypeConstraintViolationError);
                 assert.equal(c4.status, 'rejected');
-                assert.ok(c4.reason instanceof ResponseValidationError);
+                assert.ok(c4.reason instanceof RPCTypeConstraintViolationError);
                 assert.equal(c5.status, 'fulfilled');
                 assert.equal(c5.value.val, '5');
 
@@ -1066,34 +1067,170 @@ describe('RPCClient', function(){
             }
         });
 
-        it('should reject call validation failure with FormationViolation on ocpp1.6', async () => {
+        
+        it("should emit 'strictValidationFailure' when incoming call is rejected by strictMode", async () => {
+            
+            const {endpoint, close, server} = await createServer({
+                protocols: ['echo1.0']
+            }, {withClient: async (cli) => {
+                await cli.call('Echo', {bad: true}).catch(()=>{});
+                await cli.call('Echo').catch(()=>{});
+                await cli.call('Unknown').catch(()=>{});
+            }});
+            const cli = new RPCClient({
+                endpoint,
+                identity: 'X',
+                protocols: ['echo1.0'],
+                strictModeValidators: [getEchoValidator()],
+                strictMode: true,
+            });
+
+            try {
+                let uks = 0;
+                cli.handle('Echo', ({params}) => params);
+                cli.handle('Unknown', () => ++uks);
+                await cli.connect();
+
+                let calls = 0;
+                let responses = 0;
+
+                cli.on('call', () => calls++);
+                cli.on('response', () => responses++);
+
+                const [c1] = await once(cli, 'strictValidationFailure');
+                const [c2] = await once(cli, 'strictValidationFailure');
+                const [c3] = await once(cli, 'strictValidationFailure');
+
+                assert.equal(c1.rpcErrorCode, 'OccurenceConstraintViolation');
+                assert.equal(c2.rpcErrorCode, 'TypeConstraintViolation');
+                assert.equal(c3.rpcErrorCode, 'ProtocolError');
+
+                assert.equal(calls, 3);
+                assert.equal(responses, 3);
+                assert.equal(uks, 0); // 'Unknown' handler should not be called
+
+
+            } finally {
+                await cli.close();
+                close();
+            }
+
+        });
+
+        
+        it("should emit 'strictValidationFailure' when outgoing response is discarded by strictMode", async () => {
+            const {endpoint, close, server} = await createServer({
+                protocols: ['echo1.0']
+            }, {withClient: cli => {
+                cli.handle('Echo', async ({params}) => {
+                    switch (params.val) {
+                        case '1': return {bad: true};
+                        case '2': return 123;
+                        case '3': return [1,2,3];
+                        case '4': return null;
+                        case '5': return {val: params.val};
+                    }
+                });
+            }});
+            const cli = new RPCClient({
+                endpoint,
+                identity: 'X',
+                protocols: ['echo1.0'],
+                strictModeValidators: [getEchoValidator()],
+                strictMode: true,
+            });
+
+            try {
+                await cli.connect();
+
+                const [c1, c2, c3, c4, c5] = await Promise.allSettled([
+                    cli.call('Echo', {val: '1'}),
+                    cli.call('Echo', {val: '2'}),
+                    cli.call('Echo', {val: '3'}),
+                    cli.call('Echo', {val: '4'}),
+                    cli.call('Echo', {val: '5'}),
+                ]);
+
+                assert.equal(c1.status, 'rejected');
+                assert.ok(c1.reason instanceof RPCOccurenceConstraintViolationError);
+                assert.equal(c2.status, 'rejected');
+                assert.ok(c2.reason instanceof RPCTypeConstraintViolationError);
+                assert.equal(c3.status, 'rejected');
+                assert.ok(c3.reason instanceof RPCTypeConstraintViolationError);
+                assert.equal(c4.status, 'rejected');
+                assert.ok(c4.reason instanceof RPCTypeConstraintViolationError);
+                assert.equal(c5.status, 'fulfilled');
+                assert.equal(c5.value.val, '5');
+
+            } finally {
+                await cli.close();
+                close();
+            }
+        });
+
+        it("should validate calls using in-built validators", async () => {
             
             const {endpoint, close, server} = await createServer({
                 protocols: ['ocpp1.6'],
+                strictMode: true,
+            });
+            const cli = new RPCClient({
+                endpoint,
+                identity: 'X',
+                protocols: ['ocpp1.6'],
+                strictMode: true,
+            });
+
+            try {
+                await cli.connect();
+
+                const [c1, c2, c3] = await Promise.allSettled([
+                    cli.call('Heartbeat', {}),
+                    cli.call('Heartbeat', {a:1}),
+                    cli.call('Heartbeat', 1),
+                ]);
+                
+                assert.equal(c1.status, 'fulfilled');
+                assert.ok('currentTime' in c1.value);
+                assert.equal(c2.status, 'rejected');
+                assert.ok(c2.reason instanceof RPCPropertyConstraintViolationError);
+                assert.equal(c3.status, 'rejected');
+                assert.ok(c3.reason instanceof RPCTypeConstraintViolationError);
+
+            } finally {
+                await cli.close();
+                close();
+            }
+
+        });
+
+        it("should reject call validation failure with FormationViolation on ocpp1.6", async () => {
+            
+            const {endpoint, close, server} = await createServer({
+                protocols: ['ocpp1.6'],
+                strictMode: true,
             }, {withClient: cli => {
-                cli.useSchemaValidator(cli.protocol);
+                cli.handle('Heartbeat', () => {
+                    throw createRPCError("FormatViolation");
+                });
             }});
             const cli = new RPCClient({
                 endpoint,
                 identity: 'X',
                 protocols: ['ocpp1.6'],
+                strictMode: true,
             });
-
-            cli.useSchemaValidator(cli.protocol);
 
             try {
                 await cli.connect();
 
-                await assert.doesNotReject(cli.call('Heartbeat', {}));
+                const [c1] = await Promise.allSettled([
+                    cli.call('Heartbeat', {}),
+                ]);
                 
-                const c1 = await cli.call('Heartbeat', {a:1}).catch(e=>e);
-                assert.equal(c1.rpcErrorCode, 'PropertyConstraintViolation');
-                
-                const c2 = await cli.call('Heartbeat', 1).catch(e=>e);
-                assert.equal(c2.rpcErrorCode, 'TypeConstraintViolation');
+                assert.equal(c1.status, 'rejected');
+                assert.equal(c1.reason.rpcErrorCode, 'FormationViolation');
 
-            } catch (err) {
-                console.log(err);
             } finally {
                 await cli.close();
                 close();
