@@ -5,7 +5,7 @@ const RPCClient = require("../lib/client");
 const { TimeoutError, RPCFrameworkError } = require('../lib/errors');
 const RPCServer = require("../lib/server");
 const { setTimeout } = require('timers/promises');
-const { getSchemaValidator } = require('../lib/util');
+const { createValidator } = require('../lib/util');
 const {CLOSING, CLOSED, CONNECTING} = RPCClient;
 
 describe('RPCClient', function(){
@@ -40,9 +40,38 @@ describe('RPCClient', function(){
         return {server, httpServer, port, endpoint, close};
     }
 
+    function getEchoValidator() {
+        return createValidator('echo1.0', [
+            {
+                "$schema": "http://json-schema.org/draft-07/schema",
+                "$id": "urn:Echo.req",
+                "type": "object",
+                "properties": {
+                    "val": {
+                        "type": "string"
+                    }
+                },
+                "additionalProperties": false,
+                "required": ["val"]
+            },
+            {
+                "$schema": "http://json-schema.org/draft-07/schema",
+                "$id": "urn:Echo.conf",
+                "type": "object",
+                "properties": {
+                    "val": {
+                        "type": "string"
+                    }
+                },
+                "additionalProperties": false,
+                "required": ["val"]
+            }
+        ]);
+    }
+
     describe('events', function(){
 
-        it('should emit call and resposne events', async () => {
+        it('should emit call and response events', async () => {
 
             const {endpoint, close} = await createServer({}, {
                 withClient: cli => {
@@ -77,6 +106,73 @@ describe('RPCClient', function(){
             assert.ok(test.out.response);
             assert.equal(test.in.call.payload[1], test.out.response.payload[1]);
             assert.equal(test.out.call.payload[1], test.in.response.payload[1]);
+
+        });
+
+        it('should emit 2 message events after call', async () => {
+            
+            const {endpoint, close} = await createServer();
+            const cli = new RPCClient({
+                endpoint,
+                identity: 'X',
+            });
+
+            const messages = [];
+            await cli.connect();
+            cli.on('message', m => messages.push({
+                payload: JSON.parse(m.buffer.toString('utf8')),
+                outbound: m.outbound,
+            }));
+            await cli.call('Echo', {val: 123});
+            await cli.close();
+            await close();
+
+            const [call, res] = messages;
+            assert.equal(call.outbound, true);
+            assert.equal(res.outbound, false);
+            assert.equal(call.payload[0], 2);
+            assert.equal(res.payload[0], 3);
+            assert.equal(call.payload[1], res.payload[1]);
+            assert.equal(call.payload[2], 'Echo');
+
+        });
+
+        it('should emit 2 message events after handle', async () => {
+            
+            let complete;
+            let done = new Promise(r=>{complete = r;});
+            const {endpoint, close} = await createServer({}, {
+                withClient: async (cli) => {
+                    await cli.call('Echo', {val: 123});
+                    cli.close();
+                    complete();
+                }
+            });
+            const cli = new RPCClient({
+                endpoint,
+                identity: 'X',
+                reconnect: false,
+            });
+
+            cli.handle('Echo', ({params}) => params);
+
+            const messages = [];
+            await cli.connect();
+            cli.on('message', m => messages.push({
+                payload: JSON.parse(m.buffer.toString('utf8')),
+                outbound: m.outbound,
+            }));
+
+            await done;
+            await close();
+
+            const [call, res] = messages;
+            assert.equal(call.outbound, false);
+            assert.equal(res.outbound, true);
+            assert.equal(call.payload[0], 2);
+            assert.equal(res.payload[0], 3);
+            assert.equal(call.payload[1], res.payload[1]);
+            assert.equal(call.payload[2], 'Echo');
 
         });
 
@@ -669,55 +765,67 @@ describe('RPCClient', function(){
 
         it('should reject on call schema validation failure', async () => {
             
-            const validator = getSchemaValidator([
-                {
-                    "$schema": "http://json-schema.org/draft-07/schema",
-                    "$id": "urn:Echo.req",
-                    "type": "object",
-                    "properties": {
-                        "val": {
-                            "type": "string"
-                        }
-                    },
-                    "additionalProperties": false,
-                    "required": ["val"]
-                },
-                {
-                    "$schema": "http://json-schema.org/draft-07/schema",
-                    "$id": "urn:Echo.conf",
-                    "type": "object",
-                    "properties": {
-                        "val": {
-                            "type": "string"
-                        }
-                    },
-                    "additionalProperties": false,
-                    "required": ["val"]
-                }
-            ]);
-
-            const {endpoint, close, server} = await createServer({}, {withClient: cli => {
-                cli.useSchemaValidator(validator);
-            }});
+            const {endpoint, close, server} = await createServer({
+                protocols: ['echo1.0']
+            });
             const cli = new RPCClient({
                 endpoint,
                 identity: 'X',
+                protocols: ['echo1.0'],
+                strictModeValidators: [getEchoValidator()],
+                strictMode: true,
             });
-
-            cli.useSchemaValidator(validator);
 
             try {
                 await cli.connect();
 
-                const [goodCall, badCall] = await Promise.allSettled([
+                const [c1, c2, c3] = await Promise.allSettled([
                     cli.call('Echo', {val: '123'}),
                     cli.call('Echo', {val: 123}),
+                    cli.call('Unknown'),
                 ]);
 
-                assert.equal(goodCall.status, 'fulfilled');
-                assert.equal(goodCall.value.val, '123');
-                assert.equal(badCall.status, 'rejected');
-                assert.equal(badCall.reason.rpcErrorCode, 'TypeConstraintViolation');
+                assert.equal(c1.status, 'fulfilled');
+                assert.equal(c1.value.val, '123');
+                assert.equal(c2.status, 'rejected');
+                assert.equal(c2.reason.rpcErrorCode, 'TypeConstraintViolation');
+                assert.equal(c3.status, 'rejected');
+                console.log({c3});
+                assert.equal(c3.reason.rpcErrorCode, 'Missing call schema');
+
+            } finally {
+                await cli.close();
+                close();
+            }
+
+        });
+
+        
+        it('should reject on response schema validation failure', async () => {
+            
+            const {endpoint, close, server} = await createServer({
+                protocols: ['echo1.0']
+            }, {withClient: cli => {
+                cli.handle('Echo', () => ({bad: true}));
+            }});
+            const cli = new RPCClient({
+                endpoint,
+                identity: 'X',
+                protocols: ['echo1.0'],
+                strictModeValidators: [getEchoValidator()],
+                strictMode: true,
+            });
+
+            try {
+                await cli.connect();
+
+                const [c1] = await Promise.allSettled([
+                    cli.call('Echo', {val: '123'}),
+                ]);
+
+                assert.equal(c1.status, 'rejected');
+                console.log({c1});
+                assert.equal(c1.reason.rpcErrorCode, 'Bad call response');
 
             } finally {
                 await cli.close();
@@ -1102,7 +1210,6 @@ describe('RPCClient', function(){
             let disconnectedOnce = false;
             const {endpoint, close, server} = await createServer({
                 protocols: ['a'],
-                protocolRequired: true,
             }, {
                 withClient: async (client) => {
                     if (!disconnectedOnce) {
@@ -1537,7 +1644,11 @@ describe('RPCClient', function(){
                 const badProm = once(cli, 'badMessage');
                 await cli.connect();
                 const [bad] = await badProm;
-                assert.equal(bad.toString('utf8'), 'x');
+                assert.equal(bad.buffer.toString('utf8'), 'x');
+                assert.equal(bad.error.rpcErrorCode, 'RpcFrameworkError');
+                assert.equal(bad.response[0], 4);
+                assert.equal(bad.response[1], '-1');
+                assert.equal(bad.response[2], 'RpcFrameworkError');
                 
             } finally {
                 await cli.close();
@@ -1547,14 +1658,13 @@ describe('RPCClient', function(){
         });
 
         it("should cause sender to receive an RpcFrameworkError", async () => {
-            
-            let unexResolve;
-            let unexProm = new Promise(r => {unexResolve = r;});
+            let replyResolve;
+            let replyProm = new Promise(r => {replyResolve = r;});
 
             const {endpoint, close, server} = await createServer({}, {
                 withClient: cli => {
-                    cli.once('unexpectedResponse', unexResolve);
-                    cli.sendRaw('x');
+                    cli.once('badMessage', replyResolve);
+                    cli.sendRaw('[2, "a", 2]');
                 }
             });
             const cli = new RPCClient({
@@ -1564,10 +1674,12 @@ describe('RPCClient', function(){
 
             try {
                 await cli.connect();
-                const unexRes = await unexProm;
+                const reply = await replyProm;
 
-                assert.equal(unexRes.type, 4);
-                assert.equal(unexRes.error.code, 'RpcFrameworkError');
+                console.log({reply});
+
+                assert.equal(reply.type, 4);
+                assert.equal(reply.error.code, 'RpcFrameworkError');
                 
             } finally {
                 await cli.close();

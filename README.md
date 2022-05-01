@@ -226,6 +226,7 @@ Once created, the `Validator` is immutable and can be reused as many times as is
   * [new RPCClient(options)](#new-rpcclientoptions)
   * [Event: 'badMessage'](#event-badmessage)
   * [Event: 'strictValidationFailure'](#event-strictvalidationfailure)
+  * [Event: 'message'](#event-message)
   * [Event: 'call'](#event-call)
   * [Event: 'close'](#event-close-1)
   * [Event: 'closing'](#event-closing-1)
@@ -451,11 +452,12 @@ Emitted when the underlying WebSocket has disconnected. If the client is configu
 #### Event: 'message'
 
 * `event` {Object}
-  * `messageId` {String|null} - The RPC message ID. If the message ID cannot be decoded, this will be null.
-  * `payload` {Buffer} - The message payload buffer.
+  * `buffer` {Buffer} - The message payload.
   * `outbound` {Boolean} - This will be `true` if the message originated locally.
 
 Emitted whenever a message is sent or received over client's WebSocket. Useful for logging or debugging.
+
+If you want to handle (and respond) to a call, you should register a handler using [client.handle()](#clienthandlemethod-handler) instead.
 
 #### Event: 'open'
 
