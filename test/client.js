@@ -5,7 +5,7 @@ const RPCClient = require("../lib/client");
 const { TimeoutError, RPCFrameworkError } = require('../lib/errors');
 const RPCServer = require("../lib/server");
 const { setTimeout } = require('timers/promises');
-const { createValidator } = require('../lib/util');
+const { createValidator } = require('../lib/validator');
 const {CLOSING, CLOSED, CONNECTING} = RPCClient;
 
 describe('RPCClient', function(){
