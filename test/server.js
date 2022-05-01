@@ -5,6 +5,7 @@ const RPCClient = require("../lib/client");
 const { TimeoutError, UnexpectedHttpResponse } = require('../lib/errors');
 const RPCServer = require("../lib/server");
 const { setTimeout } = require('timers/promises');
+const { createValidator } = require('../lib/util');
 const {CLOSING, CLOSED, CONNECTING} = RPCClient;
 
 describe('RPCServer', function(){
@@ -35,6 +36,89 @@ describe('RPCServer', function(){
         });
         return {server, httpServer, port, endpoint, close};
     }
+
+
+    function getEchoValidator() {
+        return createValidator('echo1.0', [
+            {
+                "$schema": "http://json-schema.org/draft-07/schema",
+                "$id": "urn:Echo.req",
+                "type": "object",
+                "properties": {
+                    "val": {
+                        "type": "string"
+                    }
+                },
+                "additionalProperties": false,
+                "required": ["val"]
+            },
+            {
+                "$schema": "http://json-schema.org/draft-07/schema",
+                "$id": "urn:Echo.conf",
+                "type": "object",
+                "properties": {
+                    "val": {
+                        "type": "string"
+                    }
+                },
+                "additionalProperties": false,
+                "required": ["val"]
+            }
+        ]);
+    }
+
+    describe('#constructor', function(){
+
+        it('should throw if strictMode = true and not all protocol schemas found', async () => {
+
+            assert.throws(() => {
+                new RPCServer({
+                    protocols: ['ocpp1.6', 'echo1.0', 'other0.1'],
+                    strictMode: true,
+                });
+            });
+
+            assert.throws(() => {
+                new RPCServer({
+                    protocols: ['ocpp1.6', 'echo1.0', 'other0.1'],
+                    strictMode: ['ocpp1.6', 'other0.1'],
+                });
+            });
+
+            assert.throws(() => {
+                // trying to use strict mode with no protocols specified
+                new RPCServer({
+                    protocols: [],
+                    strictMode: true,
+                });
+            });
+
+            assert.throws(() => {
+                // trying to use strict mode with no protocols specified
+                new RPCServer({
+                    strictMode: true,
+                });
+            });
+
+            assert.doesNotThrow(() => {
+                new RPCServer({
+                    protocols: ['ocpp1.6', 'echo1.0', 'other0.1'],
+                    strictModeValidators: [getEchoValidator()],
+                    strictMode: ['ocpp1.6', 'echo1.0'],
+                });
+            });
+
+            assert.doesNotThrow(() => {
+                new RPCServer({
+                    protocols: ['ocpp1.6', 'echo1.0'],
+                    strictModeValidators: [getEchoValidator()],
+                    strictMode: true,
+                });
+            });
+
+        });
+
+    });
 
     describe('events', function(){
 

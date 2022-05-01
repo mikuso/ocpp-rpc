@@ -69,6 +69,81 @@ describe('RPCClient', function(){
         ]);
     }
 
+    describe('#constructor', function(){
+
+        it('should throw on missing identity', async () => {
+
+            assert.throws(() => {
+                new RPCClient({
+                    endpoint: 'ws://localhost',
+                });
+            });
+
+        });
+
+        it('should throw if strictMode = true and not all protocol schemas found', async () => {
+
+            assert.throws(() => {
+                new RPCClient({
+                    endpoint: 'ws://localhost',
+                    identity: 'x',
+                    protocols: ['ocpp1.6', 'echo1.0', 'other0.1'],
+                    strictMode: true,
+                });
+            });
+
+            assert.throws(() => {
+                new RPCClient({
+                    endpoint: 'ws://localhost',
+                    identity: 'x',
+                    protocols: ['ocpp1.6', 'echo1.0', 'other0.1'],
+                    strictMode: ['ocpp1.6', 'other0.1'],
+                });
+            });
+
+            assert.throws(() => {
+                // trying to use strict mode with no protocols specified
+                new RPCClient({
+                    endpoint: 'ws://localhost',
+                    identity: 'x',
+                    protocols: [],
+                    strictMode: true,
+                });
+            });
+
+            assert.throws(() => {
+                // trying to use strict mode with no protocols specified
+                new RPCClient({
+                    endpoint: 'ws://localhost',
+                    identity: 'x',
+                    strictMode: true,
+                });
+            });
+
+            assert.doesNotThrow(() => {
+                new RPCClient({
+                    endpoint: 'ws://localhost',
+                    identity: 'x',
+                    protocols: ['ocpp1.6', 'echo1.0', 'other0.1'],
+                    strictModeValidators: [getEchoValidator()],
+                    strictMode: ['ocpp1.6', 'echo1.0'],
+                });
+            });
+
+            assert.doesNotThrow(() => {
+                new RPCClient({
+                    endpoint: 'ws://localhost',
+                    identity: 'x',
+                    protocols: ['ocpp1.6', 'echo1.0'],
+                    strictModeValidators: [getEchoValidator()],
+                    strictMode: true,
+                });
+            });
+
+        });
+
+    });
+
     describe('events', function(){
 
         it('should emit call and response events', async () => {
@@ -228,20 +303,6 @@ describe('RPCClient', function(){
                 endpoint: `http://localhost:${port}`,
                 identity: 'X',
             });
-
-            try {
-                await assert.rejects(cli.connect());
-            } finally {
-                await cli.close();
-                close();
-            }
-
-        });
-
-        it('should reject on missing identity', async () => {
-
-            const {close, endpoint, port} = await createServer();
-            const cli = new RPCClient({endpoint});
 
             try {
                 await assert.rejects(cli.connect());

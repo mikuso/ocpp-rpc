@@ -585,7 +585,7 @@ The RPCServerClient is a subclass of RPCClient. This represents an RPCClient fro
 * {Object}
   * `protocols` {Set} - A set of subprotocols purportedly supported by the client.
   * `identity` {String} - The identity portion of the connection URL, decoded.
-  * `endpoint` {String} - The endpoint path portion of the connection URL. This is the part of the path before the identity.
+  * `endpoint` {String} - The endpoint path portion of the connection URL. This is the part of the path before the identity. Defaults to `'ws://localhost'`.
   * `query` {URLSearchParams} - The query string parsed as [URLSearchParams](https://developer.mozilla.org/en-US/docs/Web/API/URLSearchParams).
   * `remoteAddress` {String} - The remote IP address of the socket.
   * `headers` {Object} - The HTTP headers sent in the upgrade request.
