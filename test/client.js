@@ -251,6 +251,159 @@ describe('RPCClient', function(){
 
         });
 
+        it("should emit 'badMessage' with 'RpcFrameworkError' when message is not a JSON structure", async () => {
+            const {endpoint, close, server} = await createServer({}, {
+                withClient: cli => {
+                    cli.sendRaw('{]');
+                }
+            });
+            const cli = new RPCClient({
+                endpoint,
+                identity: 'X',
+            });
+
+            try {
+                await cli.connect();
+                const [badMsg] = await once(cli, 'badMessage');
+                assert.equal(badMsg.error.rpcErrorCode, 'RpcFrameworkError');
+            } finally {
+                await cli.close();
+                close();
+            }
+        });
+
+        it("should emit 'badMessage' with 'RpcFrameworkError' when message is not an array", async () => {
+            const {endpoint, close, server} = await createServer({}, {
+                withClient: cli => {
+                    cli.sendRaw('{}');
+                }
+            });
+            const cli = new RPCClient({
+                endpoint,
+                identity: 'X',
+            });
+
+            try {
+                await cli.connect();
+                const [badMsg] = await once(cli, 'badMessage');
+                assert.equal(badMsg.error.rpcErrorCode, 'RpcFrameworkError');
+            } finally {
+                await cli.close();
+                close();
+            }
+        });
+
+        it("should emit 'badMessage' with 'RpcFrameworkError' when message type is not a number", async () => {
+            const {endpoint, close, server} = await createServer({}, {
+                withClient: cli => {
+                    cli.sendRaw('["a", "123", "Echo", {}]');
+                }
+            });
+            const cli = new RPCClient({
+                endpoint,
+                identity: 'X',
+            });
+
+            try {
+                await cli.connect();
+                const [badMsg] = await once(cli, 'badMessage');
+                assert.equal(badMsg.error.rpcErrorCode, 'RpcFrameworkError');
+            } finally {
+                await cli.close();
+                close();
+            }
+        });
+
+        it("should emit 'badMessage' with 'MessageTypeNotSupported' when message type unrecognised", async () => {
+            const {endpoint, close, server} = await createServer({}, {
+                withClient: cli => {
+                    cli.sendRaw('[0, "123", "Echo", {}]');
+                }
+            });
+            const cli = new RPCClient({
+                endpoint,
+                identity: 'X',
+            });
+
+            try {
+                await cli.connect();
+                const [badMsg] = await once(cli, 'badMessage');
+                assert.equal(badMsg.error.rpcErrorCode, 'MessageTypeNotSupported');
+            } finally {
+                await cli.close();
+                close();
+            }
+        });
+
+        it("should emit 'badMessage' with 'RpcFrameworkError' when message ID is not a string", async () => {
+            const {endpoint, close, server} = await createServer({}, {
+                withClient: cli => {
+                    cli.sendRaw('[2, 123, "Echo", {}]');
+                }
+            });
+            const cli = new RPCClient({
+                endpoint,
+                identity: 'X',
+            });
+
+            try {
+                await cli.connect();
+                const [badMsg] = await once(cli, 'badMessage');
+                assert.equal(badMsg.error.rpcErrorCode, 'RpcFrameworkError');
+            } finally {
+                await cli.close();
+                close();
+            }
+        });
+
+        it("should emit 'badMessage' with 'RpcFrameworkError' when method is not a string", async () => {
+            const {endpoint, close, server} = await createServer({}, {
+                withClient: cli => {
+                    cli.sendRaw('[2, "123", 123, {}]');
+                }
+            });
+            const cli = new RPCClient({
+                endpoint,
+                identity: 'X',
+            });
+
+            try {
+                await cli.connect();
+                const [badMsg] = await once(cli, 'badMessage');
+                assert.equal(badMsg.error.rpcErrorCode, 'RpcFrameworkError');
+            } finally {
+                await cli.close();
+                close();
+            }
+        });
+
+        it("should emit 'badMessage' with 'RpcFrameworkError' when message ID is repeated", async () => {
+            const {endpoint, close, server} = await createServer({}, {
+                withClient: cli => {
+
+                }
+            });
+            const cli = new RPCClient({
+                endpoint,
+                identity: 'X',
+            });
+
+            try {
+                await cli.connect();
+                
+                cli.sendRaw('[2, "123", "Sleep", {"ms":20}]');
+                cli.sendRaw('[2, "123", "Sleep", {"ms":20}]');
+
+                const [badMsg] = await once(cli, 'badMessage');
+                assert.equal(badMsg.error.rpcErrorCode, 'RpcFrameworkError');
+                assert.equal(badMsg.error.details.msgId, '123');
+                assert.equal(badMsg.error.details.errorCode, 'RpcFrameworkError');
+                assert.equal(badMsg.error.details.errorDescription, 'Already processing a call with message ID: 123');
+            } finally {
+                await cli.close();
+                close();
+            }
+        });
     });
 
     describe('#connect', function(){
@@ -1718,37 +1871,7 @@ describe('RPCClient', function(){
 
         });
 
-        it("should cause sender to receive an RpcFrameworkError", async () => {
-            let replyResolve;
-            let replyProm = new Promise(r => {replyResolve = r;});
-
-            const {endpoint, close, server} = await createServer({}, {
-                withClient: cli => {
-                    cli.once('badMessage', replyResolve);
-                    cli.sendRaw('[2, "a", 2]');
-                }
-            });
-            const cli = new RPCClient({
-                endpoint,
-                identity: 'X',
-            });
-
-            try {
-                await cli.connect();
-                const reply = await replyProm;
-
-                console.log({reply});
-
-                assert.equal(reply.type, 4);
-                assert.equal(reply.error.code, 'RpcFrameworkError');
-                
-            } finally {
-                await cli.close();
-                close();
-            }
-
-        });
-
     });
 
 });
+
