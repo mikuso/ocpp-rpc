@@ -236,7 +236,6 @@ Once created, the `Validator` is immutable and can be reused as many times as is
   * [Event: 'protocol'](#event-protocol)
   * [Event: 'response'](#event-response)
   * [Event: 'socketError'](#event-socketerror)
-  * [Event: 'unexpectedResponse'](#event-unexpectedresponse)
   * [client.identity](#clientidentity)
   * [client.state](#clientstate)
   * [client.protocol](#clientprotocol)
