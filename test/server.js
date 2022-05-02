@@ -6,6 +6,7 @@ const { TimeoutError, UnexpectedHttpResponse } = require('../lib/errors');
 const RPCServer = require("../lib/server");
 const { setTimeout } = require('timers/promises');
 const { createValidator } = require('../lib/validator');
+const { abortHandshake } = require('../lib/ws-util');
 
 describe('RPCServer', function(){
     this.timeout(500);
@@ -455,6 +456,40 @@ describe('RPCServer', function(){
             } finally {
                 close();
             }
+        });
+
+    });
+
+    describe('#handleUpgrade', function() {
+
+        it("should not throw if abortHandshake() called after socket already destroyed", async () => {
+
+            const {endpoint, close, server} = await createServer();
+            const cli = new RPCClient({
+                endpoint,
+                identity: 'X',
+            });
+
+            let completeAuth;
+            let authCompleted = new Promise(r => {completeAuth = r;})
+
+            server.auth(async (accept, reject, handshake) => {
+                reject(400);
+                abortHandshake(handshake.request.socket, 500);
+                completeAuth();
+            });
+
+            try {
+                cli.on('socketError', console.error)
+                const conn = cli.connect();
+                await assert.rejects(conn, {message: "Bad Request"});
+                await authCompleted;
+                
+            } finally {
+                await cli.close();
+                close();
+            }
+
         });
 
     });
