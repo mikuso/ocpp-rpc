@@ -32,13 +32,25 @@ This module is built for Node.js and does not currently work in browsers.
 * **Embraces abort signals** - `AbortSignal`s can be passed to most async methods.
 * **Optional HTTP server** - Bring your own HTTP server if you want to, or let `RPCServer` create one for you.
 
+## Table of Contents
+
+* [Installing](#installing)
+* [Usage Examples](#usage-examples)
+  * [Barebones OCPP1.6J server](#barebones-ocpp16j-server)
+  * [Barebones OCPP1.6J client](#barebones-ocpp16j-client)
+  * [Using with Express.js](#using-with-expressjs)
+* [API Docs](#api-docs)
+* [Strict Validation](#strict-validation)
+* [RPCClient state lifecycle](#rpcclient-state-lifecycle)
+* [License](#license)
+
 ## Installing
 
 ```
 npm install ocpp-rpc
 ```
 
-## Examples
+## Usage Examples
 
 ### Barebones OCPP1.6J server
 
@@ -50,7 +62,15 @@ const server = new RPCServer({
     strictMode: true,
 });
 
+server.auth((accept, reject, handshake) => {
+    accept({
+        sessionId: 'XYZ123'
+    });
+});
+
 server.on('client', async (client) => {
+    console.log(`${client.session.sessionId} connected!`); // `XYZ123 connected!`
+
     client.handle(({method, params}) => {
         console.log(`Server got ${method} from ${client.identity}:`, params);
         throw createRPCError("NotImplemented");
@@ -96,7 +116,7 @@ await cli.call('StatusNotification', {
 });
 ```
 
-### Use with [Express.js](https://expressjs.com/)
+### Using with [Express.js](https://expressjs.com/)
 
 ```js
 const {RPCServer, RPCClient} = require('ocpp-rpc');
@@ -124,97 +144,7 @@ cli.handle('Say', ({params}) => {
 cli.connect();
 ```
 
-## Strict Validation
-
-RPC clients can operate in "strict mode", validating calls & responses according to subprotocol schemas. The goal of strict mode is to eliminate the possibility of invalid data structures being sent through RPC.
-
-To enable strict mode, pass `strictMode: true` in the options to the [`RPCServer`](#new-rpcserveroptions) or [`RPCClient`](#new-rpcclientoptions) constructor. Alternately, you can limit strict mode to specific protocols by passing an array for `strictMode` instead. The schema ultimately used for validation is determined by whichever subprotocol is agreed between client and server.
-
-Examples:
-
-```js
-// enable strict mode for all subprotocols
-const server = new RPCServer({
-    protocols: ['ocpp1.6', 'ocpp2.0.1'],
-    strictMode: true,
-});
-```
-
-```js
-// only enable strict mode for ocpp1.6
-const server = new RPCServer({
-    protocols: ['ocpp1.6', 'proprietary0.1'],
-    strictMode: ['ocpp1.6'],
-});
-```
-
-### Effects of `strictMode`
-
-As a caller, `strictMode` has the following effects:
-* If your method or params fail validation, your call will reject immediately with an [`RPCError`](#rpcerror). The call will not be sent.
-* If a response to your call fails validation, the call will reject with an [`RPCError`](#rpcerror).
-
-As a callee, `strictMode` has the following effects:
-* If an inbound call's params fail validation, the call will not be passed to a handler. Instead, an error response will be automatically issued to the caller with an appropriate RPC error. A [`'strictValidationFailure'`](#event-strictvalidationfailure) event will be emitted with an [`RPCError`](#rpcerror).
-* If your response to a call fails validation, the response will be discarded and an `"InternalError"` RPC error will be sent instead. A [`'strictValidationFailure'`](#event-strictvalidationfailure) event will be emitted with an [`RPCError`](#rpcerror).
-
-### Supported validation schemas
-
-This module natively supports the following validation schemas:
-
-| Subprotocol |
-| ----------- |
-| ocpp1.6     |
-| ocpp2.0.1   |
-
-### Adding additional validation schemas
-
-If you want to use `strictMode` with a subprotocol which is not included in the list above, you will need to add the appropriate schemas yourself. To do this, you must create a `Validator` for each subprotocol(s) and pass them to the RPC constructor using the `strictModeValidators` option.  (It is also possible to override the built-in validators this way.)
-
-To create a Validator, you should pass the name of the subprotocol and a well-formed json schema to [`createValidator()`](#createvalidatorsubprotocol-schema). An example of a well-formed schema can be found at [`./lib/schemas/ocpp1.6json`](./lib/schemas/ocpp1.6json) or in the example below.
-
-Example:
-
-```js
-// define a validator for subprotocol 'echo1.0'
-const echoValidator = createValidator('echo1.0', [
-    {
-        $schema: "http://json-schema.org/draft-07/schema",
-        $id: "urn:Echo.req",
-        type: "object",
-        properties: {
-            val: { type: "string" }
-        },
-        additionalProperties: false,
-        required: ["val"]
-    },
-    {
-        $schema: "http://json-schema.org/draft-07/schema",
-        $id: "urn:Echo.conf",
-        type: "object",
-        properties: {
-            val: { type: "string" }
-        },
-        additionalProperties: false,
-        required: ["val"]
-    }
-]);
-
-const server = new RPCServer({
-    protocols: ['echo1.0'],
-    strictModeValidators: [echoValidator],
-    strictMode: true,
-});
-
-/*
-client.call('Echo', {val: 'foo'}); // returns {val: foo}
-client.call('Echo', ['bar']); // throws RPCError
-*/
-```
-
-Once created, the `Validator` is immutable and can be reused as many times as is required.
-
-## API
+## API Docs
 
 * [Class: RPCServer](#class-rpcserver)
   * [new RPCServer(options)](#new-rpcserveroptions)
@@ -224,6 +154,7 @@ Once created, the `Validator` is immutable and can be reused as many times as is
   * [Event: 'closing'](#event-closing)
   * [server.auth(callback)](#serverauthcallback)
   * [server.handleUpgrade(request)](#serverhandleupgraderequest-socket-head)
+  * [server.reconfigure(options)](#serverreconfigureoptions)
   * [server.listen(port[, host[, options]])](#serverlistenport-host-options)
   * [server.close([options])](#servercloseoptions)
 
@@ -245,6 +176,7 @@ Once created, the `Validator` is immutable and can be reused as many times as is
   * [client.identity](#clientidentity)
   * [client.state](#clientstate)
   * [client.protocol](#clientprotocol)
+  * [client.reconfigure(options)](#clientreconfigureoptions)
   * [client.connect()](#clientconnect)
   * [client.close([options])](#clientcloseoptions)
   * [client.handle([method,] handler)](#clienthandlemethod-handler)
@@ -353,6 +285,12 @@ const rpcServer = new RPCServer();
 const httpServer = http.createServer();
 httpServer.on('upgrade', rpcServer.handleUpgrade);
 ```
+
+#### server.reconfigure(options)
+
+* `options` {Object}
+
+Use this method to change any of the `options` that can be passed to the `RPCServer`'s [constructor](#new-rpcserveroptions).
 
 #### server.listen([port[, host[, options]]])
 
@@ -522,6 +460,12 @@ The client's state. See [state lifecycle](#rpcclient-state-lifecycle)
 
 The agreed subprotocol. Once connected for the first time, this subprotocol becomes fixed and will be expected upon automatic reconnects (even if the server changes the available subprotocol options).
 
+#### client.reconfigure(options)
+
+* `options` {Object}
+
+Use this method to change any of the `options` that can be passed to the `RPCClient`'s [constructor](#new-rpcclientoptions).
+
 #### client.connect()
 
 The client will attempt to connect to the `RPCServer` specified in `options.url`.
@@ -654,6 +598,96 @@ Returns an [`RPCError`](#rpcerror) which corresponds to the specified type:
 | TypeConstraintViolation      | Payload for the method is syntactically correct but at least one of the fields violates data type constraints         |
 | MessageTypeNotSupported      | A message with a Message Type Number received is not supported by this implementation.                                |
 | RpcFrameworkError            | Content of the call is not a valid RPC Request, for example: MessageId could not be read.                             |
+
+## Strict Validation
+
+RPC clients can operate in "strict mode", validating calls & responses according to subprotocol schemas. The goal of strict mode is to eliminate the possibility of invalid data structures being sent through RPC.
+
+To enable strict mode, pass `strictMode: true` in the options to the [`RPCServer`](#new-rpcserveroptions) or [`RPCClient`](#new-rpcclientoptions) constructor. Alternately, you can limit strict mode to specific protocols by passing an array for `strictMode` instead. The schema ultimately used for validation is determined by whichever subprotocol is agreed between client and server.
+
+Examples:
+
+```js
+// enable strict mode for all subprotocols
+const server = new RPCServer({
+    protocols: ['ocpp1.6', 'ocpp2.0.1'],
+    strictMode: true,
+});
+```
+
+```js
+// only enable strict mode for ocpp1.6
+const server = new RPCServer({
+    protocols: ['ocpp1.6', 'proprietary0.1'],
+    strictMode: ['ocpp1.6'],
+});
+```
+
+### Effects of `strictMode`
+
+As a caller, `strictMode` has the following effects:
+* If your method or params fail validation, your call will reject immediately with an [`RPCError`](#rpcerror). The call will not be sent.
+* If a response to your call fails validation, the call will reject with an [`RPCError`](#rpcerror).
+
+As a callee, `strictMode` has the following effects:
+* If an inbound call's params fail validation, the call will not be passed to a handler. Instead, an error response will be automatically issued to the caller with an appropriate RPC error. A [`'strictValidationFailure'`](#event-strictvalidationfailure) event will be emitted with an [`RPCError`](#rpcerror).
+* If your response to a call fails validation, the response will be discarded and an `"InternalError"` RPC error will be sent instead. A [`'strictValidationFailure'`](#event-strictvalidationfailure) event will be emitted with an [`RPCError`](#rpcerror).
+
+### Supported validation schemas
+
+This module natively supports the following validation schemas:
+
+| Subprotocol |
+| ----------- |
+| ocpp1.6     |
+| ocpp2.0.1   |
+
+### Adding additional validation schemas
+
+If you want to use `strictMode` with a subprotocol which is not included in the list above, you will need to add the appropriate schemas yourself. To do this, you must create a `Validator` for each subprotocol(s) and pass them to the RPC constructor using the `strictModeValidators` option.  (It is also possible to override the built-in validators this way.)
+
+To create a Validator, you should pass the name of the subprotocol and a well-formed json schema to [`createValidator()`](#createvalidatorsubprotocol-schema). An example of a well-formed schema can be found at [`./lib/schemas/ocpp1.6json`](./lib/schemas/ocpp1.6json) or in the example below.
+
+Example:
+
+```js
+// define a validator for subprotocol 'echo1.0'
+const echoValidator = createValidator('echo1.0', [
+    {
+        $schema: "http://json-schema.org/draft-07/schema",
+        $id: "urn:Echo.req",
+        type: "object",
+        properties: {
+            val: { type: "string" }
+        },
+        additionalProperties: false,
+        required: ["val"]
+    },
+    {
+        $schema: "http://json-schema.org/draft-07/schema",
+        $id: "urn:Echo.conf",
+        type: "object",
+        properties: {
+            val: { type: "string" }
+        },
+        additionalProperties: false,
+        required: ["val"]
+    }
+]);
+
+const server = new RPCServer({
+    protocols: ['echo1.0'],
+    strictModeValidators: [echoValidator],
+    strictMode: true,
+});
+
+/*
+client.call('Echo', {val: 'foo'}); // returns {val: foo}
+client.call('Echo', ['bar']); // throws RPCError
+*/
+```
+
+Once created, the `Validator` is immutable and can be reused as many times as is required.
 
 ## RPCClient state lifecycle
 
