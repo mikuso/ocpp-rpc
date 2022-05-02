@@ -480,13 +480,82 @@ describe('RPCServer', function(){
             });
 
             try {
-                cli.on('socketError', console.error)
                 const conn = cli.connect();
                 await assert.rejects(conn, {message: "Bad Request"});
                 await authCompleted;
                 
             } finally {
                 await cli.close();
+                close();
+            }
+
+        });
+
+        
+        it("should abort handshake if server not open", async () => {
+
+            let authed = false;
+            const server = new RPCServer();
+            server.auth((accept) => {
+                // shouldn't get this far
+                authed = true;
+                accept()
+            });
+
+            let onUpgrade;
+            let upgradeProm = new Promise(r => {onUpgrade = r;});
+
+            const httpServer = http.createServer({}, (req, res) => res.end());
+            httpServer.on('upgrade', (...args) => onUpgrade(args));
+
+            await new Promise((resolve, reject) => {
+                httpServer.listen({port: 0}, err => err ? reject(err) : resolve());
+            });
+
+            const endpoint = 'ws://localhost:'+httpServer.address().port;
+
+            const cli = new RPCClient({
+                endpoint,
+                identity: 'X'
+            });
+
+            cli.connect();
+            const upgrade = await upgradeProm;
+            await server.close();
+            assert.doesNotReject(server.handleUpgrade(...upgrade));
+            assert.equal(authed, false);
+            httpServer.close();
+            
+        });
+        
+
+        it("should abort handshake for non-websocket upgrades", async () => {
+
+            const {endpoint, close, server} = await createServer();
+
+            let authed = false;
+            server.auth((accept) => {
+                // shouldn't get this far
+                authed = true;
+                accept()
+            });
+
+            try {
+
+                const req = http.request(endpoint.replace(/^ws/,'http') + '/X', {
+                    headers: {
+                        connection: 'Upgrade',
+                        upgrade: '_UNKNOWN_',
+                    }
+                });
+                req.end();
+
+                const [res] = await once(req, 'response');
+
+                assert.equal(res.statusCode, 400);
+                assert.equal(authed, false);
+                
+            } finally {
                 close();
             }
 
