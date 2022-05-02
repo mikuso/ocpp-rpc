@@ -191,6 +191,118 @@ describe('RPCServer', function(){
 
         });
 
+        it("should not throw on double-accept", async () => {
+
+            const {endpoint, close, server} = await createServer();
+
+            let allOk;
+            let waitOk = new Promise(r => {allOk = r;});
+
+            server.auth((accept, reject, handshake) => {
+                accept();
+                accept();
+                allOk();
+            });
+
+            const cli = new RPCClient({
+                endpoint,
+                identity: 'X'
+            });
+
+            try {
+                await cli.connect();
+                await waitOk;
+            } finally {
+                await cli.close();
+                close();
+            }
+
+        });
+
+        it("should not throw on double-reject", async () => {
+
+            const {endpoint, close, server} = await createServer();
+
+            let allOk;
+            let waitOk = new Promise(r => {allOk = r;});
+
+            server.auth((accept, reject, handshake) => {
+                reject();
+                reject();
+                allOk();
+            });
+
+            const cli = new RPCClient({
+                endpoint,
+                identity: 'X'
+            });
+
+            try {
+                await assert.rejects(cli.connect(), {code: 400});
+                await waitOk;
+            } finally {
+                await cli.close();
+                close();
+            }
+
+        });
+
+        it("should not throw on reject-after-accept", async () => {
+
+            const {endpoint, close, server} = await createServer();
+
+            let allOk;
+            let waitOk = new Promise(r => {allOk = r;});
+
+            server.auth((accept, reject, handshake) => {
+                accept();
+                reject();
+                allOk();
+            });
+
+            const cli = new RPCClient({
+                endpoint,
+                identity: 'X'
+            });
+
+            try {
+                await cli.connect();
+                await waitOk;
+            } finally {
+                await cli.close();
+                close();
+            }
+
+        });
+
+        it("should not throw on accept-after-reject", async () => {
+
+            const {endpoint, close, server} = await createServer();
+
+            let allOk;
+            let waitOk = new Promise(r => {allOk = r;});
+
+            server.auth((accept, reject, handshake) => {
+                reject();
+                accept();
+                allOk();
+            });
+
+            const cli = new RPCClient({
+                endpoint,
+                identity: 'X'
+            });
+
+            try {
+                await assert.rejects(cli.connect(), {code: 400});
+                await waitOk;
+            } finally {
+                await cli.close();
+                close();
+            }
+
+        });
+
         it('should pass identity and endpoint path to auth', async () => {
 
             const identity = 'RPC/ /123';
