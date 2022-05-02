@@ -166,6 +166,31 @@ describe('RPCServer', function(){
     
     describe('#auth', function(){
 
+        it("should refuse client with error 406 when subprotocol incorrectly forced", async () => {
+
+            const {endpoint, close, server} = await createServer({protocols: ['a', 'b']});
+
+            server.auth((accept, reject, handshake) => {
+                accept({}, 'b');
+            });
+
+            const cli = new RPCClient({
+                endpoint,
+                identity: 'X',
+                protocols: ['a'],
+            });
+
+            try {
+
+                const err = await cli.connect().catch(e=>e);
+                assert.equal(err.code, 406);
+
+            } finally {
+                close();
+            }
+
+        });
+
         it('should pass identity and endpoint path to auth', async () => {
 
             const identity = 'RPC/ /123';
@@ -255,6 +280,25 @@ describe('RPCServer', function(){
             assert.equal(err.code, 500);
 
             close();
+
+        });
+
+        it("should disconnect client if server closes during auth", async () => {
+
+            const {endpoint, close, server} = await createServer();
+            server.auth((accept, reject) => {
+                close();
+                accept();
+            });
+            const cli = new RPCClient({endpoint, identity: 'X', reconnect: false});
+    
+            const closeProm = once(cli, 'close');
+            await cli.connect();
+
+            const [closed] = await closeProm;
+
+            assert.equal(closed.code, 1000);
+            assert.equal(closed.reason, 'Server is no longer open');
 
         });
 
