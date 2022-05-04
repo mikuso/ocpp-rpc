@@ -612,7 +612,7 @@ describe('RPCClient', function(){
                 identity: 'X',
                 headers: {
                     'x-test': 'abc',
-                    'authorization': 'Token xxx',
+                    'x-test2': 'Token xxx',
                 }
             });
 
@@ -620,7 +620,51 @@ describe('RPCClient', function(){
                 await cli.connect();
                 const headers = await cli.call('GetHeaders');
                 assert.equal(headers['x-test'], 'abc');
-                assert.equal(shake.headers['authorization'], 'Token xxx');
+                assert.equal(shake.headers['x-test2'], 'Token xxx');
+
+            } finally {
+                cli.close();
+                close();
+            }
+        });
+
+        it('should also pass headers to server via wsOpts (but can be overridden by headers option)', async () => {
+            
+            let shake;
+            const {endpoint, close, server} = await createServer({}, {
+                withClient: client => {
+                    client.handle('GetHeaders', () => client.handshake.headers);
+                }
+            });
+            server.auth((accept, reject, handshake) => {
+                shake = handshake;
+                accept();
+            });
+
+            const cli = new RPCClient({
+                endpoint,
+                identity: 'X',
+                headers: {
+                    'x-test': 'abc',
+                    'x-test2': 'Token xxx',
+                },
+                wsOpts: {
+                    headers: {
+                        'x-test2': 'Token yyy',
+                        'x-test3': 'Token zzz',
+                    }
+                }
+            });
+
+            try {
+                await cli.connect();
+                const headers = await cli.call('GetHeaders');
+                assert.equal(headers['x-test'], 'abc');
+                assert.equal(headers['x-test2'], 'Token xxx');
+                assert.equal(headers['x-test3'], 'Token zzz');
+                assert.equal(shake.headers['x-test'], 'abc');
+                assert.equal(shake.headers['x-test2'], 'Token xxx');
+                assert.equal(shake.headers['x-test3'], 'Token zzz');
 
             } finally {
                 cli.close();
