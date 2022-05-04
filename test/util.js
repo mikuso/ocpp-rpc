@@ -18,6 +18,7 @@ describe('util', function(){
             assert.ok(createRPCError('FormatViolation') instanceof errors.RPCFormatViolationError);
             assert.ok(createRPCError('PropertyConstraintViolation') instanceof errors.RPCPropertyConstraintViolationError);
             assert.ok(createRPCError('OccurenceConstraintViolation') instanceof errors.RPCOccurenceConstraintViolationError);
+            assert.ok(createRPCError('OccurrenceConstraintViolation') instanceof errors.RPCOccurrenceConstraintViolationError);
             assert.ok(createRPCError('TypeConstraintViolation') instanceof errors.RPCTypeConstraintViolationError);
             assert.ok(createRPCError('MessageTypeNotSupported') instanceof errors.RPCMessageTypeNotSupportedError);
             assert.ok(createRPCError('RpcFrameworkError') instanceof errors.RPCFrameworkError);
