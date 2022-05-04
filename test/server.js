@@ -166,7 +166,7 @@ describe('RPCServer', function(){
     
     describe('#auth', function(){
 
-        it("should refuse client with error 406 when subprotocol incorrectly forced", async () => {
+        it("should refuse client with error 400 when subprotocol incorrectly forced", async () => {
 
             const {endpoint, close, server} = await createServer({protocols: ['a', 'b']});
 
@@ -183,7 +183,7 @@ describe('RPCServer', function(){
             try {
 
                 const err = await cli.connect().catch(e=>e);
-                assert.equal(err.code, 406);
+                assert.equal(err.code, 400);
 
             } finally {
                 close();
@@ -238,7 +238,7 @@ describe('RPCServer', function(){
             });
 
             try {
-                await assert.rejects(cli.connect(), {code: 400});
+                await assert.rejects(cli.connect(), {code: 404});
                 await waitOk;
             } finally {
                 await cli.close();
@@ -294,7 +294,7 @@ describe('RPCServer', function(){
             });
 
             try {
-                await assert.rejects(cli.connect(), {code: 400});
+                await assert.rejects(cli.connect(), {code: 404});
                 await waitOk;
             } finally {
                 await cli.close();
@@ -708,7 +708,7 @@ describe('RPCServer', function(){
 
                 const [res] = await once(req, 'response');
 
-                assert.equal(res.statusCode, 400);
+                assert.equal(res.statusCode, 500);
                 assert.equal(authed, false);
                 
             } finally {
