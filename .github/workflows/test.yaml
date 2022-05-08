@@ -13,7 +13,6 @@ jobs:
           - "17.2.0"
           - "lts/*"
           - "node"
-    name: Node ${{ matrix.node }} sample
     steps:
 
       - uses: actions/checkout@master
