@@ -9,10 +9,8 @@ jobs:
     strategy:
       matrix:
         nodeVer:
-          - "15.9.0"
-          - "17.2.0"
-          - "lts/*"
-          - "node"
+          - 17.2.0
+          - 18
     steps:
 
       - uses: actions/checkout@master
