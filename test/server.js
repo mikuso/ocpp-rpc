@@ -414,6 +414,179 @@ describe('RPCServer', function(){
 
         });
 
+        
+
+        it('should recognise passwords with colons', async () => {
+            
+            const password = 'hun:ter:2';
+
+            const {endpoint, close, server} = await createServer({}, {withClient: cli => {
+                cli.handle('GetPassword', () => {
+                    return cli.session.pwd;
+                });
+            }});
+
+            server.auth((accept, reject, handshake) => {
+                accept({pwd: handshake.password});
+            });
+
+            const cli = new RPCClient({
+                endpoint,
+                identity: 'X',
+                password,
+            });
+
+            try {
+                await cli.connect();
+                const pass = await cli.call('GetPassword');
+                assert.equal(password, pass);
+
+            } finally {
+                cli.close();
+                close();
+            }
+        });
+
+        it('should not get confused with identities and passwords containing colons', async () => {
+            
+            const identity = 'a:colonified:ident';
+            const password = 'a:colonified:p4ss';
+            
+            let recIdent;
+            let recPass;
+
+            const {endpoint, close, server} = await createServer();
+            server.auth((accept, reject, handshake) => {
+                recIdent = handshake.identity;
+                recPass = handshake.password;
+                accept();
+            });
+
+            const cli = new RPCClient({
+                endpoint,
+                identity,
+                password,
+            });
+
+            try {
+                await cli.connect();
+                assert.equal(password, recPass);
+                assert.equal(identity, recIdent);
+
+            } finally {
+                cli.close();
+                close();
+            }
+        });
+
+        it('should recognise empty passwords', async () => {
+            
+            const password = '';
+            let recPass;
+
+            const {endpoint, close, server} = await createServer();
+            server.auth((accept, reject, handshake) => {
+                recPass = handshake.password;
+                accept();
+            });
+
+            const cli = new RPCClient({
+                endpoint,
+                identity: 'X',
+                password,
+            });
+
+            try {
+                await cli.connect();
+                assert.equal(password, recPass);
+
+            } finally {
+                cli.close();
+                close();
+            }
+        });
+
+        it('should provide undefined password if no authorization header sent', async () => {
+            
+            let recPass;
+
+            const {endpoint, close, server} = await createServer();
+            server.auth((accept, reject, handshake) => {
+                recPass = handshake.password;
+                accept();
+            });
+
+            const cli = new RPCClient({
+                endpoint,
+                identity: 'X',
+            });
+
+            try {
+                await cli.connect();
+                assert.equal(undefined, recPass);
+
+            } finally {
+                cli.close();
+                close();
+            }
+        });
+
+        it('should provide undefined password when identity mismatches username', async () => {
+            
+            let recPass;
+
+            const {endpoint, close, server} = await createServer();
+            server.auth((accept, reject, handshake) => {
+                recPass = handshake.password;
+                accept();
+            });
+
+            const cli = new RPCClient({
+                endpoint,
+                identity: 'X',
+                headers: {
+                    'authorization': 'Basic WjoxMjM=',
+                }
+            });
+
+            try {
+                await cli.connect();
+                assert.equal(undefined, recPass);
+
+            } finally {
+                cli.close();
+                close();
+            }
+        });
+
+        it('should provide undefined password on bad authorization header', async () => {
+            
+            let recPass;
+
+            const {endpoint, close, server} = await createServer();
+            server.auth((accept, reject, handshake) => {
+                recPass = handshake.password;
+                accept();
+            });
+
+            const cli = new RPCClient({
+                endpoint,
+                identity: 'X',
+                headers: {
+                    'authorization': 'Basic ?',
+                }
+            });
+
+            try {
+                await cli.connect();
+                assert.equal(undefined, recPass);
+
+            } finally {
+                cli.close();
+                close();
+            }
+        });
+
     });
 
     

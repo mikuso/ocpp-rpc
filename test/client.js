@@ -742,6 +742,33 @@ describe('RPCClient', function(){
             }
         });
 
+        it('should authenticate with password', async () => {
+            
+            const password = 'hunter2';
+            let recPass;
+
+            const {endpoint, close, server} = await createServer();
+            server.auth((accept, reject, handshake) => {
+                recPass = handshake.password;
+                accept();
+            });
+
+            const cli = new RPCClient({
+                endpoint,
+                identity: 'X',
+                password,
+            });
+
+            try {
+                await cli.connect();
+                assert.equal(password, recPass);
+
+            } finally {
+                cli.close();
+                close();
+            }
+        });
+
     });
 
 
