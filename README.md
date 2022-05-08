@@ -27,6 +27,7 @@ This module is built for Node.js and does not currently work in browsers.
 * **Automatic reconnects** - Client supports automatic exponential-backoff reconnects.
 * **Automatic keep-alive** - Regularly performs pings, and drops dangling TCP connections.
 * **Serve multiple subprotocols** - Simultaneously serve multiple different subprotocols from the same service endpoint.
+* **[HTTP Basic Auth](#http-basic-auth)** - Easy-to-use HTTP Basic Auth compatible with OCPP security profiles 1 & 2.
 * **Graceful shutdowns** - Supports waiting for all in-flight messages to be responded to before closing sockets.
 * **Clean closing of websockets** - Supports sending & receiving WebSocket close codes & reasons.
 * **Embraces abort signals** - `AbortSignal`s can be passed to most async methods.
@@ -41,6 +42,7 @@ This module is built for Node.js and does not currently work in browsers.
   * [Using with Express.js](#using-with-expressjs)
 * [API Docs](#api-docs)
 * [Strict Validation](#strict-validation)
+* [HTTP Basic Auth](#http-basic-auth)
 * [RPCClient state lifecycle](#rpcclient-state-lifecycle)
 * [License](#license)
 
@@ -248,6 +250,7 @@ The callback function is called with the following three arguments:
 * `handshake` {Object} - A handshake object
   * `protocols` {Set} - A set of subprotocols purportedly supported by the client.
   * `identity` {String} - The identity portion of the connection URL, decoded.
+  * `password` {String} - If HTTP Basic auth was used in the connection, and the username correctly matches the identity, this field will contain the password (otherwise `undefined`). Read [HTTP Basic Auth](#http-basic-auth) for more details of how this works.
   * `endpoint` {String} - The endpoint path portion of the connection URL. This is the part of the path before the identity.
   * `query` {URLSearchParams} - The query string parsed as [URLSearchParams](https://developer.mozilla.org/en-US/docs/Web/API/URLSearchParams).
   * `remoteAddress` {String} - The remote IP address of the socket.
@@ -323,6 +326,7 @@ Returns a `Promise` which resolves when the server has completed closing.
   - `endpoint` {String} - The RPC server's endpoint (a websocket URL). **Required**.
   - `identity` {String} - The RPC client's identity. Will be automatically encoded. **Required**.
   - `protocols` {Array&lt;String&gt;} - Array of subprotocols supported by this client. Defaults to `[]`.
+  - `password` {String} - Optional password to use in HTTP Basic auth. (The username will always be the identity).
   - `headers` {Object} - Additional HTTP headers to send along with the websocket upgrade request. Defaults to `{}`.
   - `query` {Object|String} - An optional query string or object to append as the query string of the connection URL. Defaults to `''`.
   - `callTimeoutMs` {Number} - Milliseconds to wait before unanswered outbound calls are rejected automatically. Defaults to `60000`.
@@ -688,6 +692,80 @@ client.call('Echo', ['bar']); // throws RPCError
 ```
 
 Once created, the `Validator` is immutable and can be reused as many times as is required.
+
+## HTTP Basic Auth
+
+### Usage Example
+
+```js
+const cli = new RPCClient({
+    identity: "AzureDiamond",
+    password: "hunter2",
+});
+
+const server = new RPCServer();
+server.auth((accept, reject, handshake) => {
+    if (handshake.identity === "AzureDiamond" && handshake.password === "hunter2") {
+        accept();
+    } else {
+        reject(401);
+    }
+});
+
+await server.listen(80);
+await cli.connect();
+```
+
+### Identities containing colons
+
+This module supports HTTP Basic auth slightly differently than how it is specified in [RFC7617](https://datatracker.ietf.org/doc/html/rfc7617). In that spec, it is made clear that usernames cannot contain colons (:) as a colon is used to delineate where a username ends and a password begins.
+
+In the context of OCPP, the basic-auth username must always be equal to the client's identity. However, since OCPP does not forbid colons in identities, this can possibly lead to a conflict and unexpected behaviours.
+
+In practice, it's not uncommon to see violations of RFC7617 in the wild. All major browsers allow basic-auth usernames to contain colons, despite the fact that this won't make any sense to the server. RFC7617 acknowledges this fact. The prevalent solution to this problem seems to be to simply ignore it.
+
+However, in OCPP, since we have the luxury of knowing that the username must always be equal to the client's identity, it is no longer necessary to rely upon a colon to delineate the username from the password. This module makes use of this guarantee to enable identities and passwords to contain as many or as few colons as you wish.
+
+```js
+const cli = new RPCClient({
+    identity: "this:is:ok",
+    password: "as:is:this",
+});
+
+const server = new RPCServer();
+server.auth((accept, reject, handshake) => {
+    console.log(handshake.identity); // "this:is:ok"
+    console.log(handshake.password); // "as:is:this"
+    accept();
+});
+
+await server.listen(80);
+await cli.connect();
+```
+
+If you prefer to use the more conventional (broken) way of parsing the authorization header using something like the [basic-auth](https://www.npmjs.com/package/basic-auth) module, you can do that too.
+
+
+```js
+const auth = require('basic-auth');
+
+const cli = new RPCClient({
+    identity: "this:is:broken",
+    password: "as:is:this",
+});
+
+const server = new RPCServer();
+server.auth((accept, reject, handshake) => {
+    const cred = auth.parse(handshake.headers.authorization);
+
+    console.log(cred.name); // "this"
+    console.log(cred.pass); // "is:broken:as:is:this"
+    accept();
+});
+
+await server.listen(80);
+await cli.connect();
+```
 
 ## RPCClient state lifecycle
 
