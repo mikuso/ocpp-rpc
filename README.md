@@ -23,7 +23,7 @@ This module is built for Node.js and does not currently work in browsers.
 ## Features
 
 * **Authentication** - Optional authentication step for initiating session data and filtering incoming clients.
-* **Strict Validation** - Optionally enforce subprotocol schemas to prevent invalid calls & responses.
+* **[Strict Validation](#strict-validation)** - Optionally enforce subprotocol schemas to prevent invalid calls & responses.
 * **Automatic reconnects** - Client supports automatic exponential-backoff reconnects.
 * **Automatic keep-alive** - Regularly performs pings, and drops dangling TCP connections.
 * **Serve multiple subprotocols** - Simultaneously serve multiple different subprotocols from the same service endpoint.
