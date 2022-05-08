@@ -6,6 +6,14 @@ jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        nodeVer:
+          - "15.9.0"
+          - "17.2.0"
+          - "lts/*"
+          - "node"
+    name: Node ${{ matrix.node }} sample
     steps:
 
       - uses: actions/checkout@master
@@ -13,7 +21,7 @@ jobs:
       - name: Use Node.js 18.x
         uses: actions/setup-node@master
         with:
-          version: 18.x
+          node-version: ${{ matrix.nodeVer }}
 
       - name: Run tests
         run: |
