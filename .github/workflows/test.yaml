@@ -15,7 +15,7 @@ jobs:
 
       - uses: actions/checkout@master
 
-      - name: Use Node.js 18.x
+      - name: Setup Node.js
         uses: actions/setup-node@master
         with:
           node-version: ${{ matrix.nodeVer }}
