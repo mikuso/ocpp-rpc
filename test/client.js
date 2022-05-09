@@ -196,7 +196,7 @@ describe('RPCClient', function(){
             const messages = [];
             await cli.connect();
             cli.on('message', m => messages.push({
-                payload: JSON.parse(m.buffer.toString('utf8')),
+                payload: JSON.parse(m.message.toString('utf8')),
                 outbound: m.outbound,
             }));
             await cli.call('Echo', {val: 123});
@@ -235,7 +235,7 @@ describe('RPCClient', function(){
             const messages = [];
             await cli.connect();
             cli.on('message', m => messages.push({
-                payload: JSON.parse(m.buffer.toString('utf8')),
+                payload: JSON.parse(m.message.toString('utf8')),
                 outbound: m.outbound,
             }));
 

@@ -398,7 +398,7 @@ Emitted when the underlying WebSocket has disconnected. If the client is configu
 #### Event: 'message'
 
 * `event` {Object}
-  * `buffer` {Buffer} - The message payload.
+  * `message` {Buffer|String} - The message payload.
   * `outbound` {Boolean} - This will be `true` if the message originated locally.
 
 Emitted whenever a message is sent or received over client's WebSocket. Useful for logging or debugging.
