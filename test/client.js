@@ -2247,6 +2247,38 @@ describe('RPCClient', function(){
 
         });
 
+        it("should be able to adjust ping interval", async () => {
+            
+            const {endpoint, close, server} = await createServer();
+            const cli = new RPCClient({
+                endpoint,
+                identity: 'X',
+                pingIntervalMs: 30,
+            });
+
+            try {
+                
+                await cli.connect();
+
+                const t1 = Date.now();
+                await once(cli, 'ping');
+                const r1 = Date.now() - t1;
+                
+                cli.reconfigure({pingIntervalMs: 10});
+
+                const t2 = Date.now();
+                await once(cli, 'ping');
+                const r2 = Date.now() - t2;
+
+                assert.ok(r1 > 20);
+                assert.ok(r2 < 20);
+
+            } finally {
+                await cli.close();
+                close();
+            }
+
+        });
 
     });
 
