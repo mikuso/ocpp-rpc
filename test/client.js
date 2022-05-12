@@ -2099,5 +2099,156 @@ describe('RPCClient', function(){
 
     });
 
+    describe('#reconfigure', function() {
+
+        it("should not change identity on reconnect", async () => {
+            
+            const {endpoint, close, server} = await createServer({}, {
+                withClient: cli => {
+                    cli.handle('Drop', () => cli.close());
+                    cli.handle('GetID', () => cli.identity);
+                }
+            });
+            const cli = new RPCClient({
+                endpoint,
+                identity: 'X',
+                backoff: {
+                    initialDelay: 1,
+                    maxDelay: 2,
+                }
+            });
+
+            try {
+                await cli.connect();
+                assert.equal(await cli.call('GetID'), 'X');
+
+                cli.reconfigure({identity: 'Y'});
+                await cli.call('Drop').catch(()=>{});
+                
+                assert.equal(await cli.call('GetID'), 'X');
+
+            } finally {
+                await cli.close();
+                close();
+            }
+
+        });
+
+        it("should change identity on explicit close and connect", async () => {
+
+            const {endpoint, close, server} = await createServer({}, {
+                withClient: cli => {
+                    cli.handle('Drop', () => cli.close());
+                    cli.handle('GetID', () => cli.identity);
+                }
+            });
+            const cli = new RPCClient({
+                endpoint,
+                identity: 'X',
+            });
+
+            try {
+                await cli.connect();
+                assert.equal(await cli.call('GetID'), 'X');
+
+                cli.reconfigure({identity: 'Y'});
+                await cli.close();
+                await cli.connect();
+                
+                assert.equal(await cli.call('GetID'), 'Y');
+
+            } finally {
+                await cli.close();
+                close();
+            }
+
+        });
+
+        it("should be able to adjust queue concurrency", async () => {
+            
+            const {endpoint, close, server} = await createServer({}, {
+                withClient: cli => {
+                    let processing = 0;
+                    cli.handle('Max', async () => {
+                        ++processing;
+                        await setTimeout(10);
+                        return processing--;
+                    });
+                }
+            });
+            const cli = new RPCClient({
+                endpoint,
+                identity: 'X',
+                callConcurrency: 1,
+            });
+
+            try {
+                await cli.connect();
+                
+                const arr = [1,2,3,4,5,6];
+
+                const cc1 = await Promise.all(arr.map(x => cli.call('Max')));
+                cli.reconfigure({callConcurrency: 3});
+                const cc3 = await Promise.all(arr.map(x => cli.call('Max')));
+
+                assert.equal(Math.max(...cc1), 1);
+                assert.equal(Math.max(...cc3), 3);
+
+            } finally {
+                await cli.close();
+                close();
+            }
+
+        });
+
+        it("should be able to adjust backoff configuration", async () => {
+            
+            const {endpoint, close, server} = await createServer({}, {
+                withClient: cli => {
+                    cli.handle('Drop', () => cli.close());
+                }
+            });
+            const cli = new RPCClient({
+                endpoint,
+                identity: 'X',
+                backoff: {
+                    initialDelay: 1,
+                    maxDelay: 2,
+                }
+            });
+
+            try {
+                await cli.connect();
+
+                await cli.call('Drop').catch(() => {});
+                const t1 = Date.now();
+                await once(cli, 'open');
+                const r1 = Date.now() - t1;
+
+                cli.reconfigure({
+                    backoff: {
+                        initialDelay: 30,
+                        maxDelay: 31,
+                    }
+                });
+
+                await cli.call('Drop').catch(() => {});
+                const t2 = Date.now();
+                await once(cli, 'open');
+                const r2 = Date.now() - t2;
+                
+                assert.ok(r1 < 20);
+                assert.ok(r2 > 20);
+
+            } finally {
+                await cli.close();
+                close();
+            }
+
+        });
+
+
+    });
+
 });
 
