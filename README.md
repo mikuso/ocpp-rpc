@@ -477,6 +477,8 @@ The agreed subprotocol. Once connected for the first time, this subprotocol beco
 
 Use this method to change any of the `options` that can be passed to the `RPCClient`'s [constructor](#new-rpcclientoptions).
 
+When changing `identity`, the `RPCClient` must be explicitly `close()`d and then `connect()`ed for the change to take effect.
+
 #### client.connect()
 
 The client will attempt to connect to the `RPCServer` specified in `options.url`.
