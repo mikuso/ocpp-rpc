@@ -77,13 +77,20 @@ server.on('client', async (client) => {
         console.log(`Server got ${method} from ${client.identity}:`, params);
         throw createRPCError("NotImplemented");
     });
+
     client.handle('BootNotification', ({params}) => {
         console.log(`Server got BootNotification from ${client.identity}:`, params);
-        return {status: "Accepted"};
+        return {status: "Accepted", interval: 300, currentTime: new Date().toISOString()};
     });
+    
     client.handle('Heartbeat', ({params}) => {
         console.log(`Server got Heartbeat from ${client.identity}:`, params);
         return {currentTime: new Date().toISOString()};
+    });
+    
+    client.handle('StatusNotification', ({params}) => {
+        console.log(`Server got StatusNotification from ${client.identity}:`, params);
+        return {};
     });
 });
 
@@ -636,6 +643,8 @@ As a caller, `strictMode` has the following effects:
 As a callee, `strictMode` has the following effects:
 * If an inbound call's params fail validation, the call will not be passed to a handler. Instead, an error response will be automatically issued to the caller with an appropriate RPC error. A [`'strictValidationFailure'`](#event-strictvalidationfailure) event will be emitted with an [`RPCError`](#rpcerror).
 * If your response to a call fails validation, the response will be discarded and an `"InternalError"` RPC error will be sent instead. A [`'strictValidationFailure'`](#event-strictvalidationfailure) event will be emitted with an [`RPCError`](#rpcerror).
+
+**Important:** If you are using `strictMode`, you are strongly encouraged to listen for [`'strictValidationFailure'`](#event-strictvalidationfailure) events, otherwise you may not know if your responses or inbound calls are being dropped for failing validation.
 
 ### Supported validation schemas
 
