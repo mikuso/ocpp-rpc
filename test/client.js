@@ -1565,6 +1565,34 @@ describe('RPCClient', function(){
 
         });
 
+        it('should emit badMessage upon a response to a noReply call', async () => {
+
+            const echoPayload = {abc: 123};
+            const {endpoint, close} = await createServer();
+            const cli = new RPCClient({
+                endpoint,
+                identity: 'X',
+            });
+
+            try {
+                await cli.connect();
+                
+                const res = await cli.call('Echo', echoPayload, {noReply: true});
+                const [bad] = await once(cli, 'badMessage');
+                
+                const [mType, mId, mVal] = JSON.parse(bad.buffer.toString('utf8'));
+
+                assert.equal(mType, 3);
+                assert.deepEqual(mVal, echoPayload);
+                assert.equal(res, undefined);
+
+            } finally {
+                await cli.close();
+                close();
+            }
+
+        });
+
     });
 
     
