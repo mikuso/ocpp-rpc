@@ -521,9 +521,21 @@ When the `handler` function is invoked, it will be passed an object with the fol
 * `method` {String} - The name of the method being invoked (useful for wildcard handlers).
 * `params` {*} - The `params` value passed to the call.
 * `signal` {AbortSignal} - A signal which will abort if the underlying connection is dropped (therefore, the response will never be received by the caller). You may choose whether to ignore the signal or not, but it could save you some time if you use it to abort the call early.
+* `messageId` {String} - The OCPP Message ID used in the call.
 
 If the invocation of the `handler` resolves or returns, the resolved value will be returned to the caller.
 If the invocation of the `handler` rejects or throws, an error will be passed to the caller. By default, the error will be an instance of `RPCGenericError`, although additional error types are possible ([see createRPCError](#createrpcerrortype-message-details)).
+If the `handler` returns a `NOREPLY` symbol then no reply will be sent. It will be your responsibility to send the reply by some other means (such as [`sendRaw()`](#clientsendrawmessage)).
+
+##### Example of NOREPLY
+
+```js
+const {NOREPLY} = require('ocpp-rpc');
+
+client.handle('WontReply', () => {
+    return NOREPLY;
+});
+```
 
 #### client.call(method[, params[, options]])
 

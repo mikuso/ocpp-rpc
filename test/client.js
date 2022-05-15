@@ -7,6 +7,7 @@ const RPCServer = require("../lib/server");
 const { setTimeout } = require('timers/promises');
 const { createValidator } = require('../lib/validator');
 const { createRPCError } = require('../lib/util');
+const { NOREPLY } = require('../lib/symbols');
 const {CLOSING, CLOSED, CONNECTING} = RPCClient;
 
 describe('RPCClient', function(){
@@ -1593,6 +1594,27 @@ describe('RPCClient', function(){
 
         });
 
+        it('should not reject when making unhandled noReply call', async () => {
+
+            const {endpoint, close} = await createServer();
+            const cli = new RPCClient({
+                endpoint,
+                identity: 'X',
+            });
+
+            try {
+                await cli.connect();
+                
+                const res = await cli.call('UnrecognisedMethod', 1, {noReply: true});
+                assert.equal(res, undefined);
+
+            } finally {
+                await cli.close();
+                close();
+            }
+
+        });
+
     });
 
     
@@ -1986,6 +2008,72 @@ describe('RPCClient', function(){
                 });
 
                 assert.equal(dc.code, 4050);
+
+            } finally {
+                await cli.close();
+                close();
+            }
+
+        });
+
+        
+        it('should not respond to a call that returns NOREPLY symbol', async () => {
+
+            const {endpoint, close} = await createServer({}, {
+                withClient: cli => {
+                    cli.handle('NoReply', () => {
+                        return NOREPLY;
+                    });
+                }
+            });
+            const cli = new RPCClient({
+                endpoint,
+                identity: 'X',
+            });
+
+            try {
+                await cli.connect();
+                
+                await assert.rejects(cli.call('NoReply', 123, {callTimeoutMs: 50}), TimeoutError);
+
+            } finally {
+                await cli.close();
+                close();
+            }
+
+        });
+
+        
+        it('should report the message ID', async () => {
+
+            const {endpoint, close} = await createServer({}, {
+                withClient: cli => {
+                    cli.handle('Manual', async ({messageId}) => {
+                        await cli.sendRaw(JSON.stringify([
+                            3,
+                            messageId,
+                            {messageId}
+                        ]));
+                        return NOREPLY;
+                    });
+                }
+            });
+            const cli = new RPCClient({
+                endpoint,
+                identity: 'X',
+            });
+
+            try {
+                await cli.connect();
+                
+                const callOutProm = once(cli, 'call');
+                const {messageId} = await cli.call('Manual');
+                const [callOut] = await callOutProm;
+                
+                assert.equal(callOut.outbound, true);
+                assert.equal(callOut.payload[0], 2);
+                assert.equal(callOut.payload[1], messageId);
+                assert.equal(callOut.payload[2], 'Manual');
 
             } finally {
                 await cli.close();
