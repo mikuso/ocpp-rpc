@@ -22,10 +22,10 @@ This module is built for Node.js and does not currently work in browsers.
 
 ## Features
 
-* **Authentication** - Optional authentication step for initiating session data and filtering incoming clients.
-* **[OCPP Security](#ocpp-security)** - Compatible with OCPP security profiles 1, 2 & 3.
-* **Serve multiple subprotocols** - Simultaneously serve multiple different subprotocols from the same service endpoint.
-* **[Strict Validation](#strict-validation)** - Optionally enforce subprotocol schemas to prevent invalid calls & responses.
+* 🛂 **Authentication** - Optional authentication step for initiating session data and filtering incoming clients.
+* 🔒 **[OCPP Security](#ocpp-security)** - Compatible with OCPP security profiles 1, 2 & 3.
+* 💬 **Serve multiple subprotocols** - Simultaneously serve multiple different subprotocols from the same service endpoint.
+* ✅ **[Strict Validation](#strict-validation)** - Optionally enforce subprotocol schemas to prevent invalid calls & responses.
 * **Automatic reconnects** - Client supports automatic exponential-backoff reconnects.
 * **Automatic keep-alive** - Regularly performs pings, and drops dangling TCP connections.
 * **Graceful shutdowns** - Supports waiting for all in-flight messages to be responded to before closing sockets.
@@ -864,7 +864,7 @@ This security profile requires a TLS-secured central system and client-side cert
 
 The client-side example is fairly straight-forward:
 
-#### TLS Client Example
+#### mTLS Client Example
 
 ```js
 const { RPCClient } = require('ocpp-rpc');
@@ -883,7 +883,7 @@ const cli = new RPCClient({
 await cli.connect();
 ```
 
-#### TLS Server Example
+#### mTLS Server Example
 
 This example is very similar to the example for [security profile 2](#security-profile-2), except for these changes:
 
