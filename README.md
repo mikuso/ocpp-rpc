@@ -532,6 +532,7 @@ If the invocation of the `handler` rejects or throws, an error will be passed to
 * `options` {Object}
   * `callTimeoutMs` {Number} - Milliseconds before unanswered call is rejected. Defaults to the same value as the option passed to the client/server constructor.
   * `signal` {AbortSignal} - `AbortSignal` to abort the call.
+  * `noReply` {Boolean} - Send call without expecting a response, resolving immediately with `undefined`. If a response is received, a `badMessage` event will be emitted instead. Defaults to `false`.
 
 Calls a remote method. Returns a `Promise` which either:
 * resolves to the value returned by the remote handler.
