@@ -43,9 +43,9 @@ This module is built for Node.js and does not currently work in browsers.
 * [API Docs](#api-docs)
 * [Strict Validation](#strict-validation)
 * [OCPP Security](#ocpp-security)
-  * [OCPP Security Profile 1](#security-profile-1)
-  * [OCPP Security Profile 2](#security-profile-2)
-  * [OCPP Security Profile 3](#security-profile-3)
+  * [Security Profile 1](#security-profile-1)
+  * [Security Profile 2](#security-profile-2)
+  * [Security Profile 3](#security-profile-3)
 * [RPCClient state lifecycle](#rpcclient-state-lifecycle)
 * [License](#license)
 
