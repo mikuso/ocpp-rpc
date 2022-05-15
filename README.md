@@ -23,11 +23,11 @@ This module is built for Node.js and does not currently work in browsers.
 ## Features
 
 * **Authentication** - Optional authentication step for initiating session data and filtering incoming clients.
+* **[OCPP Security](#ocpp-security)** - Compatible with OCPP security profiles 1, 2 & 3.
+* **Serve multiple subprotocols** - Simultaneously serve multiple different subprotocols from the same service endpoint.
 * **[Strict Validation](#strict-validation)** - Optionally enforce subprotocol schemas to prevent invalid calls & responses.
 * **Automatic reconnects** - Client supports automatic exponential-backoff reconnects.
 * **Automatic keep-alive** - Regularly performs pings, and drops dangling TCP connections.
-* **Serve multiple subprotocols** - Simultaneously serve multiple different subprotocols from the same service endpoint.
-* **[HTTP Basic Auth](#http-basic-auth)** - Easy-to-use HTTP Basic Auth compatible with OCPP security profiles 1 & 2.
 * **Graceful shutdowns** - Supports waiting for all in-flight messages to be responded to before closing sockets.
 * **Clean closing of websockets** - Supports sending & receiving WebSocket close codes & reasons.
 * **Embraces abort signals** - `AbortSignal`s can be passed to most async methods.
@@ -42,7 +42,10 @@ This module is built for Node.js and does not currently work in browsers.
   * [Using with Express.js](#using-with-expressjs)
 * [API Docs](#api-docs)
 * [Strict Validation](#strict-validation)
-* [HTTP Basic Auth](#http-basic-auth)
+* [OCPP Security](#ocpp-security)
+  * [OCPP Security Profile 1](#security-profile-1)
+  * [OCPP Security Profile 2](#security-profile-2)
+  * [OCPP Security Profile 3](#security-profile-3)
 * [RPCClient state lifecycle](#rpcclient-state-lifecycle)
 * [License](#license)
 
@@ -129,7 +132,7 @@ await cli.call('StatusNotification', {
 
 ```js
 const {RPCServer, RPCClient} = require('ocpp-rpc');
-const express = require("express");
+const express = require('express');
 
 const app = express();
 const httpServer = app.listen(3000, 'localhost');
@@ -257,7 +260,7 @@ The callback function is called with the following three arguments:
 * `handshake` {Object} - A handshake object
   * `protocols` {Set} - A set of subprotocols purportedly supported by the client.
   * `identity` {String} - The identity portion of the connection URL, decoded.
-  * `password` {String} - If HTTP Basic auth was used in the connection, and the username correctly matches the identity, this field will contain the password (otherwise `undefined`). Read [HTTP Basic Auth](#http-basic-auth) for more details of how this works.
+  * `password` {String} - If HTTP Basic auth was used in the connection, and the username correctly matches the identity, this field will contain the password (otherwise `undefined`). Read [Security Profile 1](#security-profile-1) for more details of how this works.
   * `endpoint` {String} - The endpoint path portion of the connection URL. This is the part of the path before the identity.
   * `query` {URLSearchParams} - The query string parsed as [URLSearchParams](https://developer.mozilla.org/en-US/docs/Web/API/URLSearchParams).
   * `remoteAddress` {String} - The remote IP address of the socket.
@@ -333,7 +336,7 @@ Returns a `Promise` which resolves when the server has completed closing.
   - `endpoint` {String} - The RPC server's endpoint (a websocket URL). **Required**.
   - `identity` {String} - The RPC client's identity. Will be automatically encoded. **Required**.
   - `protocols` {Array&lt;String&gt;} - Array of subprotocols supported by this client. Defaults to `[]`.
-  - `password` {String} - Optional password to use in [HTTP Basic auth](#http-basic-auth). (The username will always be the identity).
+  - `password` {String} - Optional password to use in [HTTP Basic auth](#security-profile-1). (The username will always be the identity).
   - `headers` {Object} - Additional HTTP headers to send along with the websocket upgrade request. Defaults to `{}`.
   - `query` {Object|String} - An optional query string or object to append as the query string of the connection URL. Defaults to `''`.
   - `callTimeoutMs` {Number} - Milliseconds to wait before unanswered outbound calls are rejected automatically. Defaults to `60000`.
@@ -704,9 +707,15 @@ client.call('Echo', ['bar']); // throws RPCError
 
 Once created, the `Validator` is immutable and can be reused as many times as is required.
 
-## HTTP Basic Auth
+## OCPP Security
 
-### Usage Example
+It is possible to achieve all levels of OCPP security using this module. Keep in mind though that many aspects of OCPP security (such as key management, certificate generation, etc...) are beyond the scope of this module and it will be up to you to implement them yourself.
+
+### Security Profile 1
+
+This security profile requires HTTP Basic Authentication. Clients are able to provide a HTTP basic auth password via the `password` option of the [`RPCClient` constructor](#new-rpcclientoptions). Servers are able to validate the password within the callback passed to [`auth()`](#serverauthcallback).
+
+#### Client & Server Example
 
 ```js
 const cli = new RPCClient({
@@ -727,17 +736,19 @@ await server.listen(80);
 await cli.connect();
 ```
 
-### Identities containing colons
+#### A note on identities containing colons
 
 This module supports HTTP Basic auth slightly differently than how it is specified in [RFC7617](https://datatracker.ietf.org/doc/html/rfc7617). In that spec, it is made clear that usernames cannot contain colons (:) as a colon is used to delineate where a username ends and a password begins.
 
 In the context of OCPP, the basic-auth username must always be equal to the client's identity. However, since OCPP does not forbid colons in identities, this can possibly lead to a conflict and unexpected behaviours.
 
-In practice, it's not uncommon to see violations of RFC7617 in the wild. All major browsers allow basic-auth usernames to contain colons, despite the fact that this won't make any sense to the server. RFC7617 acknowledges this fact. The prevalent solution to this problem seems to be to simply ignore it.
+In practice, it's not uncommon to see violations of RFC7617 in the wild. All major browsers allow basic-auth usernames to contain colons, despite the fact that this won't make any sense to the server; RFC7617 acknowledges this fact in its text. The established solution to this problem seems to be to simply ignore it.
 
 However, in OCPP, since we have the luxury of knowing that the username must always be equal to the client's identity, it is no longer necessary to rely upon a colon to delineate the username from the password. This module makes use of this guarantee to enable identities and passwords to contain as many or as few colons as you wish.
 
 ```js
+const { RPCClient, RPCServer } = require('ocpp-rpc');
+
 const cli = new RPCClient({
     identity: "this:is:ok",
     password: "as:is:this",
@@ -776,6 +787,151 @@ server.auth((accept, reject, handshake) => {
 
 await server.listen(80);
 await cli.connect();
+```
+
+### Security Profile 2
+
+This security profile requires that the central system offers a TLS-secured endpoint in addition to HTTP Basic Authentication [(as per profile 1)](#security-profile-1).
+
+When implementing TLS, keep in mind that OCPP specifies a minimum TLS version and minimum set of cipher suites for maximal compatibility and security. Node.js natively supports this minimum set of requirements, but there's a couple of things you should keep in mind:
+
+* The minimum TLS version should be explicitly enforced to prevent a client from using a weak TLS version. The OCPP spec currently sets the minimum TLS version at v1.2 (with v1.1 and v1.0 being permitted for OCPP1.6 only under exceptional circumstances).
+* The central server role must support both RSA & ECDSA algorithms, so will need a corresponding certificate for each.
+
+#### TLS Client Example
+
+```js
+const { RPCClient } = require('ocpp-rpc');
+
+const cli = new RPCClient({
+    endpoint: 'wss://localhost',
+    identity: 'EXAMPLE',
+    password: `monkey1`,
+    wsOpts: { minVersion: 'TLSv1.2' }
+});
+
+await cli.connect();
+```
+
+#### TLS Server Example
+
+Implementing TLS on the server can be achieved in a couple of different ways. The most direct way is to [create an HTTPS server](https://nodejs.org/api/https.html#httpscreateserveroptions-requestlistener), giving you full end-to-end control over the TLS connectivity.
+
+```js
+const https = require('https');
+const { RPCServer } = require('ocpp-rpc');
+const { readFile } = require('fs/promises');
+
+const server = new RPCServer();
+
+const httpsServer = https.createServer({
+    cert: [
+        await readFile('./server.crt', 'utf8'), // RSA certificate
+        await readFile('./ec_server.crt', 'utf8'), // ECDSA certificate
+    ],
+    key: [
+        await readFile('./server.key', 'utf8'), // RSA key
+        await readFile('./ec_server.key', 'utf8'), // ECDSA key
+    ],
+    minVersion: 'TLSv1.2', // require TLS >= v1.2
+});
+
+httpsServer.on('upgrade', server.handleUpgrade);
+httpsServer.listen(443);
+
+server.auth((accept, reject, handshake) => {
+    const tlsClient = handshake.request.client;
+
+    if (!tlsClient) {
+        return reject();
+    }
+
+    console.log(`${handshake.identity} connected using TLS:`, {
+        password: handshake.password, // the HTTP auth password
+        cert: tlsClient.getCertificate(), // the certificate used by the server
+        cipher: tlsClient.getCipher(), // the cipher suite
+        version: tlsClient.getProtocol(), // the TLS version
+    });
+    accept();
+});
+```
+
+Alternatively, your TLS endpoint might be terminated at a different service (e.g. an Ingress controller in a Kubernetes environment or a third-party SaaS reverse-proxy such as Cloudflare). In this case, you may either try to manage your server's TLS through configuration of the aforementioned service, or perhaps by inspecting trusted HTTP headers appended to the request by a proxy.
+
+### Security Profile 3
+
+This security profile requires a TLS-secured central system and client-side certificates; This is also known as "Mutual TLS" (or "mTLS" for short).
+
+The client-side example is fairly straight-forward:
+
+#### TLS Client Example
+
+```js
+const { RPCClient } = require('ocpp-rpc');
+const { readFile } = require('fs/promises');
+
+// Read PEM-encoded certificate & key
+const cert = await readFile('./client.crt', 'utf8');
+const key = await readFile('./client.key', 'utf8');
+
+const cli = new RPCClient({
+    endpoint: 'wss://localhost',
+    identity: 'EXAMPLE',
+    wsOpts: { cert, key, minVersion: 'TLSv1.2' }
+});
+
+await cli.connect();
+```
+
+#### TLS Server Example
+
+This example is very similar to the example for [security profile 2](#security-profile-2), except for these changes:
+
+* The HTTPS server needs the option `requestCert: true` to allow the client to send its certificate.
+* The client's certificate can be inspected during the auth() callback via `handshake.request.client.getPeerCertificate()`.
+* A HTTP auth password is no longer required.
+
+**Note:** If the client does not present a certificate (or the presented certificate is invalid), [`getPeerCertificate()`](https://nodejs.org/api/tls.html#tlssocketgetpeercertificatedetailed) will return an empty object instead.
+
+```js
+const https = require('https');
+const { RPCServer } = require('ocpp-rpc');
+const { readFile } = require('fs/promises');
+
+const server = new RPCServer();
+
+const httpsServer = https.createServer({
+    cert: [
+        await readFile('./server.crt', 'utf8'), // RSA certificate
+        await readFile('./ec_server.crt', 'utf8'), // ECDSA certificate
+    ],
+    key: [
+        await readFile('./server.key', 'utf8'), // RSA key
+        await readFile('./ec_server.key', 'utf8'), // ECDSA key
+    ],
+    minVersion: 'TLSv1.2', // require TLS >= v1.2
+    requestCert: true, // ask client for a certificate
+});
+
+httpsServer.on('upgrade', server.handleUpgrade);
+httpsServer.listen(443);
+
+server.auth((accept, reject, handshake) => {
+    const tlsClient = handshake.request.client;
+
+    if (!tlsClient) {
+        return reject();
+    }
+
+    console.log(`${handshake.identity} connected using TLS:`, {
+        clientCert: tlsClient.getPeerCertificate(), // the certificate used by the client
+        serverCert: tlsClient.getCertificate(), // the certificate used by the server
+        cipher: tlsClient.getCipher(), // the cipher suite
+        version: tlsClient.getProtocol(), // the TLS version
+    });
+
+    accept();
+});
 ```
 
 ## RPCClient state lifecycle
