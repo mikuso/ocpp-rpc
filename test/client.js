@@ -2,7 +2,7 @@ const assert = require('assert/strict');
 const http = require('http');
 const { once } = require('events');
 const RPCClient = require("../lib/client");
-const { TimeoutError, RPCFrameworkError, RPCError, RPCProtocolError, RPCTypeConstraintViolationError, RPCOccurenceConstraintViolationError, RPCPropertyConstraintViolationError } = require('../lib/errors');
+const { TimeoutError, RPCFrameworkError, RPCError, RPCProtocolError, RPCTypeConstraintViolationError, RPCOccurenceConstraintViolationError, RPCPropertyConstraintViolationError, RPCOccurrenceConstraintViolationError, RPCFormationViolationError } = require('../lib/errors');
 const RPCServer = require("../lib/server");
 const { setTimeout } = require('timers/promises');
 const { createValidator } = require('../lib/validator');
@@ -1050,7 +1050,7 @@ describe('RPCClient', function(){
 
     describe('#call', function() {
 
-        it("should reject with 'RPCError' after invalid payload with strictMode", async () => {
+        it("should reject with 'RPCError' after invalid payload with client strictMode", async () => {
             
             const {endpoint, close, server} = await createServer({
                 protocols: ['echo1.0']
@@ -1080,6 +1080,46 @@ describe('RPCClient', function(){
                 assert.equal(c3.status, 'rejected');
                 assert.ok(c3.reason instanceof RPCProtocolError);
                 assert.equal(c3.reason.rpcErrorCode, 'ProtocolError');
+
+            } finally {
+                await cli.close();
+                close();
+            }
+
+        });
+
+        it("should reject with 'RPCError' after invalid payload with server strictMode", async () => {
+            
+            const {endpoint, close, server} = await createServer({
+                protocols: ['ocpp1.6'],
+                strictMode: true,
+            }, {withClient: cli => {
+                cli.handle(() => {});
+            }});
+            const cli = new RPCClient({
+                endpoint,
+                identity: 'X',
+                protocols: ['ocpp1.6'],
+            });
+
+            try {
+                await cli.connect();
+
+                const [c1, c2, c3] = await Promise.allSettled([
+                    cli.call('UpdateFirmware', {}),
+                    cli.call('Heartbeat', {a:123}),
+                    cli.call('UpdateFirmware', {location: "a", retrieveDate: "a"}),
+                ]);
+
+                assert.equal(c1.status, 'rejected');
+                assert.equal(c1.reason.rpcErrorCode, 'OccurrenceConstraintViolation');
+                assert.ok(c1.reason instanceof RPCOccurrenceConstraintViolationError);
+                assert.equal(c2.status, 'rejected');
+                assert.equal(c2.reason.rpcErrorCode, 'PropertyConstraintViolation');
+                assert.ok(c2.reason instanceof RPCPropertyConstraintViolationError);
+                assert.equal(c3.status, 'rejected');
+                assert.equal(c3.reason.rpcErrorCode, 'FormationViolation');
+                assert.ok(c3.reason instanceof RPCFormationViolationError);
 
             } finally {
                 await cli.close();
