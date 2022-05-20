@@ -2061,8 +2061,8 @@ describe('RPCClient', function(){
 
             const {endpoint, close} = await createServer({}, {
                 withClient: cli => {
-                    cli.handle('NoReply', () => {
-                        return NOREPLY;
+                    cli.handle('NoReply', ({reply}) => {
+                        reply(NOREPLY);
                     });
                 }
             });
@@ -2114,6 +2114,50 @@ describe('RPCClient', function(){
                 assert.equal(callOut.payload[0], 2);
                 assert.equal(callOut.payload[1], messageId);
                 assert.equal(callOut.payload[2], 'Manual');
+
+            } finally {
+                await cli.close();
+                close();
+            }
+
+        });
+
+        
+        it('can reply early before return/throw', async () => {
+
+            const {endpoint, close} = await createServer({}, {
+                withClient: cli => {
+                    cli.handle('ResolveEarly', async ({reply}) => {
+                        reply("early");
+                        return "late";
+                    });
+                    cli.handle('ResolveBeforeThrow', async ({reply}) => {
+                        reply("early");
+                        throw Error("late");
+                    });
+                    cli.handle('RejectEarly', async ({reply}) => {
+                        reply(Error("early"));
+                        throw Error("late");
+                    });
+                    cli.handle('RejectBeforeReturn', async ({reply}) => {
+                        reply(Error("early"));
+                        return "late";
+                    });
+                }
+            });
+            const cli = new RPCClient({
+                endpoint,
+                identity: 'X',
+            });
+
+            try {
+                await cli.connect();
+
+                assert.equal(await cli.call('ResolveEarly'), "early");
+                const err = await cli.call('RejectEarly').catch(e=>e);
+                assert.equal(err.message, "early");
+                await assert.rejects(cli.call('RejectBeforeReturn'));
+                assert.equal(await cli.call("ResolveBeforeThrow"), "early");
 
             } finally {
                 await cli.close();

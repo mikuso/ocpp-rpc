@@ -512,26 +512,48 @@ In some circumstances, the final `code` and `reason` returned may be different f
 
 #### client.handle([method,] handler)
 
-* `method` {String} - The name of the method to be handled. If not provided, acts as a wildcard handler which will handle any call that doesn't have a more specific handler already registered.
-* `handler` {Function} - The function to be invoked when attempting to handle a call. Can return a `Promise`.
+* `method` {String} - The name of the method to be handled. If not provided, acts as a "wildcard" handler which will handle any call that doesn't have a more specific handler already registered.
+* `handler` {Function} - The function to be invoked when attempting to handle a call.
 
-Register a call handler. Only one wildcard handler and one method-specific handler can be registered at a time. Attempting to register a handler with a duplicate method will override the former.
+Registers a call handler. Only one "wildcard" handler can be registered at once. Likewise, attempting to register a handler for a method which is already being handled will override the former handler.
 
 When the `handler` function is invoked, it will be passed an object with the following properties:
 * `method` {String} - The name of the method being invoked (useful for wildcard handlers).
-* `params` {*} - The `params` value passed to the call.
+* `params` {*} - The parameters of the call.
 * `signal` {AbortSignal} - A signal which will abort if the underlying connection is dropped (therefore, the response will never be received by the caller). You may choose whether to ignore the signal or not, but it could save you some time if you use it to abort the call early.
 * `messageId` {String} - The OCPP Message ID used in the call.
+* `reply` {Function} - A callback function with which to pass a response to the call. Accepts a response value, an `Error`, or a `Promise`.
 
-If the invocation of the `handler` resolves or returns, the resolved value will be returned to the caller.
-If the invocation of the `handler` rejects or throws, an error will be passed to the caller. By default, the error will be an instance of `RPCGenericError`, although additional error types are possible ([see createRPCError](#createrpcerrortype-message-details)).
-If the `handler` returns a `NOREPLY` symbol then no reply will be sent. It will be your responsibility to send the reply by some other means (such as [`sendRaw()`](#clientsendrawmessage)).
+Responses to handled calls are sent according to these rules:
+* If a value (or a `Promise` which resolves to a value) is passed to `reply()`, a **CALLRESULT** will be sent with this value as the result.
+* If an `Error` (or a `Promise` which rejects with an `Error`) is passed to `reply()`, a **CALLERROR** will be sent instead. (The `Error` may be coerced into an `RPCError`. You can use [createRPCError()](#createrpcerrortype-message-details) to reply with a specific RPC error code.)
+* If the `NOREPLY` symbol is passed to `reply()`, then no response will be sent. It will then be your responsibility to send the response by some other means (such as with [`sendRaw()`](#clientsendrawmessage)).
+* If the `handler` returns or throws before `reply()` is called, then the `reply()` callback will be called implicitly with the returned value (or thrown `Error`).
+* Calling `reply()` more than once, or returning/throwing after calling `reply()` is considered a no-op, will not result in any additional responses being sent, and has no effect.
 
-##### Example of NOREPLY
+##### Example of handling an OCPP1.6 Heartbeat
+
+```js
+client.handle('Heartbeat', ({reply}) => {
+    reply({ currentTime: new Date().toISOString() });
+});
+
+// or...
+client.handle('Heartbeat', () => {
+    return { currentTime: new Date().toISOString() };
+});
+```
+
+##### Example of using NOREPLY
 
 ```js
 const {NOREPLY} = require('ocpp-rpc');
 
+client.handle('WontReply', ({reply}) => {
+    reply(NOREPLY);
+});
+
+// or...
 client.handle('WontReply', () => {
     return NOREPLY;
 });
