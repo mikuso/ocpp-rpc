@@ -189,6 +189,8 @@ cli.connect();
   * [client.state](#clientstate)
   * [client.protocol](#clientprotocol)
   * [client.reconfigure(options)](#clientreconfigureoptions)
+  * [client.removeHandler([method])](#clientremovehandlermethod)
+  * [client.removeAllHandlers()](#clientremoveallhandlers)
   * [client.connect()](#clientconnect)
   * [client.close([options])](#clientcloseoptions)
   * [client.handle([method,] handler)](#clienthandlemethod-handler)
@@ -481,6 +483,16 @@ The agreed subprotocol. Once connected for the first time, this subprotocol beco
 Use this method to change any of the `options` that can be passed to the `RPCClient`'s [constructor](#new-rpcclientoptions).
 
 When changing `identity`, the `RPCClient` must be explicitly `close()`d and then `connect()`ed for the change to take effect.
+
+#### client.removeHandler([method])
+
+* `method` {String}
+
+Unregisters a call handler. If no method name is provided, it will unregister the wildcard handler instead.
+
+#### client.removeAllHandlers()
+
+Unregisters all previously-registered call handlers (including wildcard handler if set).
 
 #### client.connect()
 
