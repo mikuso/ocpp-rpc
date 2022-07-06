@@ -2169,6 +2169,122 @@ describe('RPCClient', function(){
     });
 
 
+    describe('#removeHandler', function() {
+
+        it('should prevent wildcard handler from running again', async () => {
+            
+            let runs = 0;
+            const {endpoint, close, server} = await createServer({}, {withClient: cli => {
+                cli.handle(({method, params}) => {
+                    runs++;
+                    cli.removeHandler();
+                    return method;
+                });
+            }});
+
+            const cli = new RPCClient({endpoint, identity: 'X', reconnect: false});
+
+            try {
+                await cli.connect();
+
+                const res = await Promise.allSettled([
+                    cli.call('Any1'),
+                    cli.call('Any2'),
+                    cli.call('Any3'),
+                ]);
+
+                assert.equal(runs, 1);
+                assert.equal(res[0].value, 'Any1');
+                assert.equal(res[1].reason.rpcErrorCode, 'NotImplemented');
+                assert.equal(res[2].reason.rpcErrorCode, 'NotImplemented');
+                
+            } finally {
+                await cli.close();
+                close();
+            }
+
+        });
+
+        it('should prevent handled methods from running again', async () => {
+
+            let runs = 0;
+            const {endpoint, close, server} = await createServer({}, {withClient: cli => {
+                cli.handle('Test', ({method, params}) => {
+                    runs++;
+                    cli.removeHandler('Test');
+                    return runs;
+                });
+            }});
+
+            const cli = new RPCClient({endpoint, identity: 'X', reconnect: false});
+
+            try {
+                await cli.connect();
+
+                const res = await Promise.allSettled([
+                    cli.call('Test'),
+                    cli.call('Test'),
+                    cli.call('Echo', 'TEST'),
+                ]);
+
+                assert.equal(runs, 1);
+                assert.equal(res[0].value, 1);
+                assert.equal(res[1].reason.rpcErrorCode, 'NotImplemented');
+                assert.equal(res[2].value, 'TEST');
+                
+            } finally {
+                await cli.close();
+                close();
+            }
+
+        });
+
+    });
+
+    describe('#removeAllHandlers', function() {
+
+        it('should prevent all handled methods from running again', async () => {
+
+            let runs = 0;
+            const {endpoint, close, server} = await createServer({}, {withClient: cli => {
+                cli.handle('Test', ({method, params}) => {
+                    runs++;
+                    cli.removeAllHandlers();
+                    return runs;
+                });
+
+                cli.handle(({method, params}) => {
+                    throw Error('GenericError');
+                });
+            }});
+
+            const cli = new RPCClient({endpoint, identity: 'X', reconnect: false});
+
+            try {
+                await cli.connect();
+
+                const res = await Promise.allSettled([
+                    cli.call('Test'),
+                    cli.call('Test'),
+                    cli.call('Echo', 'TEST'),
+                    cli.call('Unknown'),
+                ]);
+
+                assert.equal(runs, 1);
+                assert.equal(res[0].value, 1);
+                assert.equal(res[1].reason.rpcErrorCode, 'NotImplemented');
+                assert.equal(res[2].reason.rpcErrorCode, 'NotImplemented');
+                assert.equal(res[3].reason.rpcErrorCode, 'NotImplemented');
+                
+            } finally {
+                await cli.close();
+                close();
+            }
+
+        });
+
+    });
+
     describe('#_keepAlive', function() {
 
         it('should ping at the chosen interval', async () => {
