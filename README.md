@@ -635,20 +635,22 @@ This is a utility function to create a special type of RPC Error to be thrown fr
 
 Returns an [`RPCError`](#rpcerror) which corresponds to the specified type:
 
-| Type                         | Description                                                                                                           |
-| ---------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| GenericError                 | A generic error when no more specific error is appropriate                                                            |
-| NotImplemented               | Requested method is not known                                                                                         |
-| NotSupported                 | Requested method is recognised but not supported                                                                      |
-| InternalError                | An internal error occurred and the receiver was not able to process the requested method successfully                 |
-| ProtocolError                | Payload for method is incomplete                                                                                      |
-| SecurityError                | During the processing of method a security issue occurred preventing receiver from completing the method successfully |
-| FormationViolation           | Payload for the method is syntactically incorrect or not conform the PDU structure for the method                     |
-| PropertyConstraintViolation  | Payload is syntactically correct but at least one field contains an invalid value                                     |
-| OccurenceConstraintViolation | Payload for the method is syntactically correct but at least one of the fields violates occurence constraints         |
-| TypeConstraintViolation      | Payload for the method is syntactically correct but at least one of the fields violates data type constraints         |
-| MessageTypeNotSupported      | A message with a Message Type Number received is not supported by this implementation.                                |
-| RpcFrameworkError            | Content of the call is not a valid RPC Request, for example: MessageId could not be read.                             |
+| Type                          | Description                                                                                                                |
+| ----------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| GenericError                  | A generic error when no more specific error is appropriate.                                                                |
+| NotImplemented                | Requested method is not known.                                                                                             |
+| NotSupported                  | Requested method is recognised but not supported.                                                                          |
+| InternalError                 | An internal error occurred and the receiver was not able to process the requested method successfully.                     |
+| ProtocolError                 | Payload for method is incomplete.                                                                                          |
+| SecurityError                 | During the processing of method a security issue occurred preventing receiver from completing the method successfully.     |
+| FormatViolation               | Payload for the method is syntactically incorrect or not conform the PDU structure for the method.                         |
+| FormationViolation            | [Deprecated] Same as FormatViolation. Retained for backwards compatibility with OCPP versions 1.6 and below.               |
+| PropertyConstraintViolation   | Payload is syntactically correct but at least one field contains an invalid value.                                         |
+| OccurrenceConstraintViolation | Payload for the method is syntactically correct but at least one of the fields violates occurence constraints.             |
+| OccurenceConstraintViolation  | [Deprecated] Same as OccurrenceConstraintViolation. Retained for backwards compatibility with OCPP versions 1.6 and below. |
+| TypeConstraintViolation       | Payload for the method is syntactically correct but at least one of the fields violates data type constraints.             |
+| MessageTypeNotSupported       | A message with a Message Type Number received is not supported by this implementation.                                     |
+| RpcFrameworkError             | Content of the call is not a valid RPC Request, for example: MessageId could not be read.                                  |
 
 ## Strict Validation
 
