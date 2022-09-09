@@ -63,12 +63,14 @@ npm install ocpp-rpc
 const { RPCServer, createRPCError } = require('ocpp-rpc');
 
 const server = new RPCServer({
-    protocols: ['ocpp1.6'],
-    strictMode: true,
+    protocols: ['ocpp1.6'], // server accepts ocpp1.6 subprotocol
+    strictMode: true,       // enable strict validation of requests & responses
 });
 
 server.auth((accept, reject, handshake) => {
+    // accept the incoming client
     accept({
+        // anything passed to accept() will be attached as a 'session' property of the client.
         sessionId: 'XYZ123'
     });
 });
@@ -76,24 +78,41 @@ server.auth((accept, reject, handshake) => {
 server.on('client', async (client) => {
     console.log(`${client.session.sessionId} connected!`); // `XYZ123 connected!`
 
-    client.handle(({method, params}) => {
-        console.log(`Server got ${method} from ${client.identity}:`, params);
-        throw createRPCError("NotImplemented");
-    });
-
+    // create a specific handler for handling BootNotification requests
     client.handle('BootNotification', ({params}) => {
         console.log(`Server got BootNotification from ${client.identity}:`, params);
-        return {status: "Accepted", interval: 300, currentTime: new Date().toISOString()};
+
+        // respond to accept the client
+        return {
+            status: "Accepted",
+            interval: 300,
+            currentTime: new Date().toISOString()
+        };
     });
     
+    // create a specific handler for handling Heartbeat requests
     client.handle('Heartbeat', ({params}) => {
         console.log(`Server got Heartbeat from ${client.identity}:`, params);
-        return {currentTime: new Date().toISOString()};
+
+        // respond with the server's current time.
+        return {
+            currentTime: new Date().toISOString()
+        };
     });
     
+    // create a specific handler for handling StatusNotification requests
     client.handle('StatusNotification', ({params}) => {
         console.log(`Server got StatusNotification from ${client.identity}:`, params);
         return {};
+    });
+
+    // create a wildcard handler to handle any RPC method
+    client.handle(({method, params}) => {
+        // This handler will be called if the incoming method cannot be handled elsewhere.
+        console.log(`Server got ${method} from ${client.identity}:`, params);
+
+        // throw an RPC error to inform the server that we don't understand the request.
+        throw createRPCError("NotImplemented");
     });
 });
 
@@ -106,26 +125,36 @@ await server.listen(3000);
 const { RPCClient } = require('ocpp-rpc');
 
 const cli = new RPCClient({
-    endpoint: 'ws://localhost:3000',
-    identity: 'EXAMPLE',
-    protocols: ['ocpp1.6'],
-    strictMode: true,
+    endpoint: 'ws://localhost:3000', // the OCPP endpoint URL
+    identity: 'EXAMPLE',             // the OCPP identity
+    protocols: ['ocpp1.6'],          // client understands ocpp1.6 subprotocol
+    strictMode: true,                // enable strict validation of requests & responses
 });
 
+// connect to the OCPP server
 await cli.connect();
 
-await cli.call('BootNotification', {
-    "chargePointVendor": "ocpp-rpc",
-    "chargePointModel": "ocpp-rpc",
+// send a BootNotification request and await the response
+const bootResponse = await cli.call('BootNotification', {
+    chargePointVendor: "ocpp-rpc",
+    chargePointModel: "ocpp-rpc",
 });
 
-await cli.call('Heartbeat', {});
+// check that the server accepted the client
+if (bootResponse.status === 'Accepted') {
 
-await cli.call('StatusNotification', {
-    connectorId: 0,
-    errorCode: "NoError",
-    status: "Available",
-});
+    // send a Heartbeat request and await the response
+    const heartbeatResponse = await cli.call('Heartbeat', {});
+    // read the current server time from the response
+    console.log('Server time is:', heartbeatResponse.currentTime);
+
+    // send a StatusNotification request for the controller
+    await cli.call('StatusNotification', {
+        connectorId: 0,
+        errorCode: "NoError",
+        status: "Available",
+    });
+}
 ```
 
 ### Using with [Express.js](https://expressjs.com/)
@@ -711,7 +740,7 @@ This module natively supports the following validation schemas:
 
 ### Adding additional validation schemas
 
-If you want to use `strictMode` with a subprotocol which is not included in the list above, you will need to add the appropriate schemas yourself. To do this, you must create a `Validator` for each subprotocol(s) and pass them to the RPC constructor using the `strictModeValidators` option.  (It is also possible to override the built-in validators this way.)
+If you want to use `strictMode` with a subprotocol which is not included in the list above, you will need to add the appropriate schemas yourself. To do this, you must create a `Validator` for each subprotocol and pass them to the RPC constructor using the `strictModeValidators` option.  (It is also possible to override the built-in validators this way.)
 
 To create a Validator, you should pass the name of the subprotocol and a well-formed json schema to [`createValidator()`](#createvalidatorsubprotocol-schema). An example of a well-formed schema can be found at [`./lib/schemas/ocpp1.6json`](./lib/schemas/ocpp1.6json) or in the example below.
 
@@ -855,7 +884,7 @@ const { RPCClient } = require('ocpp-rpc');
 const cli = new RPCClient({
     endpoint: 'wss://localhost',
     identity: 'EXAMPLE',
-    password: `monkey1`,
+    password: 'monkey1',
     wsOpts: { minVersion: 'TLSv1.2' }
 });
 
