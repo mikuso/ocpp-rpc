@@ -629,7 +629,7 @@ The RPCServerClient is a subclass of RPCClient. This represents an RPCClient fro
   * `protocols` {Set} - A set of subprotocols purportedly supported by the client.
   * `identity` {String} - The identity portion of the connection URL, decoded.
   * `password` {String} - If HTTP Basic auth was used in the connection, and the username correctly matches the identity, this field will contain the password (otherwise `undefined`). Read [Security Profile 1](#security-profile-1) for more details of how this works.
-  * `endpoint` {String} - The endpoint path portion of the connection URL. This is the part of the path before the identity. Defaults to `'ws://localhost'`.
+  * `endpoint` {String} - The endpoint path portion of the connection URL. This is the part of the path before the identity.
   * `query` {URLSearchParams} - The query string parsed as [URLSearchParams](https://developer.mozilla.org/en-US/docs/Web/API/URLSearchParams).
   * `remoteAddress` {String} - The remote IP address of the socket.
   * `headers` {Object} - The HTTP headers sent in the upgrade request.
