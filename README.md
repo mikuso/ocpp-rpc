@@ -51,7 +51,7 @@ This module is built for Node.js and does not currently work in browsers.
 
 ## Installing
 
-```
+```sh
 npm install ocpp-rpc
 ```
 
@@ -170,9 +170,11 @@ const rpcServer = new RPCServer();
 httpServer.on('upgrade', rpcServer.handleUpgrade);
 
 rpcServer.on('client', client => {
+    // RPC client connected
     client.call('Say', `Hello, ${client.identity}!`);
 });
 
+// create a simple client to connect to the server
 const cli = new RPCClient({
     endpoint: 'ws://localhost:3000',
     identity: 'XYZ123'
@@ -180,9 +182,9 @@ const cli = new RPCClient({
 
 cli.handle('Say', ({params}) => {
     console.log('Server said:', params);
-})
+});
 
-cli.connect();
+await cli.connect();
 ```
 
 ## API Docs
@@ -234,7 +236,7 @@ cli.connect();
   * [err.rpcErrorCode](#errrpcerrorcode)
   * [err.details](#errdetails)
 
-* [createValidator(subprotocol, schema)]()
+* [createValidator(subprotocol, schema)](#createvalidatorsubprotocol-schema)
 * [createRPCError(type[, message[, details]])](#createrpcerrortype-message-details)
 
 ### Class: RPCServer
@@ -626,6 +628,7 @@ The RPCServerClient is a subclass of RPCClient. This represents an RPCClient fro
 * {Object}
   * `protocols` {Set} - A set of subprotocols purportedly supported by the client.
   * `identity` {String} - The identity portion of the connection URL, decoded.
+  * `password` {String} - If HTTP Basic auth was used in the connection, and the username correctly matches the identity, this field will contain the password (otherwise `undefined`). Read [Security Profile 1](#security-profile-1) for more details of how this works.
   * `endpoint` {String} - The endpoint path portion of the connection URL. This is the part of the path before the identity. Defaults to `'ws://localhost'`.
   * `query` {URLSearchParams} - The query string parsed as [URLSearchParams](https://developer.mozilla.org/en-US/docs/Web/API/URLSearchParams).
   * `remoteAddress` {String} - The remote IP address of the socket.
