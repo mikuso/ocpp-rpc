@@ -399,7 +399,14 @@ If too many bad messages are received in succession, the client will be closed w
 
 #### Event: 'strictValidationFailure'
 
-* `error` [{RPCError}](#rpcerror)
+* `event` {Object}
+  * `error` {Error} - The validation error that triggered the `strictValidationFailure` event.
+  * `messageId` {String} - The RPC message ID
+  * `method` {String} - The RPC method being invoked.
+  * `params` {Object} - The RPC parameters.
+  * `result` {Object} - If this error relates to a **CALLRESULT** validation failure, then this contains the invalid result, otherwise `null`.
+  * `outbound` {Boolean} - This will be `true` if the invalid message originated locally.
+  * `isCall` {Boolean} - This will be `true` if the invalid message is a **CALL** type. `false` indicates a **CALLRESULT** type.
 
 This event is emitted in [strict mode](#strict-validation) when an inbound call or outbound response does not satisfy the subprotocol schema validator. See [Effects of `strictMode`](#effects-of-strictmode) to understand what happens in response to the invalid message.
 
@@ -677,7 +684,7 @@ An object containing additional error details.
 
 This is a utility function to create a special type of RPC Error to be thrown from a call handler to return a non-generic error response.
 
-Returns an [`RPCError`](#rpcerror) which corresponds to the specified type:
+Returns an [`RPCError`](#class-rpcerror--error) which corresponds to the specified type:
 
 | Type                          | Description                                                                                                                |
 | ----------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
@@ -723,12 +730,14 @@ const server = new RPCServer({
 ### Effects of `strictMode`
 
 As a caller, `strictMode` has the following effects:
-* If your method or params fail validation, your call will reject immediately with an [`RPCError`](#rpcerror). The call will not be sent.
-* If a response to your call fails validation, the call will reject with an [`RPCError`](#rpcerror).
+* If your method or params fail validation, your call will reject immediately with an [`RPCError`](#class-rpcerror--error). The call will not be sent.
+* If a response to your call fails validation, the call will reject with an [`RPCError`](#class-rpcerror--error).
 
 As a callee, `strictMode` has the following effects:
-* If an inbound call's params fail validation, the call will not be passed to a handler. Instead, an error response will be automatically issued to the caller with an appropriate RPC error. A [`'strictValidationFailure'`](#event-strictvalidationfailure) event will be emitted with an [`RPCError`](#rpcerror).
-* If your response to a call fails validation, the response will be discarded and an `"InternalError"` RPC error will be sent instead. A [`'strictValidationFailure'`](#event-strictvalidationfailure) event will be emitted with an [`RPCError`](#rpcerror).
+* If an inbound call's params fail validation, the call will not be passed to a handler. Instead, an error response will be automatically issued to the caller with an appropriate RPC error.
+* If your response to a call fails validation, the response will be discarded and an `"InternalError"` RPC error will be sent instead.
+
+In all cases, a [`'strictValidationFailure'`](#event-strictvalidationfailure) event will be emitted, detailing the circumstances of the failure.
 
 **Important:** If you are using `strictMode`, you are strongly encouraged to listen for [`'strictValidationFailure'`](#event-strictvalidationfailure) events, otherwise you may not know if your responses or inbound calls are being dropped for failing validation.
 

@@ -1213,9 +1213,9 @@ describe('RPCClient', function(){
                 const [c2] = await once(cli, 'strictValidationFailure');
                 const [c3] = await once(cli, 'strictValidationFailure');
 
-                assert.equal(c1.rpcErrorCode, 'OccurenceConstraintViolation');
-                assert.equal(c2.rpcErrorCode, 'TypeConstraintViolation');
-                assert.equal(c3.rpcErrorCode, 'ProtocolError');
+                assert.equal(c1.error.rpcErrorCode, 'OccurenceConstraintViolation');
+                assert.equal(c2.error.rpcErrorCode, 'TypeConstraintViolation');
+                assert.equal(c3.error.rpcErrorCode, 'ProtocolError');
 
                 assert.equal(calls, 3);
                 assert.equal(responses, 3);
