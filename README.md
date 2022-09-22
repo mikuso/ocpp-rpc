@@ -731,11 +731,11 @@ const server = new RPCServer({
 
 As a caller, `strictMode` has the following effects:
 * If your method or params fail validation, your call will reject immediately with an [`RPCError`](#class-rpcerror--error). The call will not be sent.
-* If a response to your call fails validation, the call will reject with an [`RPCError`](#class-rpcerror--error).
+* If a response to your call fails validation, the call will reject with an [`RPCError`](#class-rpcerror--error) and you will not receive the actual response that was sent.
 
 As a callee, `strictMode` has the following effects:
 * If an inbound call's params fail validation, the call will not be passed to a handler. Instead, an error response will be automatically issued to the caller with an appropriate RPC error.
-* If your response to a call fails validation, the response will be discarded and an `"InternalError"` RPC error will be sent instead.
+* If your response to a call fails validation, then your response will be discarded and an `"InternalError"` RPC error will be sent instead.
 
 In all cases, a [`'strictValidationFailure'`](#event-strictvalidationfailure) event will be emitted, detailing the circumstances of the failure.
 
