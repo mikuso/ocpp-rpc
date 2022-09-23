@@ -1043,6 +1043,11 @@ server.auth((accept, reject, handshake) => {
 * RPC calls while in this state are rejected.
 * RPC responses will be silently dropped.
 
+## Upgrading from 1.6 -> 2.0
+
+* The RPCClient event `'strictValidationFailure'` now fires for both inbound & outbound requests & responses.
+* The RPCClient event `'strictValidationFailure'` emits an object containing more information than was previously available. The Error which was previously emitted is now a member of this object.
+
 ## License
 
 [MIT](LICENSE.md)
