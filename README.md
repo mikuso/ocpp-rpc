@@ -430,7 +430,7 @@ If you want to handle (and respond) to the call, you should register a handler u
   * `outbound` {Boolean} - This will be `true` if the call originated locally.
   * `method` {String} - The RPC method.
   * `params` {Object} - The RPC params.
-  * `result` {Object} - If the call succeeded, this contains the result object - otherwise `null`.
+  * `result` {Object} - The result of the call.
 
 Emitted immediately after a call result is successfully sent or received. Useful for logging or debugging.
 
@@ -441,7 +441,7 @@ Emitted immediately after a call result is successfully sent or received. Useful
   * `outbound` {Boolean} - This will be `true` if the call originated locally.
   * `method` {String} - The RPC method.
   * `params` {Object} - The RPC params.
-  * `error` {RPCError} - If the call errored, this contains - otherwise `null`.
+  * `error` {RPCError} - The error from the call.
 
 Emitted immediately after a call error is sent or received. Useful for logging or debugging.
 
