@@ -207,6 +207,8 @@ await cli.connect();
   * [Event: 'strictValidationFailure'](#event-strictvalidationfailure)
   * [Event: 'message'](#event-message)
   * [Event: 'call'](#event-call)
+  * [Event: 'callResult'](#event-callresult)
+  * [Event: 'callError'](#event-callerror)
   * [Event: 'close'](#event-close-1)
   * [Event: 'closing'](#event-closing-1)
   * [Event: 'connecting'](#event-connecting)
@@ -420,6 +422,30 @@ This event is emitted in [strict mode](#strict-validation) when an inbound call 
 Emitted immediately before a call request is sent, or in the case of an inbound call, immediately before the call is processed. Useful for logging or debugging.
 
 If you want to handle (and respond) to the call, you should register a handler using [client.handle()](#clienthandlemethod-handler) instead.
+
+#### Event: 'callResult'
+
+* `event` {Object}
+  * `messageId` {String} - The RPC message ID
+  * `outbound` {Boolean} - This will be `true` if the call originated locally.
+  * `method` {String} - The RPC method.
+  * `params` {Object} - The RPC params.
+  * `result` {Object} - If the call succeeded, this contains the result object - otherwise `null`.
+
+Emitted immediately after a call result is successfully sent or received. Useful for logging or debugging.
+
+#### Event: 'callError'
+
+* `event` {Object}
+  * `messageId` {String} - The RPC message ID
+  * `outbound` {Boolean} - This will be `true` if the call originated locally.
+  * `method` {String} - The RPC method.
+  * `params` {Object} - The RPC params.
+  * `error` {RPCError} - If the call errored, this contains - otherwise `null`.
+
+Emitted immediately after a call error is sent or received. Useful for logging or debugging.
+
+Will not be emitted if NOREPLY is sent as a response, or if a call times out.
 
 #### Event: 'close'
 
