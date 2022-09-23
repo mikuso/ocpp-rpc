@@ -186,7 +186,7 @@ describe('RPCClient', function(){
 
         });
 
-        it('should emit callResult and callError events', async () => {
+        it('should emit callResult and callError events for outbound calls', async () => {
 
             const {endpoint, close} = await createServer({}, {});
             const cli = new RPCClient({
@@ -218,6 +218,61 @@ describe('RPCClient', function(){
             
             assert.equal(error.method, 'Reject');
             assert.equal(error.outbound, true);
+            assert.equal(error.params.details.code, 'Test');
+            assert.equal(error.error.details.code, 'Test');
+
+        });
+
+        it('should emit callResult and callError events for inbound calls', async () => {
+
+            let resolveReceived;
+            let received = new Promise(r => {resolveReceived = r});
+
+            const {endpoint, close} = await createServer({}, {
+                withClient: async (cli) => {
+                    await cli.call('Echo', {txt: 'Test'});
+                    await cli.call('Reject', {details:{code: 'Test'}}).catch(()=>{});
+                }
+            });
+            const cli = new RPCClient({
+                endpoint,
+                identity: 'X',
+            });
+
+            cli.handle('Echo', async ({params}) => {
+                return params;
+            });
+    
+            cli.handle('Reject', async ({params}) => {
+                const err = Error("Rejecting");
+                Object.assign(err, params);
+                throw err;
+            });
+
+            let result;
+            let error;
+
+            cli.on('callResult', evt => {
+                result = evt;
+            });
+
+            cli.on('callError', evt => {
+                error = evt;
+                resolveReceived();
+            });
+
+            await cli.connect();
+            await received;
+            await cli.close();
+            await close();
+
+            assert.equal(result.method, 'Echo');
+            assert.equal(result.outbound, false);
+            assert.equal(result.params.txt, 'Test');
+            assert.equal(result.result.txt, 'Test');
+            
+            assert.equal(error.method, 'Reject');
+            assert.equal(error.outbound, false);
             assert.equal(error.params.details.code, 'Test');
             assert.equal(error.error.details.code, 'Test');
 
