@@ -186,6 +186,43 @@ describe('RPCClient', function(){
 
         });
 
+        it('should emit callResult and callError events', async () => {
+
+            const {endpoint, close} = await createServer({}, {});
+            const cli = new RPCClient({
+                endpoint,
+                identity: 'X',
+            });
+
+            let result;
+            let error;
+
+            cli.on('callResult', evt => {
+                result = evt;
+            });
+
+            cli.on('callError', evt => {
+                error = evt;
+            });
+
+            await cli.connect();
+            await cli.call('Echo', {txt: 'Test'});
+            await cli.call('Reject', {details:{code: 'Test'}}).catch(()=>{});
+            await cli.close();
+            await close();
+
+            assert.equal(result.method, 'Echo');
+            assert.equal(result.outbound, true);
+            assert.equal(result.params.txt, 'Test');
+            assert.equal(result.result.txt, 'Test');
+            
+            assert.equal(error.method, 'Reject');
+            assert.equal(error.outbound, true);
+            assert.equal(error.params.details.code, 'Test');
+            assert.equal(error.error.details.code, 'Test');
+
+        });
+
         it('should emit 2 message events after call', async () => {
             
             const {endpoint, close} = await createServer();
