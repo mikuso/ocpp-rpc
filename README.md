@@ -384,7 +384,7 @@ Returns a `Promise` which resolves when the server has completed closing.
   - `maxReconnects` {Number} - If `reconnect` is `true`, specifies the number of times to try reconnecting before failing and emitting a `close` event. Defaults to `Infinity`
   - `backoff` {Object} - If `reconnect` is `true`, specifies the options for an [ExponentialStrategy](https://github.com/MathieuTurcotte/node-backoff#class-exponentialstrategy) backoff strategy, used for reconnects.
   - `maxBadMessages` {Number} - The maximum number of [non-conforming RPC messages](#event-rpcerror) which can be tolerated by the client before the client is automatically closed. Defaults to `Infinity`.
-  - `wsOptions` {Object} - Additional [WebSocket options](https://github.com/websockets/ws/blob/master/doc/ws.md#new-websocketaddress-protocols-options).
+  - `wsOpts` {Object} - Additional [WebSocket options](https://github.com/websockets/ws/blob/master/doc/ws.md#new-websocketaddress-protocols-options).
 
 #### Event: 'badMessage'
 
