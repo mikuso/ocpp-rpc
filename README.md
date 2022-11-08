@@ -313,7 +313,7 @@ The callback function is called with the following three arguments:
   * `headers` {Object} - The HTTP headers sent in the upgrade request.
   * `request` {http.IncomingMessage} - The full HTTP request received by the underlying webserver.
 
-* `signal` {AbortSignal} - An `AbortSignal` used to indicate whether the websocket upgrade has been aborted during the authentication process.
+* `signal` {AbortSignal} - An `AbortSignal` used to indicate whether the websocket upgrade has been aborted during the authentication process.  The `signal.reason` is also available as the `error` property of the ['upgradeAborted'](#event-upgradeaborted) event.
 
 Example:
 
