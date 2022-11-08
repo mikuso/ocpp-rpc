@@ -2,7 +2,7 @@ const assert = require('assert/strict');
 const http = require('http');
 const { once } = require('events');
 const RPCClient = require("../lib/client");
-const { TimeoutError, UnexpectedHttpResponse } = require('../lib/errors');
+const { TimeoutError, UnexpectedHttpResponse, WebsocketUpgradeError } = require('../lib/errors');
 const RPCServer = require("../lib/server");
 const { setTimeout } = require('timers/promises');
 const { createValidator } = require('../lib/validator');
@@ -823,8 +823,14 @@ describe('RPCServer', function(){
         
         it("should abort handshake if server not open", async () => {
 
-            let authed = false;
             const server = new RPCServer();
+            
+            let abortEvent;
+            server.on('upgradeAborted', event => {
+                abortEvent = event;
+            });
+            
+            let authed = false;
             server.auth((accept) => {
                 // shouldn't get this far
                 authed = true;
@@ -853,6 +859,7 @@ describe('RPCServer', function(){
             await server.close();
             assert.doesNotReject(server.handleUpgrade(...upgrade));
             assert.equal(authed, false);
+            assert.equal(abortEvent.error.code, 500);
             httpServer.close();
             
         });
@@ -861,6 +868,11 @@ describe('RPCServer', function(){
         it("should abort handshake for non-websocket upgrades", async () => {
 
             const {endpoint, close, server} = await createServer();
+
+            let abortEvent;
+            server.on('upgradeAborted', event => {
+                abortEvent = event;
+            });
 
             let authed = false;
             server.auth((accept) => {
@@ -875,14 +887,49 @@ describe('RPCServer', function(){
                     headers: {
                         connection: 'Upgrade',
                         upgrade: '_UNKNOWN_',
+                        'user-agent': 'test/0',
                     }
                 });
                 req.end();
 
                 const [res] = await once(req, 'response');
 
-                assert.equal(res.statusCode, 500);
+                assert.equal(res.statusCode, 400);
                 assert.equal(authed, false);
+                assert.ok(abortEvent.error instanceof WebsocketUpgradeError);
+                assert.equal(abortEvent.request.headers['user-agent'], 'test/0');
+                
+            } finally {
+                close();
+            }
+
+        });
+        
+
+        it("should emit upgradeAborted event on auth reject", async () => {
+
+            const {endpoint, close, server} = await createServer();
+
+            let abortEvent;
+            server.on('upgradeAborted', event => {
+                abortEvent = event;
+            });
+
+            server.auth((accept, reject) => {
+                reject(499);
+            });
+
+            try {
+
+                const cli = new RPCClient({
+                    endpoint,
+                    identity: 'X'
+                });
+
+                await assert.rejects(cli.connect());
+                
+                assert.ok(abortEvent.error instanceof WebsocketUpgradeError);
+                assert.equal(abortEvent.error.code, 499);
                 
             } finally {
                 close();
