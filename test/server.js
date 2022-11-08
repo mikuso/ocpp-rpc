@@ -937,6 +937,37 @@ describe('RPCServer', function(){
 
         });
 
+        it("should abort auth on upgrade error", async () => {
+
+            const {endpoint, close, server} = await createServer();
+            const cli = new RPCClient({
+                endpoint,
+                identity: 'X',
+            });
+
+            let completeAuth;
+            let authCompleted = new Promise(r => {completeAuth = r;})
+
+            server.auth(async (accept, reject, handshake, signal) => {
+                const abortProm = once(signal, 'abort');
+                await cli.close({force: true, awaitPending: false});
+                await abortProm;
+                completeAuth();
+            });
+
+            try {
+                const connErr = await cli.connect().catch(e=>e);
+                await authCompleted;
+                assert.ok(connErr instanceof Error);
+
+            } finally {
+                await cli.close();
+                close();
+            }
+
+        });
+
+
     });
 
 });
