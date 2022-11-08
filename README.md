@@ -195,6 +195,7 @@ await cli.connect();
   * [Event: 'error'](#event-error)
   * [Event: 'close'](#event-close)
   * [Event: 'closing'](#event-closing)
+  * [Event: 'upgradeAborted'](#event-upgradeaborted)
   * [server.auth(callback)](#serverauthcallback)
   * [server.handleUpgrade(request)](#serverhandleupgraderequest-socket-head)
   * [server.reconfigure(options)](#serverreconfigureoptions)
@@ -276,6 +277,16 @@ Emitted when the server has fully closed and all clients have been disconnected.
 
 Emitted when the server has begun closing. Beyond this point, no more clients will be accepted and the `'client'` event will no longer fire.
 
+#### Event: 'upgradeAborted'
+
+* `event` {Object}
+  * `error` {Error} - The cause of the abort.
+  * `socket` {net.Socket} - Network socket between the server and client
+  * `request` {http.IncomingMessage} - The full HTTP request received by the underlying webserver.
+  * `identity` {String} - The identity portion of the connection URL, decoded.
+
+Emitted when a websocket upgrade has been aborted. This could be caused by an authentication rejection, socket error or websocket handshake error.
+
 #### server.auth(callback)
 
 * `callback` {Function}
@@ -319,7 +330,7 @@ rpcServer.auth((accept, reject, handshake) => {
 #### server.handleUpgrade(request, socket, head)
 
 * `request` {http.IncomingMessage}
-* `socket` {stream.Duplex} - Network socket between the server and client
+* `socket` {net.Socket} - Network socket between the server and client
 * `head` {Buffer} - The first packet of the upgraded stream (may be empty)
 
 Converts an HTTP upgrade request into a WebSocket client to be handled by this RPCServer. This method is bound to the server instance, so it is suitable to pass directly as an `http.Server`'s `'upgrade'` event handler.
