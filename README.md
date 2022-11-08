@@ -313,12 +313,13 @@ The callback function is called with the following three arguments:
   * `headers` {Object} - The HTTP headers sent in the upgrade request.
   * `request` {http.IncomingMessage} - The full HTTP request received by the underlying webserver.
 
+* `signal` {AbortSignal} - An `AbortSignal` used to indicate whether the websocket upgrade has been aborted during the authentication process.
 
 Example:
 
 ```js
 const rpcServer = new RPCServer();
-rpcServer.auth((accept, reject, handshake) => {
+rpcServer.auth((accept, reject, handshake, signal) => {
     if (handshake.identity === 'TEST') {
         accept();
     } else {
