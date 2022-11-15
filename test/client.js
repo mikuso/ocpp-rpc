@@ -2471,6 +2471,77 @@ describe('RPCClient', function(){
 
         });
 
+
+        it('should skip pinging client if other activity received with option deferPingsOnActivity', async () => {
+            
+            let pings = 0;
+            const {endpoint, close, server} = await createServer({}, {
+                withClient: async (client) => {
+                    client.handle('Echo', async ({params}) => {
+                        return params;
+                    });
+                    for (let i = 0; i < 4; i++) {
+                        await cli.call('Echo', {});
+                        await setTimeout(25);
+                    }
+                    await client.close();
+                }
+            });
+            const cli = new RPCClient({
+                endpoint,
+                identity: 'X',
+                reconnect: false,
+                deferPingsOnActivity: true,
+                pingIntervalMs: 40
+            });
+
+            cli.on('ping', () => {++pings;});
+
+            try {
+                await cli.connect();
+                await once(cli, 'close');
+                assert.equal(pings, 0);
+            } finally {
+                await cli.close();
+                close();
+            }
+        });
+
+        it('should allow pinging client if other activity received without option deferPingsOnActivity', async () => {
+            
+            let pings = 0;
+            const {endpoint, close, server} = await createServer({}, {
+                withClient: async (client) => {
+                    client.handle('Echo', async ({params}) => {
+                        return params;
+                    });
+                    for (let i = 0; i < 4; i++) {
+                        await cli.call('Echo', {});
+                        await setTimeout(25);
+                    }
+                    await client.close();
+                }
+            });
+            const cli = new RPCClient({
+                endpoint,
+                identity: 'X',
+                reconnect: false,
+                deferPingsOnActivity: false,
+                pingIntervalMs: 40
+            });
+
+            cli.on('ping', () => {++pings;});
+
+            try {
+                await cli.connect();
+                await once(cli, 'close');
+                assert.ok(pings > 0);
+            } finally {
+                await cli.close();
+                close();
+            }
+        });
+
     });
 
 
