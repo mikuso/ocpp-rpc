@@ -767,69 +767,6 @@ describe('RPCServer', function(){
             }
         });
 
-        it('should skip pinging client if other activity received with option deferPingsOnActivity', async () => {
-            
-            let pings = 0;
-            const {endpoint, close, server} = await createServer({
-                pingIntervalMs: 40,
-                deferPingsOnActivity: true,
-            }, {
-                withClient: async (client) => {
-                    client.on('ping', () => {++pings;});
-                }
-            });
-            const cli = new RPCClient({
-                endpoint,
-                identity: 'X',
-                reconnect: false,
-            });
-
-            try {
-                await cli.connect();
-                for (let i = 0; i < 4; i++) {
-                    await cli.call('Echo', {});
-                    await setTimeout(25);
-                }
-                await cli.close();
-                assert.equal(pings, 0);
-            } finally {
-                await cli.close();
-                close();
-            }
-        });
-
-        it('should allow pinging client if other activity received without option deferPingsOnActivity', async () => {
-            
-            let pings = 0;
-            const {endpoint, close, server} = await createServer({
-                pingIntervalMs: 40,
-                deferPingsOnActivity: false,
-            }, {
-                withClient: async (client) => {
-                    client.on('ping', () => {++pings;});
-                }
-            });
-            const cli = new RPCClient({
-                endpoint,
-                identity: 'X',
-                reconnect: false,
-            });
-
-            try {
-                await cli.connect();
-                for (let i = 0; i < 4; i++) {
-                    await cli.call('Echo', {});
-                    await setTimeout(25);
-                }
-                await cli.close();
-                assert.ok(pings > 0);
-            } finally {
-                await cli.close();
-                close();
-            }
-        });
-
-
         it('should reject non-websocket requests with a 404', async () => {
             
             const {port, close, server} = await createServer();

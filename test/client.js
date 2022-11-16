@@ -2472,16 +2472,14 @@ describe('RPCClient', function(){
         });
 
 
-        it('should skip pinging client if other activity received with option deferPingsOnActivity', async () => {
+        it('should not auto-ping server if other activity received with option deferPingsOnActivity', async () => {
             
             let pings = 0;
             const {endpoint, close, server} = await createServer({}, {
                 withClient: async (client) => {
-                    client.handle('Echo', async ({params}) => {
-                        return params;
-                    });
+                    // send some rapid activity from the server
                     for (let i = 0; i < 4; i++) {
-                        await cli.call('Echo', {});
+                        await client.call('Echo', {});
                         await setTimeout(25);
                     }
                     await client.close();
@@ -2494,12 +2492,17 @@ describe('RPCClient', function(){
                 deferPingsOnActivity: true,
                 pingIntervalMs: 40
             });
+            cli.handle('Echo', async ({params}) => {
+                return params;
+            });
 
+            // count how many times we ping the server
             cli.on('ping', () => {++pings;});
 
             try {
                 await cli.connect();
                 await once(cli, 'close');
+                // we shouldn't have pinged, because of the activity sent from the server
                 assert.equal(pings, 0);
             } finally {
                 await cli.close();
@@ -2507,16 +2510,14 @@ describe('RPCClient', function(){
             }
         });
 
-        it('should allow pinging client if other activity received without option deferPingsOnActivity', async () => {
+        it('should auto-ping server even if other activity received without option deferPingsOnActivity', async () => {
             
             let pings = 0;
             const {endpoint, close, server} = await createServer({}, {
                 withClient: async (client) => {
-                    client.handle('Echo', async ({params}) => {
-                        return params;
-                    });
+                    // send some rapid activity from the server
                     for (let i = 0; i < 4; i++) {
-                        await cli.call('Echo', {});
+                        await client.call('Echo', {});
                         await setTimeout(25);
                     }
                     await client.close();
@@ -2529,12 +2530,88 @@ describe('RPCClient', function(){
                 deferPingsOnActivity: false,
                 pingIntervalMs: 40
             });
+            cli.handle('Echo', async ({params}) => {
+                return params;
+            });
 
+            // count how many times we ping the server
             cli.on('ping', () => {++pings;});
 
             try {
                 await cli.connect();
                 await once(cli, 'close');
+                // we should have pinged multiple times, despite the activity sent from the server
+                assert.ok(pings > 0);
+            } finally {
+                await cli.close();
+                close();
+            }
+        });
+
+
+        it('should not auto-ping server if ping received with option deferPingsOnActivity', async () => {
+            
+            let pings = 0;
+            const {endpoint, close, server} = await createServer({
+                pingIntervalMs: 25,
+                deferPingsOnActivity: false,
+            }, {
+                withClient: async (client) => {
+                    // keep the client lingering long enough for the server to send several pings
+                    await setTimeout(110);
+                    await client.close();
+                }
+            });
+            const cli = new RPCClient({
+                endpoint,
+                identity: 'X',
+                reconnect: false,
+                deferPingsOnActivity: true,
+                pingIntervalMs: 40
+            });
+
+            // count how many times we ping the server
+            cli.on('ping', () => {++pings;});
+
+            try {
+                await cli.connect();
+                await once(cli, 'close');
+                // we shouldn't have pinged, because of the activity sent from the server
+                assert.equal(pings, 0);
+            } finally {
+                await cli.close();
+                close();
+            }
+        });
+
+        it('should auto-ping server even if ping received without option deferPingsOnActivity', async () => {
+            
+            let pings = 0;
+            const {endpoint, close, server} = await createServer({
+                pingIntervalMs: 25,
+                deferPingsOnActivity: false,
+            }, {
+                withClient: async (client) => {
+                    // keep the client lingering long enough for the server to send several pings
+                    await setTimeout(110);
+                    await client.close();
+                }
+            });
+            const cli = new RPCClient({
+                endpoint,
+                identity: 'X',
+                reconnect: false,
+                deferPingsOnActivity: false,
+                pingIntervalMs: 40
+            });
+
+            // count how many times we ping the server
+            cli.on('ping', () => {++pings;});
+
+            try {
+                await cli.connect();
+                await once(cli, 'close');
+                // we should have pinged multiple times, despite the activity sent from the server
                 assert.ok(pings > 0);
             } finally {
                 await cli.close();
