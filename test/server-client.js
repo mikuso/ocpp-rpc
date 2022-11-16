@@ -1,11 +1,38 @@
 const assert = require('assert/strict');
-const http = require('http');
 const { once } = require('events');
 const RPCClient = require("../lib/client");
-const { TimeoutError } = require('../lib/errors');
 const RPCServer = require("../lib/server");
 const { setTimeout } = require('timers/promises');
-const {CLOSING, CLOSED, CONNECTING} = RPCClient;
+const { createValidator } = require('../lib/validator');
+
+function getEchoValidator() {
+    return createValidator('echo1.0', [
+        {
+            "$schema": "http://json-schema.org/draft-07/schema",
+            "$id": "urn:Echo.req",
+            "type": "object",
+            "properties": {
+                "val": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "required": ["val"]
+        },
+        {
+            "$schema": "http://json-schema.org/draft-07/schema",
+            "$id": "urn:Echo.conf",
+            "type": "object",
+            "properties": {
+                "val": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "required": ["val"]
+        }
+    ]);
+}
 
 describe('RPCServerClient', function(){
     this.timeout(500);
@@ -59,6 +86,55 @@ describe('RPCServerClient', function(){
 
         });
 
+    });
+
+    it('should inherit server options', async () => {
+
+        const inheritableOptions = {
+            callTimeoutMs: Math.floor(Math.random()*99999),
+            pingIntervalMs: Math.floor(Math.random()*99999),
+            deferPingsOnActivity: true,
+            respondWithDetailedErrors: true,
+            callConcurrency: Math.floor(Math.random()*99999),
+            strictMode: true,
+            strictModeValidators: [
+                getEchoValidator(),
+            ],
+            maxBadMessages: Math.floor(Math.random()*99999),
+        };
+
+        const server = new RPCServer({
+            protocols: ['echo1.0'],
+            ...inheritableOptions
+        });
+        const httpServer = await server.listen(0);
+        const port = httpServer.address().port;
+        const endpoint = `ws://localhost:${port}`;
+
+        const test = new Promise((resolve, reject) => {
+            server.on('client', cli => {
+                const optionKeys = Object.keys(inheritableOptions);
+                for (const optionKey of optionKeys) {
+                    const option = cli._options[optionKey];
+                    if (option !== inheritableOptions[optionKey]) {
+                        reject(Error(`RPCServerClient did not inherit option "${optionKey}" from RPCServer`));
+                    }
+                }
+                resolve();
+            });
+        });
+        
+        const cli = new RPCClient({
+            endpoint,
+            identity: 'X',
+            reconnect: false,
+            deferPingsOnActivity: false,
+            pingIntervalMs: 40
+        });
+        await cli.connect();
+        await cli.close();
+        await server.close();
+        await test;
     });
 
 });
