@@ -249,8 +249,8 @@ await cli.connect();
 - `options` {Object}
   - `protocols` {Array&lt;String&gt;} - Array of subprotocols supported by this server. Can be overridden in an [auth](#serverauthcallback) callback. Defaults to `[]`.
   - `callTimeoutMs` {Number} - Milliseconds to wait before unanswered outbound calls are rejected automatically. Defaults to `30000`.
-  - `pingIntervalMs` {Number} - Milliseconds between WebSocket pings to connected clients. Defaults to `30000`.
-  - `deferPingsOnActivity` {Boolean} - Should connected clients skip sending pings if activity received? Defaults to `false`.
+  - `pingIntervalMs` {Number} - Milliseconds between WebSocket pings to connected clients. Used for keep-alive timeouts. Defaults to `30000`.
+  - `deferPingsOnActivity` {Boolean} - Should connected clients skip sending keep-alive pings if activity received? Defaults to `false`.
   - `respondWithDetailedErrors` {Boolean} - Specifies whether to send detailed errors (including stack trace) to remote party upon an error being thrown by a handler. Defaults to `false`.
   - `callConcurrency` {Number} - The number of concurrent in-flight outbound calls permitted at any one time. Additional calls are queued. (There is no limit on inbound calls.) Defaults to `1`.
   - `strictMode` {Boolean} - Enable strict validation of calls & responses. Defaults to `false`. (See [Strict Validation](#strict-validation) to understand how this works.)
@@ -388,8 +388,8 @@ Returns a `Promise` which resolves when the server has completed closing.
   - `headers` {Object} - Additional HTTP headers to send along with the websocket upgrade request. Defaults to `{}`.
   - `query` {Object|String} - An optional query string or object to append as the query string of the connection URL. Defaults to `''`.
   - `callTimeoutMs` {Number} - Milliseconds to wait before unanswered outbound calls are rejected automatically. Defaults to `60000`.
-  - `pingIntervalMs` {Number} - Milliseconds between WebSocket pings. Defaults to `30000`.
-  - `deferPingsOnActivity` {Boolean} - Should the client skip sending pings if activity received? Defaults to `false`.
+  - `pingIntervalMs` {Number} - Milliseconds between WebSocket pings. Used for keep-alive timeouts. Defaults to `30000`.
+  - `deferPingsOnActivity` {Boolean} - Should the client skip sending keep-alive pings if activity received? Defaults to `false`.
   - `strictMode` {Boolean} - Enable strict validation of calls & responses. Defaults to `false`. (See [Strict Validation](#strict-validation) to understand how this works.)
   - `strictModeValidators` {Array&lt;Validator&gt;} - Optional additional validators to be used in conjunction with `strictMode`. (See [Strict Validation](#adding-additional-validation-schemas) to understand how this works.)
   - `respondWithDetailedErrors` {Boolean} - Specifies whether to send detailed errors (including stack trace) to remote party upon an error being thrown by a handler. Defaults to `false`.
