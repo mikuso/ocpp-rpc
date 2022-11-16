@@ -8,7 +8,7 @@
     "coverage": "nyc --reporter=lcov --reporter=text mocha"
   },
   "engines": {
-    "node": ">=17.2.0"
+    "node": ">=17.3.0"
   },
   "keywords": [
     "ocpp",
