@@ -2479,8 +2479,8 @@ describe('RPCClient', function(){
                 withClient: async (client) => {
                     // send some rapid activity from the server
                     for (let i = 0; i < 4; i++) {
-                        await client.call('Echo', {});
                         await setTimeout(25);
+                        await client.call('Echo', {});
                     }
                     await client.close();
                 }
@@ -2490,7 +2490,7 @@ describe('RPCClient', function(){
                 identity: 'X',
                 reconnect: false,
                 deferPingsOnActivity: true,
-                pingIntervalMs: 40
+                pingIntervalMs: 50
             });
             cli.handle('Echo', async ({params}) => {
                 return params;
@@ -2517,8 +2517,8 @@ describe('RPCClient', function(){
                 withClient: async (client) => {
                     // send some rapid activity from the server
                     for (let i = 0; i < 4; i++) {
-                        await client.call('Echo', {});
                         await setTimeout(25);
+                        await client.call('Echo', {});
                     }
                     await client.close();
                 }
@@ -2528,7 +2528,7 @@ describe('RPCClient', function(){
                 identity: 'X',
                 reconnect: false,
                 deferPingsOnActivity: false,
-                pingIntervalMs: 40
+                pingIntervalMs: 50
             });
             cli.handle('Echo', async ({params}) => {
                 return params;
@@ -2567,7 +2567,7 @@ describe('RPCClient', function(){
                 identity: 'X',
                 reconnect: false,
                 deferPingsOnActivity: true,
-                pingIntervalMs: 40
+                pingIntervalMs: 50
             });
 
             // count how many times we ping the server
@@ -2602,7 +2602,7 @@ describe('RPCClient', function(){
                 identity: 'X',
                 reconnect: false,
                 deferPingsOnActivity: false,
-                pingIntervalMs: 40
+                pingIntervalMs: 50
             });
 
             // count how many times we ping the server
