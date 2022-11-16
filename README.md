@@ -403,7 +403,7 @@ Returns a `Promise` which resolves when the server has completed closing.
 #### Event: 'badMessage'
 
 * `event` {Object}
-  * `payload` {Buffer} - The raw discarded "bad" message payload.
+  * `buffer` {Buffer} - The raw discarded "bad" message payload.
   * `error` {Error} - An error describing what went wrong when handling the payload.
   * `response` {Array|null} - A copy of the response sent in reply to the bad message (if applicable).
 
