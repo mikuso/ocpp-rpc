@@ -888,6 +888,30 @@ describe('RPCClient', function(){
 
         });
 
+        it('should treat invalid/reserved close codes as 1000', async () => {
+
+            const {server, endpoint, close} = await createServer();
+            const cli = new RPCClient({endpoint, identity: 'X'});
+
+            try {
+                const testCodes = [-1000,0,1,1005,10000];
+
+                for (const testCode of testCodes) {
+                    const serverClientPromise = once(server, 'client');
+                    await cli.connect();
+                    const [serverClient] = await serverClientPromise;
+                    const serverClosePromise = once(serverClient, 'close');
+                    await cli.close({code: testCode});
+                    const [serverClose] = await serverClosePromise;
+                    assert.equal(serverClose.code, 1000);
+                }
+
+            } finally {
+                close();
+            }
+
+        });
+
         it('should return the close code of the first close() call', async () => {
 
             const {endpoint, close} = await createServer();

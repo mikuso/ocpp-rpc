@@ -1,14 +1,14 @@
 {
   "name": "ocpp-rpc",
-  "version": "1.10.3",
-  "description": "A client & server implementation of the WAMP-like RPC-over-websocket system defined in the OCPP protcols (e.g. OCPP1.6-J and OCPP2.0.1).",
+  "version": "1.10.4",
+  "description": "A client & server implementation of the WAMP-like RPC-over-websocket system defined in the OCPP protocols (e.g. OCPP1.6-J and OCPP2.0.1).",
   "main": "index.js",
   "scripts": {
     "test": "mocha",
     "coverage": "nyc --reporter=lcov --reporter=text mocha"
   },
   "engines": {
-    "node": ">=17.2.0"
+    "node": ">=17.3.0"
   },
   "keywords": [
     "ocpp",

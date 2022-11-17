@@ -9,9 +9,9 @@
 
 ![OCPP-RPC](/docs/logo.png)
 
-A client & server implementation of the WAMP-like RPC-over-websocket system defined in the [OCPP-J protcols](https://www.openchargealliance.org/protocols/) (e.g. [OCPP1.6J](https://www.openchargealliance.org/protocols/ocpp-16/) and [OCPP2.0.1J](https://www.openchargealliance.org/protocols/ocpp-201/)).
+A client & server implementation of the WAMP-like RPC-over-websocket system defined in the [OCPP-J protocols](https://www.openchargealliance.org/protocols/) (e.g. [OCPP1.6J](https://www.openchargealliance.org/protocols/ocpp-16/) and [OCPP2.0.1J](https://www.openchargealliance.org/protocols/ocpp-201/)).
 
-Requires Node.js >= 17.2.0
+Requires Node.js >= 17.3.0
 
 This module is built for Node.js and does not currently work in browsers.
 
