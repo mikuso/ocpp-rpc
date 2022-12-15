@@ -1085,10 +1085,13 @@ server.auth((accept, reject, handshake) => {
 * RPC calls while in this state are rejected.
 * RPC responses will be silently dropped.
 
-## Upgrading from 1.6 -> 2.0
+## Upgrading from 1.X -> 2.0
 
-* The RPCClient event `'strictValidationFailure'` now fires for both inbound & outbound requests & responses.
-* The RPCClient event `'strictValidationFailure'` emits an object containing more information than was previously available. The Error which was previously emitted is now a member of this object.
+Breaking changes:
+* The `RPCClient` event [`'strictValidationFailure'`](#event-strictvalidationfailure) now fires for both inbound & outbound requests & responses.
+* The `RPCClient` event [`'strictValidationFailure'`](#event-strictvalidationfailure) emits an object containing more information than was previously available. The Error which was previously emitted is now a member of this object.
+* The `password` option in the `RPCClient` [constructor](#new-rpcclientoptions) can now be supplied as a `Buffer`. If a string is provided, it will be encoded as utf8.
+* The `password` field of `RPCServerClient`'s [`handshake`](#clienthandshake) object is now always provided as a Buffer instead of a string. Use `password.toString('utf8')` to convert back to a string as per previous versions.
 
 ## License
 
