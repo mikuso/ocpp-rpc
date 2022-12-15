@@ -47,6 +47,7 @@ This module is built for Node.js and does not currently work in browsers.
   * [Security Profile 2](#security-profile-2)
   * [Security Profile 3](#security-profile-3)
 * [RPCClient state lifecycle](#rpcclient-state-lifecycle)
+* [Upgrading from 1.X -> 2.0](#upgrading-from-1x---20)
 * [License](#license)
 
 ## Installing
