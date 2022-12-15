@@ -307,7 +307,7 @@ The callback function is called with the following three arguments:
 * `handshake` {Object} - A handshake object
   * `protocols` {Set} - A set of subprotocols purportedly supported by the client.
   * `identity` {String} - The identity portion of the connection URL, decoded.
-  * `password` {String} - If HTTP Basic auth was used in the connection, and the username correctly matches the identity, this field will contain the password (otherwise `undefined`). Read [Security Profile 1](#security-profile-1) for more details of how this works.
+  * `password` {Buffer} - If HTTP Basic auth was used in the connection, and the username correctly matches the identity, this field will contain the password (otherwise `undefined`). Typically this password would be a string, but the OCPP specs allow for this to be binary, so it is provided as a `Buffer` for you to interpret as you wish. Read [Security Profile 1](#security-profile-1) for more details of how this works.
   * `endpoint` {String} - The endpoint path portion of the connection URL. This is the part of the path before the identity.
   * `query` {URLSearchParams} - The query string parsed as [URLSearchParams](https://developer.mozilla.org/en-US/docs/Web/API/URLSearchParams).
   * `remoteAddress` {String} - The remote IP address of the socket.
@@ -384,7 +384,7 @@ Returns a `Promise` which resolves when the server has completed closing.
   - `endpoint` {String} - The RPC server's endpoint (a websocket URL). **Required**.
   - `identity` {String} - The RPC client's identity. Will be automatically encoded. **Required**.
   - `protocols` {Array&lt;String&gt;} - Array of subprotocols supported by this client. Defaults to `[]`.
-  - `password` {String} - Optional password to use in [HTTP Basic auth](#security-profile-1). (The username will always be the identity).
+  - `password` {String|Buffer} - Optional password to use in [HTTP Basic auth](#security-profile-1). This can be a Buffer to allow for binary auth keys as recommended in the OCPP security whitepaper. If provided as a string, it will be encoded as UTF-8. (The corresponding username will always be the identity).
   - `headers` {Object} - Additional HTTP headers to send along with the websocket upgrade request. Defaults to `{}`.
   - `query` {Object|String} - An optional query string or object to append as the query string of the connection URL. Defaults to `''`.
   - `callTimeoutMs` {Number} - Milliseconds to wait before unanswered outbound calls are rejected automatically. Defaults to `60000`.
@@ -415,7 +415,14 @@ If too many bad messages are received in succession, the client will be closed w
 
 #### Event: 'strictValidationFailure'
 
-* `error` [{RPCError}](#rpcerror)
+* `event` {Object}
+  * `error` {Error} - The validation error that triggered the `strictValidationFailure` event.
+  * `messageId` {String} - The RPC message ID
+  * `method` {String} - The RPC method being invoked.
+  * `params` {Object} - The RPC parameters.
+  * `result` {Object} - If this error relates to a **CALLRESULT** validation failure, then this contains the invalid result, otherwise `null`.
+  * `outbound` {Boolean} - This will be `true` if the invalid message originated locally.
+  * `isCall` {Boolean} - This will be `true` if the invalid message is a **CALL** type. `false` indicates a **CALLRESULT** type.
 
 This event is emitted in [strict mode](#strict-validation) when an inbound call or outbound response does not satisfy the subprotocol schema validator. See [Effects of `strictMode`](#effects-of-strictmode) to understand what happens in response to the invalid message.
 
@@ -668,7 +675,7 @@ The RPCServerClient is a subclass of RPCClient. This represents an RPCClient fro
 * {Object}
   * `protocols` {Set} - A set of subprotocols purportedly supported by the client.
   * `identity` {String} - The identity portion of the connection URL, decoded.
-  * `password` {String} - If HTTP Basic auth was used in the connection, and the username correctly matches the identity, this field will contain the password (otherwise `undefined`). Read [Security Profile 1](#security-profile-1) for more details of how this works.
+  * `password` {Buffer} - If HTTP Basic auth was used in the connection, and the username correctly matches the identity, this field will contain the password (otherwise `undefined`). Typically this password would be a string, but the OCPP specs allow for this to be binary, so it is provided as a `Buffer` for you to interpret as you wish. Read [Security Profile 1](#security-profile-1) for more details of how this works.
   * `endpoint` {String} - The endpoint path portion of the connection URL. This is the part of the path before the identity.
   * `query` {URLSearchParams} - The query string parsed as [URLSearchParams](https://developer.mozilla.org/en-US/docs/Web/API/URLSearchParams).
   * `remoteAddress` {String} - The remote IP address of the socket.
@@ -717,7 +724,7 @@ An object containing additional error details.
 
 This is a utility function to create a special type of RPC Error to be thrown from a call handler to return a non-generic error response.
 
-Returns an [`RPCError`](#rpcerror) which corresponds to the specified type:
+Returns an [`RPCError`](#class-rpcerror--error) which corresponds to the specified type:
 
 | Type                          | Description                                                                                                                |
 | ----------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
@@ -763,12 +770,14 @@ const server = new RPCServer({
 ### Effects of `strictMode`
 
 As a caller, `strictMode` has the following effects:
-* If your method or params fail validation, your call will reject immediately with an [`RPCError`](#rpcerror). The call will not be sent.
-* If a response to your call fails validation, the call will reject with an [`RPCError`](#rpcerror).
+* If your method or params fail validation, your call will reject immediately with an [`RPCError`](#class-rpcerror--error). The call will not be sent.
+* If a response to your call fails validation, the call will reject with an [`RPCError`](#class-rpcerror--error) and you will not receive the actual response that was sent.
 
 As a callee, `strictMode` has the following effects:
-* If an inbound call's params fail validation, the call will not be passed to a handler. Instead, an error response will be automatically issued to the caller with an appropriate RPC error. A [`'strictValidationFailure'`](#event-strictvalidationfailure) event will be emitted with an [`RPCError`](#rpcerror).
-* If your response to a call fails validation, the response will be discarded and an `"InternalError"` RPC error will be sent instead. A [`'strictValidationFailure'`](#event-strictvalidationfailure) event will be emitted with an [`RPCError`](#rpcerror).
+* If an inbound call's params fail validation, the call will not be passed to a handler. Instead, an error response will be automatically issued to the caller with an appropriate RPC error.
+* If your response to a call fails validation, then your response will be discarded and an `"InternalError"` RPC error will be sent instead.
+
+In all cases, a [`'strictValidationFailure'`](#event-strictvalidationfailure) event will be emitted, detailing the circumstances of the failure.
 
 **Important:** If you are using `strictMode`, you are strongly encouraged to listen for [`'strictValidationFailure'`](#event-strictvalidationfailure) events, otherwise you may not know if your responses or inbound calls are being dropped for failing validation.
 
@@ -846,7 +855,7 @@ const cli = new RPCClient({
 
 const server = new RPCServer();
 server.auth((accept, reject, handshake) => {
-    if (handshake.identity === "AzureDiamond" && handshake.password === "hunter2") {
+    if (handshake.identity === "AzureDiamond" && handshake.password.toString('utf8') === "hunter2") {
         accept();
     } else {
         reject(401);
@@ -867,6 +876,8 @@ In practice, it's not uncommon to see violations of RFC7617 in the wild. All maj
 
 However, in OCPP, since we have the luxury of knowing that the username must always be equal to the client's identity, it is no longer necessary to rely upon a colon to delineate the username from the password. This module makes use of this guarantee to enable identities and passwords to contain as many or as few colons as you wish.
 
+Additionally, the OCPP security whitepaper recommends passwords consist purely of random bytes (for maximum entropy), although this violates the Basic Auth RFC which requires all passwords to be TEXT (US-ASCII compatible with no control characters). For this reason, this library will not make any presumptions about the character encoding (or otherwise) of the password provided, and present the password as a `Buffer`.
+
 ```js
 const { RPCClient, RPCServer } = require('ocpp-rpc');
 
@@ -877,8 +888,8 @@ const cli = new RPCClient({
 
 const server = new RPCServer();
 server.auth((accept, reject, handshake) => {
-    console.log(handshake.identity); // "this:is:ok"
-    console.log(handshake.password); // "as:is:this"
+    console.log(handshake.identity);                  // "this:is:ok"
+    console.log(handshake.password.toString('utf8')); // "as:is:this"
     accept();
 });
 
@@ -901,8 +912,8 @@ const server = new RPCServer();
 server.auth((accept, reject, handshake) => {
     const cred = auth.parse(handshake.headers.authorization);
 
-    console.log(cred.name); // "this"
-    console.log(cred.pass); // "is:broken:as:is:this"
+    console.log(cred.name);                  // "this"
+    console.log(cred.pass.toString('utf8')); // "is:broken:as:is:this"
     accept();
 });
 
@@ -1073,6 +1084,14 @@ server.auth((accept, reject, handshake) => {
 **CLOSING**  
 * RPC calls while in this state are rejected.
 * RPC responses will be silently dropped.
+
+## Upgrading from 1.X -> 2.0
+
+Breaking changes:
+* The `RPCClient` event [`'strictValidationFailure'`](#event-strictvalidationfailure) now fires for both inbound & outbound requests & responses.
+* The `RPCClient` event [`'strictValidationFailure'`](#event-strictvalidationfailure) emits an object containing more information than was previously available. The Error which was previously emitted is now a member of this object.
+* The `password` option in the `RPCClient` [constructor](#new-rpcclientoptions) can now be supplied as a `Buffer`. If a string is provided, it will be encoded as utf8.
+* The `password` field of `RPCServerClient`'s [`handshake`](#clienthandshake) object is now always provided as a Buffer instead of a string. Use `password.toString('utf8')` to convert back to a string as per previous versions.
 
 ## License
 

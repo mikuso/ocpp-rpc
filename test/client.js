@@ -835,7 +835,7 @@ describe('RPCClient', function(){
             }
         });
 
-        it('should authenticate with password', async () => {
+        it('should authenticate with string passwords', async () => {
             
             const password = 'hunter2';
             let recPass;
@@ -854,7 +854,39 @@ describe('RPCClient', function(){
 
             try {
                 await cli.connect();
-                assert.equal(password, recPass);
+                assert.equal(password, recPass.toString('utf8'));
+
+            } finally {
+                cli.close();
+                close();
+            }
+        });
+
+        it('should authenticate with binary passwords', async () => {
+            
+            const password = Buffer.from([
+                0,1,2,3,4,5,6,7,8,9,
+                65,66,67,68,69,
+                251,252,253,254,255,
+            ]);
+            let recPass;
+
+            const {endpoint, close, server} = await createServer();
+            server.auth((accept, reject, handshake) => {
+                recPass = handshake.password;
+                accept();
+            });
+
+            const cli = new RPCClient({
+                endpoint,
+                identity: 'X',
+                password,
+            });
+
+            try {
+                await cli.connect();
+                // console.log(Buffer.from(recPass, 'ascii'));
+                assert.equal(password.toString('hex'), recPass.toString('hex'));
 
             } finally {
                 cli.close();
@@ -1329,9 +1361,9 @@ describe('RPCClient', function(){
                 const [c2] = await once(cli, 'strictValidationFailure');
                 const [c3] = await once(cli, 'strictValidationFailure');
 
-                assert.equal(c1.rpcErrorCode, 'OccurenceConstraintViolation');
-                assert.equal(c2.rpcErrorCode, 'TypeConstraintViolation');
-                assert.equal(c3.rpcErrorCode, 'ProtocolError');
+                assert.equal(c1.error.rpcErrorCode, 'OccurenceConstraintViolation');
+                assert.equal(c2.error.rpcErrorCode, 'TypeConstraintViolation');
+                assert.equal(c3.error.rpcErrorCode, 'ProtocolError');
 
                 assert.equal(calls, 3);
                 assert.equal(responses, 3);
