@@ -307,7 +307,7 @@ The callback function is called with the following three arguments:
 * `handshake` {Object} - A handshake object
   * `protocols` {Set} - A set of subprotocols purportedly supported by the client.
   * `identity` {String} - The identity portion of the connection URL, decoded.
-  * `password` {String} - If HTTP Basic auth was used in the connection, and the username correctly matches the identity, this field will contain the password (otherwise `undefined`). Read [Security Profile 1](#security-profile-1) for more details of how this works.
+  * `password` {Buffer} - If HTTP Basic auth was used in the connection, and the username correctly matches the identity, this field will contain the password (otherwise `undefined`). Typically this password would be a string, but the OCPP specs allow for this to be binary, so it is provided as a `Buffer` for you to interpret as you wish. Read [Security Profile 1](#security-profile-1) for more details of how this works.
   * `endpoint` {String} - The endpoint path portion of the connection URL. This is the part of the path before the identity.
   * `query` {URLSearchParams} - The query string parsed as [URLSearchParams](https://developer.mozilla.org/en-US/docs/Web/API/URLSearchParams).
   * `remoteAddress` {String} - The remote IP address of the socket.
@@ -384,7 +384,7 @@ Returns a `Promise` which resolves when the server has completed closing.
   - `endpoint` {String} - The RPC server's endpoint (a websocket URL). **Required**.
   - `identity` {String} - The RPC client's identity. Will be automatically encoded. **Required**.
   - `protocols` {Array&lt;String&gt;} - Array of subprotocols supported by this client. Defaults to `[]`.
-  - `password` {String} - Optional password to use in [HTTP Basic auth](#security-profile-1). (The username will always be the identity).
+  - `password` {String|Buffer} - Optional password to use in [HTTP Basic auth](#security-profile-1). This can be a Buffer to allow for binary auth keys as recommended in the OCPP security whitepaper. If provided as a string, it will be encoded as UTF-8. (The corresponding username will always be the identity).
   - `headers` {Object} - Additional HTTP headers to send along with the websocket upgrade request. Defaults to `{}`.
   - `query` {Object|String} - An optional query string or object to append as the query string of the connection URL. Defaults to `''`.
   - `callTimeoutMs` {Number} - Milliseconds to wait before unanswered outbound calls are rejected automatically. Defaults to `60000`.
@@ -675,7 +675,7 @@ The RPCServerClient is a subclass of RPCClient. This represents an RPCClient fro
 * {Object}
   * `protocols` {Set} - A set of subprotocols purportedly supported by the client.
   * `identity` {String} - The identity portion of the connection URL, decoded.
-  * `password` {String} - If HTTP Basic auth was used in the connection, and the username correctly matches the identity, this field will contain the password (otherwise `undefined`). Read [Security Profile 1](#security-profile-1) for more details of how this works.
+  * `password` {Buffer} - If HTTP Basic auth was used in the connection, and the username correctly matches the identity, this field will contain the password (otherwise `undefined`). Typically this password would be a string, but the OCPP specs allow for this to be binary, so it is provided as a `Buffer` for you to interpret as you wish. Read [Security Profile 1](#security-profile-1) for more details of how this works.
   * `endpoint` {String} - The endpoint path portion of the connection URL. This is the part of the path before the identity.
   * `query` {URLSearchParams} - The query string parsed as [URLSearchParams](https://developer.mozilla.org/en-US/docs/Web/API/URLSearchParams).
   * `remoteAddress` {String} - The remote IP address of the socket.
@@ -855,7 +855,7 @@ const cli = new RPCClient({
 
 const server = new RPCServer();
 server.auth((accept, reject, handshake) => {
-    if (handshake.identity === "AzureDiamond" && handshake.password === "hunter2") {
+    if (handshake.identity === "AzureDiamond" && handshake.password.toString('utf8') === "hunter2") {
         accept();
     } else {
         reject(401);
@@ -876,6 +876,8 @@ In practice, it's not uncommon to see violations of RFC7617 in the wild. All maj
 
 However, in OCPP, since we have the luxury of knowing that the username must always be equal to the client's identity, it is no longer necessary to rely upon a colon to delineate the username from the password. This module makes use of this guarantee to enable identities and passwords to contain as many or as few colons as you wish.
 
+Additionally, the OCPP security whitepaper recommends passwords consist purely of random bytes (for maximum entropy), although this violates the Basic Auth RFC which requires all passwords to be TEXT (US-ASCII compatible with no control characters). For this reason, this library will not make any presumptions about the character encoding (or otherwise) of the password provided, and present the password as a `Buffer`.
+
 ```js
 const { RPCClient, RPCServer } = require('ocpp-rpc');
 
@@ -886,8 +888,8 @@ const cli = new RPCClient({
 
 const server = new RPCServer();
 server.auth((accept, reject, handshake) => {
-    console.log(handshake.identity); // "this:is:ok"
-    console.log(handshake.password); // "as:is:this"
+    console.log(handshake.identity);                  // "this:is:ok"
+    console.log(handshake.password.toString('utf8')); // "as:is:this"
     accept();
 });
 
@@ -910,8 +912,8 @@ const server = new RPCServer();
 server.auth((accept, reject, handshake) => {
     const cred = auth.parse(handshake.headers.authorization);
 
-    console.log(cred.name); // "this"
-    console.log(cred.pass); // "is:broken:as:is:this"
+    console.log(cred.name);                  // "this"
+    console.log(cred.pass.toString('utf8')); // "is:broken:as:is:this"
     accept();
 });
 

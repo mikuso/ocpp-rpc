@@ -427,7 +427,7 @@ describe('RPCServer', function(){
             }});
 
             server.auth((accept, reject, handshake) => {
-                accept({pwd: handshake.password});
+                accept({pwd: handshake.password.toString('utf8')});
             });
 
             const cli = new RPCClient({
@@ -470,7 +470,7 @@ describe('RPCServer', function(){
 
             try {
                 await cli.connect();
-                assert.equal(password, recPass);
+                assert.equal(password, recPass.toString('utf8'));
                 assert.equal(identity, recIdent);
 
             } finally {
@@ -498,7 +498,7 @@ describe('RPCServer', function(){
 
             try {
                 await cli.connect();
-                assert.equal(password, recPass);
+                assert.equal(password, recPass.toString('utf8'));
 
             } finally {
                 cli.close();
@@ -580,6 +580,41 @@ describe('RPCServer', function(){
             try {
                 await cli.connect();
                 assert.equal(undefined, recPass);
+
+            } finally {
+                cli.close();
+                close();
+            }
+        });
+        
+        it('should recognise binary passwords', async () => {
+            
+            const password = Buffer.from([
+                0,1,2,3,4,5,6,7,8,9,
+                65,66,67,68,69,
+                251,252,253,254,255,
+            ]);
+
+            const {endpoint, close, server} = await createServer({}, {withClient: cli => {
+                cli.handle('GetPassword', () => {
+                    return cli.session.pwd;
+                });
+            }});
+
+            server.auth((accept, reject, handshake) => {
+                accept({pwd: handshake.password.toString('hex')});
+            });
+
+            const cli = new RPCClient({
+                endpoint,
+                identity: 'X',
+                password,
+            });
+
+            try {
+                await cli.connect();
+                const pass = await cli.call('GetPassword');
+                assert.equal(password.toString('hex'), pass);
 
             } finally {
                 cli.close();
