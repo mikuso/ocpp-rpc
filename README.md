@@ -1,7 +1,7 @@
 # OCPP-RPC
 
 [![Coverage Status](https://coveralls.io/repos/github/mikuso/ocpp-rpc/badge.svg?branch=master)](https://coveralls.io/github/mikuso/ocpp-rpc?branch=master)
-![GitHub Workflow Status](https://img.shields.io/github/workflow/status/mikuso/ocpp-rpc/Test%20Coveralls)
+![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/mikuso/ocpp-rpc/test.yaml?branch=master)
 [![GitHub issues](https://img.shields.io/github/issues/mikuso/ocpp-rpc)](https://github.com/mikuso/ocpp-rpc/issues)
 [![GitHub license](https://img.shields.io/github/license/mikuso/ocpp-rpc)](https://github.com/mikuso/ocpp-rpc/blob/master/LICENSE.md)
 [![GitHub stars](https://img.shields.io/github/stars/mikuso/ocpp-rpc)](https://github.com/mikuso/ocpp-rpc/stargazers)
