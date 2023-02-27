@@ -1,27 +1,106 @@
-const { randomUUID} = require('crypto');
-const { EventEmitter, once } = require('events');
-const { setTimeout } = require('timers/promises');
-const { setTimeout: setTimeoutCb } = require('timers');
-const WebSocket = require('ws');
-const { ExponentialStrategy } = require('backoff');
-const { CONNECTING, OPEN, CLOSING, CLOSED } = WebSocket;
-const { NOREPLY } = require('./symbols');
-const { TimeoutError, UnexpectedHttpResponse, RPCFrameworkError, RPCGenericError, RPCMessageTypeNotSupportedError } = require('./errors');
-const { getErrorPlainObject, createRPCError, getPackageIdent } = require('./util');
-const Queue = require('./queue');
-const EventBuffer = require('./event-buffer');
-const standardValidators = require('./standard-validators');
-const {isValidStatusCode} = require('./ws-util');
+import { randomUUID} from 'node:crypto';
+import { EventEmitter, once } from 'node:events';
+import { setTimeout } from 'node:timers/promises';
+import { setTimeout as setTimeoutCb } from 'node:timers';
+import { WebSocket, CONNECTING, OPEN, CLOSING, CLOSED, ClientOptions } from 'ws';
+import { ExponentialOptions, ExponentialStrategy } from 'backoff';
+import { NOREPLY } from './symbols';
+import { TimeoutError, UnexpectedHttpResponse, RPCFrameworkError, RPCGenericError, RPCMessageTypeNotSupportedError } from './errors';
+import { getErrorPlainObject, createRPCError, getPackageIdent } from './util';
+import Queue from './queue';
+import EventBuffer from './event-buffer';
+import standardValidators from './standard-validators';
+import { Validator } from './validator';
+import { isValidStatusCode } from './ws-util';
+import { IncomingMessage } from 'node:http';
 
-const MSG_CALL = 2;
-const MSG_CALLRESULT = 3;
-const MSG_CALLERROR = 4;
+enum MsgType {
+    CALL = 2,
+    RESULT = 3,
+    ERROR = 4,
+}
 
-class RPCClient extends EventEmitter {
-    constructor(options) {
+interface EventOpenResult {
+    response: IncomingMessage;
+}
+
+interface RPCClientReconfigureOptions {
+    identity?: string;
+}
+
+type BufferLike = string | Buffer;
+
+interface RPCClientOptions extends RPCClientReconfigureOptions {
+    query?: string | string[][] | Record<string, string> | URLSearchParams;
+    identity: string;
+    endpoint: URL | string;
+    password?: Buffer;
+    callTimeoutMs: number;
+    pingIntervalMs: number;
+    deferPingsOnActivity: boolean;
+    wsOpts: ClientOptions;
+    headers: {};
+    protocols: string[];
+    reconnect: boolean;
+    maxReconnects: number;
+    respondWithDetailedErrors: boolean;
+    callConcurrency: number;
+    maxBadMessages: number;
+    strictMode: boolean;
+    strictModeValidators: Validator[];
+    backoff: ExponentialOptions;
+}
+
+enum StateEnum {
+    CONNECTING = WebSocket.CONNECTING,
+    OPEN = WebSocket.OPEN,
+    CLOSING = WebSocket.CLOSING,
+    CLOSED = WebSocket.CLOSED,
+}
+
+interface CloseOptions {
+    code?: number,
+    reason?: string,
+    awaitPending?: boolean,
+    force?: boolean
+}
+
+interface CloseEvent {
+    code?: number,
+    reason?: string,
+}
+
+export class RPCClient extends EventEmitter {
+    private _identity: string;
+    private _wildcardHandler: Function | null;
+    private _handlers: Map<string, Function>;
+    private _state: StateEnum;
+    private _callQueue: Queue;
+    private _ws?: WebSocket;
+    private _wsAbortController?: AbortController;
+    private _keepAliveAbortController?: AbortController;
+    private _pendingPingResponse: boolean;
+    private _lastPingTime: number;
+    private _closePromise?: Promise<CloseEvent>;
+    private _protocolOptions: string[];
+    private _protocol?: string;
+    private _strictProtocols: string[];
+    private _strictValidators: Map<string, Validator>;
+    private _pendingCalls: Map<any, any>;
+    private _pendingResponses: Map<any, any>;
+    private _outboundMsgBuffer: BufferLike[];
+    private _connectedOnce: boolean;
+    private _backoffStrategy?: ExponentialStrategy;
+    private _badMessagesCount: number;
+    private _reconnectAttempt: number;
+    private _options: RPCClientOptions;
+    private _connectionUrl?: URL;
+    private _connectPromise?: Promise<EventOpenResult>;
+
+    constructor(options: RPCClientOptions) {
         super();
 
-        this._identity = undefined;
+        this._identity = options.identity;
         this._wildcardHandler = null;
         this._handlers = new Map();
         this._state = CLOSED;
@@ -36,7 +115,7 @@ class RPCClient extends EventEmitter {
         this._protocolOptions = [];
         this._protocol = undefined;
         this._strictProtocols = [];
-        this._strictValidators = undefined;
+        this._strictValidators = new Map();
 
         this._pendingCalls = new Map();
         this._pendingResponses = new Map();
@@ -49,8 +128,9 @@ class RPCClient extends EventEmitter {
 
         this._options = {
             // defaults
+            identity: '',
             endpoint: 'ws://localhost',
-            password: null,
+            password: undefined,
             callTimeoutMs: 1000*60,
             pingIntervalMs: 1000*30,
             deferPingsOnActivity: false,
@@ -75,19 +155,19 @@ class RPCClient extends EventEmitter {
         this.reconfigure(options || {});
     }
 
-    get identity() {
+    get identity(): string {
         return this._identity;
     }
 
-    get protocol() {
+    get protocol(): string | undefined {
         return this._protocol;
     }
 
-    get state() {
+    get state(): StateEnum {
         return this._state;
     }
 
-    reconfigure(options) {
+    reconfigure(options: RPCClientOptions) {
         const newOpts = Object.assign(this._options, options);
 
         if (!newOpts.identity) {
@@ -143,7 +223,7 @@ class RPCClient extends EventEmitter {
             connUrl += '?' + searchParams.toString();
         }
 
-        this._connectionUrl = connUrl;
+        this._connectionUrl = new URL(connUrl);
 
         if (this._state === CLOSING) {
             throw Error(`Cannot connect while closing`);
@@ -172,8 +252,9 @@ class RPCClient extends EventEmitter {
      * Send a message to the RPCServer. While socket is connecting, the message is queued and send when open.
      * @param {Buffer|String} message - String to send via websocket
      */
-    sendRaw(message) {
-        if ([OPEN, CLOSING].includes(this._state) && this._ws) {
+    sendRaw(message: BufferLike) {
+        if ([StateEnum.OPEN, StateEnum.CLOSING].includes(this._state) && this._ws) {
+            // ^?
             // can send while closing so long as websocket doesn't mind
             this._ws.send(message);
             this.emit('message', {message, outbound: true});
@@ -194,8 +275,8 @@ class RPCClient extends EventEmitter {
      * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/CloseEvent/code CloseEvent codes}
      * @returns Promise<Object> - The CloseEvent (code & reason) for closure. May be different from requested code & reason.
      */
-    async close({code, reason, awaitPending, force} = {}) {
-        if ([CLOSED, CLOSING].includes(this._state)) {
+    async close({code, reason, awaitPending, force}: CloseOptions = {}): Promise<CloseEvent> {
+        if ([StateEnum.CLOSED, StateEnum.CLOSING].includes(this._state)) {
             // no-op
             return this._closePromise;
         }
@@ -301,7 +382,7 @@ class RPCClient extends EventEmitter {
         }
 
         const msgId = randomUUID();
-        const payload = [MSG_CALL, msgId, method, params];
+        const payload = [MsgType.CALL, msgId, method, params];
 
         if (this._strictProtocols.includes(this._protocol)) {
             // perform some strict-mode checks
@@ -509,7 +590,7 @@ class RPCClient extends EventEmitter {
             );
     
             const leadMsgBuffer = new EventBuffer(this._ws, 'message');
-            let upgradeResponse;
+            let upgradeResponse: IncomingMessage;
 
             try {
                 await new Promise((resolve, reject) => {
@@ -520,7 +601,7 @@ class RPCClient extends EventEmitter {
                         err.response = response;
                         reject(err);
                     });
-                    this._ws.once('upgrade', (response) => {
+                    this._ws.once('upgrade', (response: IncomingMessage) => {
                         upgradeResponse = response;
                     });
                     this._ws.once('error', err => reject(err));
@@ -551,7 +632,7 @@ class RPCClient extends EventEmitter {
                     buff.forEach(msg => this.sendRaw(msg));
                 }
 
-                const result = {
+                const result: EventOpenResult = {
                     response: upgradeResponse
                 };
 
@@ -716,7 +797,7 @@ class RPCClient extends EventEmitter {
 
             // Extension fallback mechanism
             // (see section 4.4 of OCPP2.0.1J)
-            if (![MSG_CALL, MSG_CALLERROR, MSG_CALLRESULT].includes(messageTypePart)) {
+            if (![MsgType.CALL, MsgType.ERROR, MsgType.RESULT].includes(messageTypePart)) {
                 throw createRPCError("MessageTypeNotSupported", "Unrecognised message type", {});
             }
 
@@ -729,7 +810,7 @@ class RPCClient extends EventEmitter {
             msgId = msgIdPart;
             
             switch (messageType) {
-                case MSG_CALL:
+                case MsgType.CALL:
                     const [method, params] = more;
                     if (typeof method !== 'string') {
                         throw new RPCFrameworkError("Method must be a string");
@@ -737,12 +818,12 @@ class RPCClient extends EventEmitter {
                     this.emit('call', {outbound: false, payload});
                     this._onCall(msgId, method, params);
                     break;
-                case MSG_CALLRESULT:
+                case MsgType.RESULT:
                     const [result] = more;
                     this.emit('response', {outbound: false, payload});
                     this._onCallResult(msgId, result);
                     break;
-                case MSG_CALLERROR:
+                case MsgType.ERROR:
                     const [errorCode, errorDescription, errorDetails] = more;
                     this.emit('response', {outbound: false, payload});
                     this._onCallError(msgId, errorCode, errorDescription, errorDetails);
@@ -760,7 +841,7 @@ class RPCClient extends EventEmitter {
             let response = null;
             let errorMessage = '';
 
-            if (![MSG_CALLERROR, MSG_CALLRESULT].includes(messageType)) {
+            if (![MsgType.ERROR, MsgType.RESULT].includes(messageType)) {
                 // We shouldn't respond to CALLERROR or CALLRESULT, but we may respond
                 // to any CALL (or other unknown message type) with a CALLERROR
                 // (see section 4.4 of OCPP2.0.1J - Extension fallback mechanism)
@@ -770,7 +851,7 @@ class RPCClient extends EventEmitter {
                 errorMessage = error.message || error.rpcErrorMessage || "";
 
                 response = [
-                    MSG_CALLERROR,
+                    MsgType.ERROR,
                     msgId,
                     error.rpcErrorCode || 'GenericError',
                     errorMessage,
@@ -873,7 +954,7 @@ class RPCClient extends EventEmitter {
                     return; // don't send a reply
                 }
 
-                payload = [MSG_CALLRESULT, msgId, result];
+                payload = [MsgType.RESULT, msgId, result];
 
                 if (this._strictProtocols.includes(this._protocol)) {
                     // perform some strict-mode checks
@@ -916,7 +997,7 @@ class RPCClient extends EventEmitter {
                 }
 
                 payload = [
-                    MSG_CALLERROR,
+                    MsgType.ERROR,
                     msgId,
                     rpcErrorCode,
                     err.message || err.rpcErrorMessage || "",
@@ -996,5 +1077,3 @@ RPCClient.OPEN = OPEN;
 RPCClient.CONNECTING = CONNECTING;
 RPCClient.CLOSING = CLOSING;
 RPCClient.CLOSED = CLOSED;
-
-module.exports = RPCClient;

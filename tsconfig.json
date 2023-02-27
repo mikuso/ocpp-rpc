@@ -1,0 +1,13 @@
+{
+    "compilerOptions": {
+        "outDir": "./dist",
+        "allowJs": true,
+        "target": "es2022",
+        "moduleResolution": "node",
+        "strict": true,
+        "skipLibCheck": true,
+        "noImplicitAny": true,
+        "resolveJsonModule": true
+    },
+    "include": ["./src/**/*"]
+}

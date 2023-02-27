@@ -1,6 +1,6 @@
-const Ajv = require('ajv');
-const addFormats = require('ajv-formats');
-const { createRPCError } = require('./util');
+import Ajv, { AnySchema, AsyncSchema, SchemaObject } from 'ajv';
+import addFormats from 'ajv-formats';
+import { createRPCError } from './util';
 
 const errorCodeLUT = {
     'maximum'                : "FormatViolation",
@@ -22,8 +22,11 @@ const errorCodeLUT = {
     'type'                   : "TypeConstraintViolation",
 };
 
-class Validator {
-    constructor(subprotocol, ajv) {
+export class Validator {
+    private _subprotocol: string;
+    private _ajv: Ajv;
+    
+    constructor(subprotocol: string, ajv: Ajv) {
         this._subprotocol = subprotocol;
         this._ajv = ajv;
     }
@@ -32,7 +35,7 @@ class Validator {
         return this._subprotocol;
     }
 
-    validate(schemaId, params) {
+    validate(schemaId: string, params: {}) {
         const validator = this._ajv.getSchema(schemaId);
 
         if (!validator) {
@@ -54,7 +57,7 @@ class Validator {
     }
 }
 
-function createValidator(subprotocol, json) {
+export function createValidator(subprotocol: string, json: SchemaObject | AsyncSchema | AnySchema[]) {
     const ajv = new Ajv({strictSchema: false});
     addFormats(ajv);
     ajv.addSchema(json);
