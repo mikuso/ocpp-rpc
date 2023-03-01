@@ -1,11 +1,16 @@
+import { ClientRequest, IncomingMessage } from "http";
 
 export class TimeoutError extends Error {};
-export class UnexpectedHttpResponse extends Error {};
+export class UnexpectedHttpResponse extends Error {
+    code?: number;
+    request?: ClientRequest;
+    response?: IncomingMessage;
+};
 
 export class RPCError extends Error {
     rpcErrorMessage = '';
     rpcErrorCode = 'GenericError';
-    details?: string;
+    details?: object;
 }
 export class RPCGenericError extends RPCError {
     rpcErrorMessage = '';

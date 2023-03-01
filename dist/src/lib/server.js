@@ -1,12 +1,20 @@
 import { EventEmitter, once } from 'events';
 import { WebSocketServer, OPEN, CLOSING, CLOSED } from 'ws';
 import { createServer } from 'http';
-import RPCServerClient from './server-client';
+import { RPCServerClient } from './server-client';
 import { abortHandshake, parseSubprotocols } from './ws-util';
 import standardValidators from './standard-validators';
 import { getPackageIdent } from './util';
 import { WebsocketUpgradeError } from './errors';
 export class RPCServer extends EventEmitter {
+    _httpServerAbortControllers;
+    _state;
+    _clients;
+    _pendingUpgrades;
+    _options;
+    _wss;
+    _strictValidators;
+    _authCallback;
     constructor(options) {
         super();
         this._httpServerAbortControllers = new Set();
@@ -35,8 +43,8 @@ export class RPCServer extends EventEmitter {
                 return protocol;
             },
         });
-        this._wss.on('headers', h => h.push(`Server: ${getPackageIdent()}`));
-        this._wss.on('error', err => this.emit('error', err));
+        this._wss.on('headers', (headers) => headers.push(`Server: ${getPackageIdent()}`));
+        this._wss.on('error', (err) => this.emit('error', err));
         this._wss.on('connection', this._onConnection.bind(this));
     }
     reconfigure(options) {
@@ -70,7 +78,7 @@ export class RPCServer extends EventEmitter {
             let resolved = false;
             const ac = new AbortController();
             const { signal } = ac;
-            const url = new URL(request.url, 'http://localhost');
+            const url = new URL(request.url ?? '/', 'http://localhost');
             const pathParts = url.pathname.split('/');
             const identity = decodeURIComponent(pathParts.pop());
             const abortUpgrade = (error) => {
@@ -102,13 +110,13 @@ export class RPCServer extends EventEmitter {
                     throw new WebsocketUpgradeError(400, `Client readyState = '${socket.readyState}'`);
                 }
                 const headers = request.headers;
-                if (headers.upgrade.toLowerCase() !== 'websocket') {
+                if (headers.upgrade?.toLowerCase() !== 'websocket') {
                     throw new WebsocketUpgradeError(400, "Can only upgrade websocket upgrade requests");
                 }
                 const endpoint = pathParts.join('/');
                 const remoteAddress = request.socket.remoteAddress;
-                const protocols = ('sec-websocket-protocol' in request.headers)
-                    ? parseSubprotocols(request.headers['sec-websocket-protocol'])
+                const protocols = request.headers.hasOwnProperty('sec-websocket-protocol')
+                    ? parseSubprotocols(request.headers['sec-websocket-protocol'] ?? '')
                     : new Set();
                 let password;
                 if (headers.authorization) {
@@ -123,7 +131,9 @@ export class RPCServer extends EventEmitter {
                          * but is necessary for allowing truly random binary keys as
                          * recommended by the OCPP security whitepaper.
                          */
-                        const b64up = headers.authorization.match(/^ *(?:[Bb][Aa][Ss][Ii][Cc]) +([A-Za-z0-9._~+/-]+=*) *$/)[1];
+                        const b64up = headers.authorization.match(/^ *(?:[Bb][Aa][Ss][Ii][Cc]) +([A-Za-z0-9._~+/-]+=*) *$/)?.[1];
+                        if (!b64up)
+                            throw Error("Auth b64 not found");
                         const userPassBuffer = Buffer.from(b64up, 'base64');
                         const clientIdentityUserBuffer = Buffer.from(identity + ':');
                         if (clientIdentityUserBuffer.compare(userPassBuffer, 0, clientIdentityUserBuffer.length) === 0) {
@@ -158,7 +168,7 @@ export class RPCServer extends EventEmitter {
                             // pick first subprotocol (preferred by server) that is also supported by the client
                             protocol = (this._options.protocols ?? []).find(p => protocols.has(p));
                         }
-                        else if (protocol !== false && !protocols.has(protocol)) {
+                        else if (protocol != null && !protocols.has(protocol)) {
                             throw new WebsocketUpgradeError(400, `Client doesn't support expected subprotocol`);
                         }
                         // cache auth results for connection creation
@@ -167,7 +177,7 @@ export class RPCServer extends EventEmitter {
                             protocol,
                             handshake
                         });
-                        this._wss.handleUpgrade(request, socket, head, ws => {
+                        this._wss.handleUpgrade(request, socket, head, (ws) => {
                             this._wss.emit('connection', ws, request);
                         });
                     }
@@ -187,8 +197,8 @@ export class RPCServer extends EventEmitter {
                 socket.once('close', () => {
                     reject(400, `Client connection closed before upgrade complete`);
                 });
-                if (this.authCallback) {
-                    await this.authCallback(accept, reject, handshake, signal);
+                if (this._authCallback) {
+                    await this._authCallback(accept, reject, handshake, signal);
                 }
                 else {
                     accept();
@@ -231,7 +241,7 @@ export class RPCServer extends EventEmitter {
         }
     }
     auth(cb) {
-        this.authCallback = cb;
+        this._authCallback = cb;
     }
     async listen(port, host, options = {}) {
         const ac = new AbortController();

@@ -1,25 +1,6 @@
 import Ajv from 'ajv';
 import addFormats from 'ajv-formats';
-import { createRPCError } from './util';
-const errorCodeLUT = {
-    'maximum': "FormatViolation",
-    'minimum': "FormatViolation",
-    'maxLength': "FormatViolation",
-    'minLength': "FormatViolation",
-    'exclusiveMaximum': "OccurenceConstraintViolation",
-    'exclusiveMinimum': "OccurenceConstraintViolation",
-    'multipleOf': "OccurenceConstraintViolation",
-    'maxItems': "OccurenceConstraintViolation",
-    'minItems': "OccurenceConstraintViolation",
-    'maxProperties': "OccurenceConstraintViolation",
-    'minProperties': "OccurenceConstraintViolation",
-    'additionalItems': "OccurenceConstraintViolation",
-    'required': "OccurenceConstraintViolation",
-    'pattern': "PropertyConstraintViolation",
-    'propertyNames': "PropertyConstraintViolation",
-    'additionalProperties': "PropertyConstraintViolation",
-    'type': "TypeConstraintViolation",
-};
+import { createRPCError, translateErrorToOCPPCode } from './util';
 export class Validator {
     _subprotocol;
     _ajv;
@@ -36,9 +17,9 @@ export class Validator {
             throw createRPCError("ProtocolError", `Schema '${schemaId}' is missing from subprotocol schema '${this._subprotocol}'`);
         }
         const res = validator(params);
-        if (!res && validator.errors?.length > 0) {
-            const [first] = validator.errors;
-            const rpcErrorCode = errorCodeLUT[first.keyword] ?? "FormatViolation";
+        if (!res && validator.errors?.length) {
+            const first = validator.errors[0];
+            const rpcErrorCode = translateErrorToOCPPCode(first.keyword);
             throw createRPCError(rpcErrorCode, this._ajv.errorsText(validator.errors), {
                 errors: validator.errors,
                 data: params,

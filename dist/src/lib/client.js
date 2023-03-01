@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { EventEmitter, once } from 'node:events';
 import { setTimeout } from 'node:timers/promises';
 import { setTimeout as setTimeoutCb } from 'node:timers';
-import { WebSocket, CONNECTING, OPEN, CLOSING, CLOSED } from 'ws';
+import { WebSocket } from 'ws';
 import { ExponentialStrategy } from 'backoff';
 import { NOREPLY } from './symbols';
 import { TimeoutError, UnexpectedHttpResponse, RPCFrameworkError, RPCGenericError, RPCMessageTypeNotSupportedError } from './errors';
@@ -13,16 +13,17 @@ import standardValidators from './standard-validators';
 import { isValidStatusCode } from './ws-util';
 var MsgType;
 (function (MsgType) {
+    MsgType[MsgType["UNKNOWN"] = -1] = "UNKNOWN";
     MsgType[MsgType["CALL"] = 2] = "CALL";
     MsgType[MsgType["RESULT"] = 3] = "RESULT";
     MsgType[MsgType["ERROR"] = 4] = "ERROR";
 })(MsgType || (MsgType = {}));
-var StateEnum;
+export var StateEnum;
 (function (StateEnum) {
-    StateEnum[StateEnum["CONNECTING"] = 1] = "CONNECTING";
-    StateEnum[StateEnum["OPEN"] = 2] = "OPEN";
-    StateEnum[StateEnum["CLOSING"] = 3] = "CLOSING";
-    StateEnum[StateEnum["CLOSED"] = 4] = "CLOSED";
+    StateEnum[StateEnum["CONNECTING"] = WebSocket.CONNECTING] = "CONNECTING";
+    StateEnum[StateEnum["OPEN"] = WebSocket.OPEN] = "OPEN";
+    StateEnum[StateEnum["CLOSING"] = WebSocket.CLOSING] = "CLOSING";
+    StateEnum[StateEnum["CLOSED"] = WebSocket.CLOSED] = "CLOSED";
 })(StateEnum || (StateEnum = {}));
 export class RPCClient extends EventEmitter {
     _identity;
@@ -48,13 +49,17 @@ export class RPCClient extends EventEmitter {
     _badMessagesCount;
     _reconnectAttempt;
     _options;
+    _connectionUrl;
+    _connectPromise;
+    _nextPingTimeout;
     constructor(options) {
         super();
-        this._identity = undefined;
-        this._wildcardHandler = null;
+        this._identity = options.identity;
+        this._wildcardHandler = undefined;
         this._handlers = new Map();
-        this._state = CLOSED;
+        this._state = StateEnum.CLOSED;
         this._callQueue = new Queue();
+        this._connectionUrl = new URL('');
         this._ws = undefined;
         this._wsAbortController = undefined;
         this._keepAliveAbortController = undefined;
@@ -64,16 +69,16 @@ export class RPCClient extends EventEmitter {
         this._protocolOptions = [];
         this._protocol = undefined;
         this._strictProtocols = [];
-        this._strictValidators = undefined;
+        this._strictValidators = new Map();
         this._pendingCalls = new Map();
         this._pendingResponses = new Map();
         this._outboundMsgBuffer = [];
         this._connectedOnce = false;
-        this._backoffStrategy = undefined;
         this._badMessagesCount = 0;
         this._reconnectAttempt = 0;
         this._options = {
             // defaults
+            identity: '',
             endpoint: 'ws://localhost',
             password: undefined,
             callTimeoutMs: 1000 * 60,
@@ -153,37 +158,37 @@ export class RPCClient extends EventEmitter {
             const searchParams = new URLSearchParams(this._options.query);
             connUrl += '?' + searchParams.toString();
         }
-        this._connectionUrl = connUrl;
-        if (this._state === CLOSING) {
+        this._connectionUrl = new URL(connUrl);
+        if (this._state === StateEnum.CLOSED) {
+            try {
+                return await this._beginConnect();
+            }
+            catch (err) {
+                this._state = StateEnum.CLOSED;
+                this.emit('close', { code: 1006, reason: "Abnormal Closure" });
+                throw err;
+            }
+        }
+        else if (this._state === StateEnum.CLOSING) {
             throw Error(`Cannot connect while closing`);
         }
-        if (this._state === OPEN) {
+        else if ([StateEnum.OPEN, StateEnum.CONNECTING].includes(this._state)) {
             // no-op
-            return;
-        }
-        if (this._state === CONNECTING) {
             return this._connectPromise;
         }
-        try {
-            return await this._beginConnect();
-        }
-        catch (err) {
-            this._state = CLOSED;
-            this.emit('close', { code: 1006, reason: "Abnormal Closure" });
-            throw err;
-        }
+        throw Error(`Client in unexpected state`);
     }
     /**
      * Send a message to the RPCServer. While socket is connecting, the message is queued and send when open.
      * @param {Buffer|String} message - String to send via websocket
      */
     sendRaw(message) {
-        if ([OPEN, CLOSING].includes(this._state) && this._ws) {
+        if ([StateEnum.OPEN, StateEnum.CLOSING].includes(this._state) && this._ws) {
             // can send while closing so long as websocket doesn't mind
             this._ws.send(message);
             this.emit('message', { message, outbound: true });
         }
-        else if (this._state === CONNECTING) {
+        else if (this._state === StateEnum.CONNECTING) {
             this._outboundMsgBuffer.push(message);
         }
         else {
@@ -201,12 +206,16 @@ export class RPCClient extends EventEmitter {
      * @returns Promise<Object> - The CloseEvent (code & reason) for closure. May be different from requested code & reason.
      */
     async close({ code, reason, awaitPending, force } = {}) {
-        if ([CLOSED, CLOSING].includes(this._state)) {
+        const defaultCloseEvent = { code: 1000, reason: '' };
+        if ([StateEnum.CLOSED, StateEnum.CLOSING].includes(this._state)) {
             // no-op
-            return this._closePromise;
+            return this._closePromise ?? defaultCloseEvent;
         }
-        if (this._state === OPEN) {
+        if (this._state === StateEnum.OPEN) {
             this._closePromise = (async () => {
+                if (!this._ws) {
+                    return defaultCloseEvent;
+                }
                 if (force || !awaitPending) {
                     // reject pending calls
                     this._rejectPendingCalls("Client going away");
@@ -228,7 +237,7 @@ export class RPCClient extends EventEmitter {
                 }
                 return { code: codeRes, reason: reasonRes };
             })();
-            this._state = CLOSING;
+            this._state = StateEnum.CLOSING;
             this._connectedOnce = false;
             this.emit('closing');
             return this._closePromise;
@@ -238,23 +247,19 @@ export class RPCClient extends EventEmitter {
                 { code, reason } :
                 { code: 1001, reason: "Connection aborted" };
             this._wsAbortController.abort();
-            this._state = CLOSED;
+            this._state = StateEnum.CLOSED;
             this._connectedOnce = false;
             this.emit('close', result);
             return result;
         }
+        return defaultCloseEvent;
     }
-    /**
-     *
-     * @param {string} [method] - The name of the RPC method to handle.
-     * @param {Function} handler - A function that can handle incoming calls for this method.
-     */
-    handle(method, handler) {
-        if (method instanceof Function && !handler) {
-            this._wildcardHandler = method;
+    handle(methodOrHandler, handler) {
+        if (typeof methodOrHandler === 'string' && handler instanceof Function) {
+            this._handlers.set(methodOrHandler, handler);
         }
-        else {
-            this._handlers.set(method, handler);
+        else if (methodOrHandler instanceof Function) {
+            this._wildcardHandler = methodOrHandler;
         }
     }
     /**
@@ -263,14 +268,14 @@ export class RPCClient extends EventEmitter {
      */
     removeHandler(method) {
         if (method == null) {
-            this._wildcardHandler = null;
+            this._wildcardHandler = undefined;
         }
         else {
             this._handlers.delete(method);
         }
     }
     removeAllHandlers() {
-        this._wildcardHandler = null;
+        this._wildcardHandler = undefined;
         this._handlers.clear();
     }
     /**
@@ -288,12 +293,12 @@ export class RPCClient extends EventEmitter {
     }
     async _call(method, params, options = {}) {
         const timeoutMs = options.callTimeoutMs ?? this._options.callTimeoutMs;
-        if ([CLOSED, CLOSING].includes(this._state)) {
+        if ([StateEnum.CLOSED, StateEnum.CLOSING].includes(this._state)) {
             throw Error(`Cannot make call while socket not open`);
         }
         const msgId = randomUUID();
         const payload = [MsgType.CALL, msgId, method, params];
-        if (this._strictProtocols.includes(this._protocol)) {
+        if (typeof this._protocol === 'string' && this._strictProtocols.includes(this._protocol)) {
             // perform some strict-mode checks
             const validator = this._strictValidators.get(this._protocol);
             try {
@@ -322,13 +327,13 @@ export class RPCClient extends EventEmitter {
                 this._pendingCalls.delete(msgId);
             };
             pendingCall.abort = (reason) => {
-                const err = Error(reason);
+                const err = Error(reason ?? "Call Aborted");
                 err.name = "AbortError";
-                pendingCall.reject(err);
+                pendingCall.reject?.(err);
             };
             if (options.signal) {
                 once(options.signal, 'abort').then(() => {
-                    pendingCall.abort(options.signal.reason);
+                    pendingCall.abort?.(options.signal?.reason);
                 });
             }
             pendingCall.promise = new Promise((resolve, reject) => {
@@ -344,7 +349,7 @@ export class RPCClient extends EventEmitter {
             if (timeoutMs && timeoutMs > 0 && timeoutMs < Infinity) {
                 const timeoutError = new TimeoutError("Call timeout");
                 pendingCall.timeout = setTimeout(timeoutMs, null, { signal: timeoutAc.signal }).then(() => {
-                    pendingCall.reject(timeoutError);
+                    pendingCall.reject?.(timeoutError);
                 }).catch(err => { });
             }
             this._pendingCalls.set(msgId, pendingCall);
@@ -427,15 +432,15 @@ export class RPCClient extends EventEmitter {
         this._rejectPendingCalls("Client disconnected");
         this._keepAliveAbortController?.abort();
         this.emit('disconnect', { code, reason });
-        if (this._state === CLOSED) {
+        if (this._state === StateEnum.CLOSED) {
             // nothing to do here
             return;
         }
-        if (this._state !== CLOSING && this._options.reconnect) {
+        if (this._state !== StateEnum.CLOSING && this._options.reconnect) {
             this._tryReconnect();
         }
         else {
-            this._state = CLOSED;
+            this._state = StateEnum.CLOSED;
             this.emit('close', { code, reason });
         }
     }
@@ -465,6 +470,9 @@ export class RPCClient extends EventEmitter {
             let upgradeResponse;
             try {
                 await new Promise((resolve, reject) => {
+                    if (!this._ws) {
+                        return reject(Error("WebSocket missing"));
+                    }
                     this._ws.once('unexpected-response', (request, response) => {
                         const err = new UnexpectedHttpResponse(response.statusMessage);
                         err.code = response.statusCode;
@@ -476,7 +484,7 @@ export class RPCClient extends EventEmitter {
                         upgradeResponse = response;
                     });
                     this._ws.once('error', err => reject(err));
-                    this._ws.once('open', () => resolve());
+                    this._ws.once('open', () => resolve(null));
                 });
                 // record which protocol was selected
                 if (this._protocol === undefined) {
@@ -487,7 +495,7 @@ export class RPCClient extends EventEmitter {
                 this._protocolOptions = this._protocol ? [this._protocol] : [];
                 this._reconnectAttempt = 0;
                 this._backoffStrategy.reset();
-                this._state = OPEN;
+                this._state = StateEnum.OPEN;
                 this._connectedOnce = true;
                 this._pendingPingResponse = false;
                 this._attachWebsocket(this._ws, leadMsgBuffer);
@@ -498,20 +506,17 @@ export class RPCClient extends EventEmitter {
                     buff.forEach(msg => this.sendRaw(msg));
                 }
                 const result = {
-                    response: upgradeResponse
+                    response: upgradeResponse,
                 };
                 this.emit('open', result);
                 return result;
             }
             catch (err) {
                 this._ws.terminate();
-                if (upgradeResponse) {
-                    err.upgrade = upgradeResponse;
-                }
                 throw err;
             }
         })();
-        this._state = CONNECTING;
+        this._state = StateEnum.CONNECTING;
         this.emit('connecting', { protocols: this._protocolOptions });
         return this._connectPromise;
     }
@@ -530,7 +535,7 @@ export class RPCClient extends EventEmitter {
         }, this._options.pingIntervalMs);
         this._nextPingTimeout = nextPingTimeout;
         try {
-            if (this._state !== OPEN) {
+            if (this._state !== StateEnum.OPEN) {
                 // don't start pinging if connection not open
                 return;
             }
@@ -543,7 +548,7 @@ export class RPCClient extends EventEmitter {
             while (true) {
                 await once(timerEmitter, 'next', { signal: this._keepAliveAbortController.signal }),
                     this._keepAliveAbortController.signal.throwIfAborted();
-                if (this._state !== OPEN) {
+                if (this._state !== StateEnum.OPEN) {
                     // keepalive no longer required
                     break;
                 }
@@ -553,7 +558,7 @@ export class RPCClient extends EventEmitter {
                 }
                 this._lastPingTime = Date.now();
                 this._pendingPingResponse = true;
-                this._ws.ping();
+                this._ws?.ping();
                 nextPingTimeout.refresh();
             }
         }
@@ -561,7 +566,7 @@ export class RPCClient extends EventEmitter {
             // console.log('keepalive failed', err);
             if (err.name !== 'AbortError') {
                 // throws on ws.ping() error
-                this._ws.terminate();
+                this._ws?.terminate();
             }
         }
         finally {
@@ -576,9 +581,9 @@ export class RPCClient extends EventEmitter {
         }
         else {
             try {
-                this._state = CONNECTING;
+                this._state = StateEnum.CONNECTING;
                 const delay = this._backoffStrategy.next();
-                await setTimeout(delay, null, { signal: this._wsAbortController.signal });
+                await setTimeout(delay, null, { signal: this._wsAbortController?.signal });
                 await this._beginConnect().catch(async (err) => {
                     const intolerableErrors = [
                         'Maximum redirects exceeded',
@@ -613,7 +618,7 @@ export class RPCClient extends EventEmitter {
         }
         this.emit('message', { message, outbound: false });
         let msgId = '-1';
-        let messageType;
+        let messageType = MsgType.UNKNOWN;
         try {
             let payload;
             try {
@@ -671,13 +676,13 @@ export class RPCClient extends EventEmitter {
                 // We shouldn't respond to CALLERROR or CALLRESULT, but we may respond
                 // to any CALL (or other unknown message type) with a CALLERROR
                 // (see section 4.4 of OCPP2.0.1J - Extension fallback mechanism)
-                const details = error.details
+                const details = error?.details
                     || (this._options.respondWithDetailedErrors ? getErrorPlainObject(error) : {});
                 errorMessage = error.message || error.rpcErrorMessage || "";
                 response = [
                     MsgType.ERROR,
                     msgId,
-                    error.rpcErrorCode || 'GenericError',
+                    error?.rpcErrorCode || 'GenericError',
                     errorMessage,
                     details ?? {},
                 ];
@@ -689,7 +694,7 @@ export class RPCClient extends EventEmitter {
                     reason: (error instanceof RPCGenericError) ? errorMessage : "Protocol error"
                 });
             }
-            else if (response && this._state === OPEN) {
+            else if (response && this._state === StateEnum.OPEN) {
                 this.sendRaw(JSON.stringify(response));
             }
         }
@@ -698,7 +703,7 @@ export class RPCClient extends EventEmitter {
         // NOTE: This method must not throw or else it risks sending 2 replies
         try {
             let payload;
-            if (this._state !== OPEN) {
+            if (this._state !== StateEnum.OPEN) {
                 throw Error("Call received while client state not OPEN");
             }
             try {
@@ -712,7 +717,7 @@ export class RPCClient extends EventEmitter {
                 if (!handler) {
                     throw createRPCError("NotImplemented", `Unable to handle '${method}' calls`, {});
                 }
-                if (this._strictProtocols.includes(this._protocol)) {
+                if (this._protocol && this._strictProtocols.includes(this._protocol)) {
                     // perform some strict-mode checks
                     const validator = this._strictValidators.get(this._protocol);
                     try {
@@ -768,7 +773,7 @@ export class RPCClient extends EventEmitter {
                     return; // don't send a reply
                 }
                 payload = [MsgType.RESULT, msgId, result];
-                if (this._strictProtocols.includes(this._protocol)) {
+                if (this._protocol && this._strictProtocols.includes(this._protocol)) {
                     // perform some strict-mode checks
                     const validator = this._strictValidators.get(this._protocol);
                     try {
@@ -790,7 +795,7 @@ export class RPCClient extends EventEmitter {
             }
             catch (err) {
                 // catch here to prevent this error from being considered a 'badMessage'.
-                const details = err.details
+                const details = err?.details
                     || (this._options.respondWithDetailedErrors ? getErrorPlainObject(err) : {});
                 let rpcErrorCode = err.rpcErrorCode || 'GenericError';
                 if (this.protocol === 'ocpp1.6') {
@@ -833,7 +838,7 @@ export class RPCClient extends EventEmitter {
     _onCallResult(msgId, result) {
         const pendingCall = this._pendingCalls.get(msgId);
         if (pendingCall) {
-            if (this._strictProtocols.includes(this._protocol)) {
+            if (this._protocol && this._strictProtocols.includes(this._protocol)) {
                 // perform some strict-mode checks
                 const validator = this._strictValidators.get(this._protocol);
                 try {
@@ -877,7 +882,3 @@ export class RPCClient extends EventEmitter {
         }
     }
 }
-RPCClient.OPEN = OPEN;
-RPCClient.CONNECTING = CONNECTING;
-RPCClient.CLOSING = CLOSING;
-RPCClient.CLOSED = CLOSED;

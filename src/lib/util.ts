@@ -16,24 +16,7 @@ import {
 } from './errors';
 import { name, version } from '../../package.json';
 
-const rpcErrorLUT = {
-    'GenericError'                  : RPCGenericError,
-    'NotImplemented'                : RPCNotImplementedError,
-    'NotSupported'                  : RPCNotSupportedError,
-    'InternalError'                 : RPCInternalError,
-    'ProtocolError'                 : RPCProtocolError,
-    'SecurityError'                 : RPCSecurityError,
-    'FormationViolation'            : RPCFormationViolationError,
-    'FormatViolation'               : RPCFormatViolationError,
-    'PropertyConstraintViolation'   : RPCPropertyConstraintViolationError,
-    'OccurenceConstraintViolation'  : RPCOccurenceConstraintViolationError,
-    'OccurrenceConstraintViolation' : RPCOccurrenceConstraintViolationError,
-    'TypeConstraintViolation'       : RPCTypeConstraintViolationError,
-    'MessageTypeNotSupported'       : RPCMessageTypeNotSupportedError,
-    'RpcFrameworkError'             : RPCFrameworkError,
-};
-
-type OCPP16ErrorType = 'GenericError' |
+export type OCPPErrorType = 'GenericError' |
     'NotImplemented' |
     'NotSupported' |
     'InternalError' |
@@ -52,7 +35,56 @@ export function getPackageIdent() {
     return `${name}/${version} (${process.platform})`;
 }
 
-export function getErrorPlainObject(err: Error) {
+export function translateErrorToOCPPCode(keyword: string): OCPPErrorType {
+    switch (keyword) {
+        default:
+        case 'maximum':
+        case 'minimum':
+        case 'maxLength':
+        case 'minLength':
+            return "FormatViolation";
+        case 'exclusiveMaximum':
+        case 'exclusiveMinimum':
+        case 'multipleOf':
+        case 'maxItems':
+        case 'minItems':
+        case 'maxProperties':
+        case 'minProperties':
+        case 'additionalItems':
+        case 'required':
+            return "OccurenceConstraintViolation";
+        case 'pattern':
+        case 'propertyNames':
+        case 'additionalProperties':
+            return "PropertyConstraintViolation";
+        case 'type':
+            return "TypeConstraintViolation";
+    }
+}
+
+const rpcErrorLUT = {
+    'GenericError'                  : RPCGenericError,
+    'NotImplemented'                : RPCNotImplementedError,
+    'NotSupported'                  : RPCNotSupportedError,
+    'InternalError'                 : RPCInternalError,
+    'ProtocolError'                 : RPCProtocolError,
+    'SecurityError'                 : RPCSecurityError,
+    'FormationViolation'            : RPCFormationViolationError,
+    'FormatViolation'               : RPCFormatViolationError,
+    'PropertyConstraintViolation'   : RPCPropertyConstraintViolationError,
+    'OccurenceConstraintViolation'  : RPCOccurenceConstraintViolationError,
+    'OccurrenceConstraintViolation' : RPCOccurrenceConstraintViolationError,
+    'TypeConstraintViolation'       : RPCTypeConstraintViolationError,
+    'MessageTypeNotSupported'       : RPCMessageTypeNotSupportedError,
+    'RpcFrameworkError'             : RPCFrameworkError,
+};
+
+interface ErrorPlainObject {
+    stack: string;
+    message: string;
+}
+
+export function getErrorPlainObject(err: Error): ErrorPlainObject {
     try {
 
         // (nasty hack)
@@ -63,13 +95,13 @@ export function getErrorPlainObject(err: Error) {
         // cannot serialise into JSON.
         // return just stack and message instead
         return {
-            stack: err.stack,
-            message: err.message,
+            stack: err?.stack ?? '',
+            message: err?.message ?? '',
         };
     }
 }
 
-export function createRPCError(type: OCPP16ErrorType, message: string, details: string) {
+export function createRPCError(type: OCPPErrorType, message?: string, details?: object) {
     const E = rpcErrorLUT[type] ?? RPCGenericError;
     const err = new E(message ?? '');
     err.details = details ?? {};

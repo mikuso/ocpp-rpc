@@ -2,6 +2,9 @@ export class TimeoutError extends Error {
 }
 ;
 export class UnexpectedHttpResponse extends Error {
+    code;
+    request;
+    response;
 }
 ;
 export class RPCError extends Error {

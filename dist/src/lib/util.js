@@ -1,5 +1,34 @@
 import { RPCGenericError, RPCNotImplementedError, RPCNotSupportedError, RPCInternalError, RPCProtocolError, RPCSecurityError, RPCFormationViolationError, RPCFormatViolationError, RPCPropertyConstraintViolationError, RPCOccurenceConstraintViolationError, RPCOccurrenceConstraintViolationError, RPCTypeConstraintViolationError, RPCMessageTypeNotSupportedError, RPCFrameworkError, } from './errors';
 import { name, version } from '../../package.json';
+export function getPackageIdent() {
+    return `${name}/${version} (${process.platform})`;
+}
+export function translateErrorToOCPPCode(keyword) {
+    switch (keyword) {
+        default:
+        case 'maximum':
+        case 'minimum':
+        case 'maxLength':
+        case 'minLength':
+            return "FormatViolation";
+        case 'exclusiveMaximum':
+        case 'exclusiveMinimum':
+        case 'multipleOf':
+        case 'maxItems':
+        case 'minItems':
+        case 'maxProperties':
+        case 'minProperties':
+        case 'additionalItems':
+        case 'required':
+            return "OccurenceConstraintViolation";
+        case 'pattern':
+        case 'propertyNames':
+        case 'additionalProperties':
+            return "PropertyConstraintViolation";
+        case 'type':
+            return "TypeConstraintViolation";
+    }
+}
 const rpcErrorLUT = {
     'GenericError': RPCGenericError,
     'NotImplemented': RPCNotImplementedError,
@@ -16,9 +45,6 @@ const rpcErrorLUT = {
     'MessageTypeNotSupported': RPCMessageTypeNotSupportedError,
     'RpcFrameworkError': RPCFrameworkError,
 };
-export function getPackageIdent() {
-    return `${name}/${version} (${process.platform})`;
-}
 export function getErrorPlainObject(err) {
     try {
         // (nasty hack)
@@ -29,8 +55,8 @@ export function getErrorPlainObject(err) {
         // cannot serialise into JSON.
         // return just stack and message instead
         return {
-            stack: err.stack,
-            message: err.message,
+            stack: err?.stack ?? '',
+            message: err?.message ?? '',
         };
     }
 }

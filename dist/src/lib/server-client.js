@@ -1,12 +1,12 @@
-"use strict";
-const RPCClient = require("./client");
-const { OPEN } = require("ws");
-class RPCServerClient extends RPCClient {
+import { RPCClient, StateEnum } from "./client";
+export class RPCServerClient extends RPCClient {
+    _session;
+    _handshake;
     constructor(options, { ws, handshake, session }) {
         super(options);
         this._session = session;
         this._handshake = handshake;
-        this._state = OPEN;
+        this._state = StateEnum.OPEN;
         this._identity = this._options.identity;
         this._ws = ws;
         this._protocol = ws.protocol;
@@ -22,4 +22,3 @@ class RPCServerClient extends RPCClient {
         throw Error("Cannot connect from server to client");
     }
 }
-module.exports = RPCServerClient;
