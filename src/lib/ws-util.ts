@@ -59,8 +59,8 @@ const tokenChars = [
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0 // 112 - 127
 ];
 
-export function parseSubprotocols(header: string) {
-    const protocols = new Set();
+export function parseSubprotocols(header: string): Set<string> {
+    const protocols = new Set<string>();
     let start = -1;
     let end = -1;
     let i = 0;

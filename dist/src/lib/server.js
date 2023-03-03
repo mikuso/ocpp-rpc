@@ -1,11 +1,13 @@
 import { EventEmitter, once } from 'events';
-import { WebSocketServer, OPEN, CLOSING, CLOSED } from 'ws';
-import { createServer } from 'http';
+import { WebSocketServer } from 'ws';
+import { createServer } from 'node:http';
 import { RPCServerClient } from './server-client';
 import { abortHandshake, parseSubprotocols } from './ws-util';
 import standardValidators from './standard-validators';
 import { getPackageIdent } from './util';
 import { WebsocketUpgradeError } from './errors';
+import { StateEnum } from './baseclient';
+;
 export class RPCServer extends EventEmitter {
     _httpServerAbortControllers;
     _state;
@@ -18,7 +20,7 @@ export class RPCServer extends EventEmitter {
     constructor(options) {
         super();
         this._httpServerAbortControllers = new Set();
-        this._state = OPEN;
+        this._state = StateEnum.OPEN;
         this._clients = new Set();
         this._pendingUpgrades = new WeakMap();
         this._options = {
@@ -39,8 +41,8 @@ export class RPCServer extends EventEmitter {
             ...this._options.wssOptions,
             noServer: true,
             handleProtocols: (protocols, request) => {
-                const { protocol } = this._pendingUpgrades.get(request);
-                return protocol;
+                const pendingUpgrade = this._pendingUpgrades.get(request);
+                return pendingUpgrade?.protocol ?? false;
             },
         });
         this._wss.on('headers', (headers) => headers.push(`Server: ${getPackageIdent()}`));
@@ -103,7 +105,7 @@ export class RPCServer extends EventEmitter {
                 abortUpgrade(err);
             });
             try {
-                if (this._state !== OPEN) {
+                if (this._state !== StateEnum.OPEN) {
                     throw new WebsocketUpgradeError(500, "Server not open");
                 }
                 if (socket.readyState !== 'open') {
@@ -114,7 +116,7 @@ export class RPCServer extends EventEmitter {
                     throw new WebsocketUpgradeError(400, "Can only upgrade websocket upgrade requests");
                 }
                 const endpoint = pathParts.join('/');
-                const remoteAddress = request.socket.remoteAddress;
+                const remoteAddress = request.socket.remoteAddress ?? '';
                 const protocols = request.headers.hasOwnProperty('sec-websocket-protocol')
                     ? parseSubprotocols(request.headers['sec-websocket-protocol'] ?? '')
                     : new Set();
@@ -164,7 +166,7 @@ export class RPCServer extends EventEmitter {
                         if (socket.readyState !== 'open') {
                             throw new WebsocketUpgradeError(400, `Client readyState = '${socket.readyState}'`);
                         }
-                        if (protocol === undefined) {
+                        if (protocol == null) {
                             // pick first subprotocol (preferred by server) that is also supported by the client
                             protocol = (this._options.protocols ?? []).find(p => protocols.has(p));
                         }
@@ -211,13 +213,16 @@ export class RPCServer extends EventEmitter {
     }
     async _onConnection(websocket, request) {
         try {
-            if (this._state !== OPEN) {
+            if (this._state !== StateEnum.OPEN) {
                 throw Error("Server is no longer open");
             }
-            const { handshake, session } = this._pendingUpgrades.get(request);
+            const pendingUpgrade = this._pendingUpgrades.get(request);
+            if (!pendingUpgrade) {
+                throw Error("Upgrade is not pending");
+            }
+            const { handshake, session } = pendingUpgrade;
             const client = new RPCServerClient({
                 identity: handshake.identity,
-                reconnect: false,
                 callTimeoutMs: this._options.callTimeoutMs,
                 pingIntervalMs: this._options.pingIntervalMs,
                 deferPingsOnActivity: this._options.deferPingsOnActivity,
@@ -227,6 +232,9 @@ export class RPCServer extends EventEmitter {
                 strictModeValidators: this._options.strictModeValidators,
                 maxBadMessages: this._options.maxBadMessages,
                 protocols: this._options.protocols,
+                headers: request.headers,
+                reconnect: false,
+                endpoint: request.url,
             }, {
                 ws: websocket,
                 session,
@@ -237,7 +245,7 @@ export class RPCServer extends EventEmitter {
             this.emit('client', client);
         }
         catch (err) {
-            websocket.close(err.statusCode || 1000, err.message);
+            websocket.close(err.statusCode ?? 1000, err.message);
         }
     }
     auth(cb) {
@@ -246,9 +254,10 @@ export class RPCServer extends EventEmitter {
     async listen(port, host, options = {}) {
         const ac = new AbortController();
         this._httpServerAbortControllers.add(ac);
-        if (options.signal) {
-            once(options.signal, 'abort').then(() => {
-                ac.abort(options.signal.reason);
+        const signal = options.signal;
+        if (signal) {
+            once(signal, 'abort').then(() => {
+                ac.abort(signal.reason);
             });
         }
         const httpServer = createServer({
@@ -260,26 +269,32 @@ export class RPCServer extends EventEmitter {
         });
         httpServer.on('upgrade', this.handleUpgrade);
         httpServer.once('close', () => this._httpServerAbortControllers.delete(ac));
-        await new Promise((resolve, reject) => {
-            httpServer.listen({
-                port,
-                host,
-                signal: ac.signal,
-            }, err => err ? reject(err) : resolve());
+        httpServer.listen({
+            port,
+            host,
+            signal: ac.signal,
         });
+        const complete = await Promise.race([
+            once(httpServer, 'listen', { signal: ac.signal }),
+            once(httpServer, 'error', { signal: ac.signal }),
+            once(ac.signal, 'abort')
+        ]);
+        if (complete instanceof Error) {
+            throw complete;
+        }
         return httpServer;
     }
     async close({ code, reason, awaitPending, force } = {}) {
-        if (this._state === OPEN) {
-            this._state = CLOSING;
+        if (this._state === StateEnum.OPEN) {
+            this._state = StateEnum.CLOSING;
             this.emit('closing');
             code = code ?? 1001;
             await Array.from(this._clients).map(cli => cli.close({ code, reason, awaitPending, force }));
             await new Promise((resolve, reject) => {
-                this._wss.close(err => err ? reject(err) : resolve());
+                this._wss.close((err) => err ? reject(err) : resolve());
                 this._httpServerAbortControllers.forEach(ac => ac.abort("Closing"));
             });
-            this._state = CLOSED;
+            this._state = StateEnum.CLOSED;
             this.emit('close');
         }
     }

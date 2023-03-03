@@ -1,5 +1,6 @@
-import { RPCClient, StateEnum } from "./client";
-export class RPCServerClient extends RPCClient {
+import { RPCBaseClient } from "./baseclient";
+import { StateEnum } from "./client";
+export class RPCServerClient extends RPCBaseClient {
     _session;
     _handshake;
     constructor(options, { ws, handshake, session }) {

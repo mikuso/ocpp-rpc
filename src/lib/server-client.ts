@@ -1,5 +1,6 @@
 import { WebSocket } from "ws";
-import { EventOpenResult, RPCClient, RPCClientOptions, StateEnum } from "./client";
+import { RPCBaseClient, RPCBaseClientOptions } from "./baseclient";
+import { EventOpenResult, StateEnum } from "./client";
 import { RPCServerClientHandshake } from "./server";
 
 export interface RPCServerClientDependencies {
@@ -8,26 +9,11 @@ export interface RPCServerClientDependencies {
     session: any;
 }
 
-export interface RPCServerClientOptions extends RPCClientOptions {
-    identity: string;
-    reconnect: any;
-    callTimeoutMs: any;
-    pingIntervalMs: any;
-    deferPingsOnActivity: any;
-    respondWithDetailedErrors: any;
-    callConcurrency: any;
-    strictMode: any;
-    strictModeValidators: any;
-    maxBadMessages: any;
-    protocols: any;
-}
-
-
-export class RPCServerClient extends RPCClient {
+export class RPCServerClient extends RPCBaseClient {
     private _session: any;
     private _handshake: RPCServerClientHandshake;
 
-    constructor(options: RPCServerClientOptions, {ws, handshake, session}: RPCServerClientDependencies) {
+    constructor(options: RPCBaseClientOptions, {ws, handshake, session}: RPCServerClientDependencies) {
         super(options);
 
         this._session = session;
