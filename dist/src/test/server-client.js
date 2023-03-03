@@ -1,8 +1,7 @@
 "use strict";
 const assert = require('assert/strict');
-const { once } = require('events');
-const RPCClient = require("../lib/client");
-const RPCServer = require("../lib/server");
+const { RPCClient } = require("../lib/client");
+const { RPCServer } = require("../lib/server");
 const { setTimeout } = require('timers/promises');
 const { createValidator } = require('../lib/validator');
 function getEchoValidator() {
@@ -73,7 +72,7 @@ describe('RPCServerClient', function () {
                 identity: 'X',
             });
             await cli.connect();
-            await assert.rejects(servCli.connect());
+            await assert.throws(() => servCli.connect());
             await cli.close();
             await close();
         });

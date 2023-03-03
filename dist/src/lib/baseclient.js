@@ -1,14 +1,17 @@
-import { randomUUID } from 'node:crypto';
-import { EventEmitter, once } from 'node:events';
-import { setTimeout } from 'node:timers/promises';
-import { setTimeout as setTimeoutCb } from 'node:timers';
-import { WebSocket } from 'ws';
-import { NOREPLY } from './symbols';
-import { TimeoutError, RPCFrameworkError, RPCGenericError, RPCMessageTypeNotSupportedError } from './errors';
-import { getErrorPlainObject, createRPCError } from './util';
-import Queue from './queue';
-import standardValidators from './standard-validators';
-import { isValidStatusCode } from './ws-util';
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.RPCBaseClient = exports.StateEnum = void 0;
+const node_crypto_1 = require("node:crypto");
+const node_events_1 = require("node:events");
+const promises_1 = require("node:timers/promises");
+const node_timers_1 = require("node:timers");
+const ws_1 = require("ws");
+const symbols_1 = require("./symbols");
+const errors_1 = require("./errors");
+const util_1 = require("./util");
+const queue_1 = require("./queue");
+const standard_validators_1 = require("./standard-validators");
+const ws_util_1 = require("./ws-util");
 var MsgType;
 (function (MsgType) {
     MsgType[MsgType["UNKNOWN"] = -1] = "UNKNOWN";
@@ -16,14 +19,14 @@ var MsgType;
     MsgType[MsgType["RESULT"] = 3] = "RESULT";
     MsgType[MsgType["ERROR"] = 4] = "ERROR";
 })(MsgType || (MsgType = {}));
-export var StateEnum;
+var StateEnum;
 (function (StateEnum) {
-    StateEnum[StateEnum["CONNECTING"] = WebSocket.CONNECTING] = "CONNECTING";
-    StateEnum[StateEnum["OPEN"] = WebSocket.OPEN] = "OPEN";
-    StateEnum[StateEnum["CLOSING"] = WebSocket.CLOSING] = "CLOSING";
-    StateEnum[StateEnum["CLOSED"] = WebSocket.CLOSED] = "CLOSED";
-})(StateEnum || (StateEnum = {}));
-export class RPCBaseClient extends EventEmitter {
+    StateEnum[StateEnum["CONNECTING"] = ws_1.WebSocket.CONNECTING] = "CONNECTING";
+    StateEnum[StateEnum["OPEN"] = ws_1.WebSocket.OPEN] = "OPEN";
+    StateEnum[StateEnum["CLOSING"] = ws_1.WebSocket.CLOSING] = "CLOSING";
+    StateEnum[StateEnum["CLOSED"] = ws_1.WebSocket.CLOSED] = "CLOSED";
+})(StateEnum = exports.StateEnum || (exports.StateEnum = {}));
+class RPCBaseClient extends node_events_1.EventEmitter {
     _identity;
     _wildcardHandler;
     _handlers;
@@ -46,7 +49,6 @@ export class RPCBaseClient extends EventEmitter {
     _badMessagesCount;
     _reconnectAttempt;
     _options;
-    _connectionUrl;
     _connectPromise;
     _nextPingTimeout;
     constructor(options) {
@@ -55,8 +57,7 @@ export class RPCBaseClient extends EventEmitter {
         this._wildcardHandler = undefined;
         this._handlers = new Map();
         this._state = StateEnum.CLOSED;
-        this._callQueue = new Queue();
-        this._connectionUrl = new URL('');
+        this._callQueue = new queue_1.default();
         this._ws = undefined;
         this._wsAbortController = undefined;
         this._keepAliveAbortController = undefined;
@@ -109,7 +110,7 @@ export class RPCBaseClient extends EventEmitter {
         if (newOpts.strictMode && !newOpts.protocols?.length) {
             throw Error(`strictMode requires at least one subprotocol`);
         }
-        const strictValidators = [...standardValidators];
+        const strictValidators = [...standard_validators_1.default];
         if (newOpts.strictModeValidators) {
             strictValidators.push(...newOpts.strictModeValidators);
         }
@@ -181,12 +182,12 @@ export class RPCBaseClient extends EventEmitter {
                 else {
                     // await pending calls & responses
                     await this._awaitUntilPendingSettled();
-                    if (!code || !isValidStatusCode(code)) {
+                    if (!code || !(0, ws_util_1.isValidStatusCode)(code)) {
                         code = 1000;
                     }
                     this._ws.close(code, reason);
                 }
-                let [codeRes, reasonRes] = await once(this._ws, 'close');
+                let [codeRes, reasonRes] = await (0, node_events_1.once)(this._ws, 'close');
                 if (reasonRes instanceof Buffer) {
                     reasonRes = reasonRes.toString('utf8');
                 }
@@ -251,7 +252,7 @@ export class RPCBaseClient extends EventEmitter {
         if ([StateEnum.CLOSED, StateEnum.CLOSING].includes(this._state)) {
             throw Error(`Cannot make call while socket not open`);
         }
-        const msgId = randomUUID();
+        const msgId = (0, node_crypto_1.randomUUID)();
         const payload = [MsgType.CALL, msgId, method, params];
         if (typeof this._protocol === 'string' && this._strictProtocols.includes(this._protocol)) {
             // perform some strict-mode checks
@@ -287,7 +288,7 @@ export class RPCBaseClient extends EventEmitter {
                 pendingCall.reject?.(err);
             };
             if (options.signal) {
-                once(options.signal, 'abort').then(() => {
+                (0, node_events_1.once)(options.signal, 'abort').then(() => {
                     pendingCall.abort?.(options.signal?.reason);
                 });
             }
@@ -302,8 +303,8 @@ export class RPCBaseClient extends EventEmitter {
                 };
             });
             if (timeoutMs && timeoutMs > 0 && timeoutMs < Infinity) {
-                const timeoutError = new TimeoutError("Call timeout");
-                pendingCall.timeout = setTimeout(timeoutMs, null, { signal: timeoutAc.signal }).then(() => {
+                const timeoutError = new errors_1.TimeoutError("Call timeout");
+                pendingCall.timeout = (0, promises_1.setTimeout)(timeoutMs, null, { signal: timeoutAc.signal }).then(() => {
                     pendingCall.reject?.(timeoutError);
                 }).catch(err => { });
             }
@@ -403,8 +404,8 @@ export class RPCBaseClient extends EventEmitter {
     async _keepAlive() {
         // abort any previously running keepAlive
         this._keepAliveAbortController?.abort();
-        const timerEmitter = new EventEmitter();
-        const nextPingTimeout = setTimeoutCb(() => {
+        const timerEmitter = new node_events_1.EventEmitter();
+        const nextPingTimeout = (0, node_timers_1.setTimeout)(() => {
             timerEmitter.emit('next');
         }, this._options.pingIntervalMs);
         this._nextPingTimeout = nextPingTimeout;
@@ -420,7 +421,7 @@ export class RPCBaseClient extends EventEmitter {
             // setup new abort controller
             this._keepAliveAbortController = new AbortController();
             while (true) {
-                await once(timerEmitter, 'next', { signal: this._keepAliveAbortController.signal }),
+                await (0, node_events_1.once)(timerEmitter, 'next', { signal: this._keepAliveAbortController.signal }),
                     this._keepAliveAbortController.signal.throwIfAborted();
                 if (this._state !== StateEnum.OPEN) {
                     // keepalive no longer required
@@ -466,30 +467,30 @@ export class RPCBaseClient extends EventEmitter {
                 payload = JSON.parse(message);
             }
             catch (err) {
-                throw createRPCError("RpcFrameworkError", "Message must be a JSON structure", {});
+                throw (0, util_1.createRPCError)("RpcFrameworkError", "Message must be a JSON structure", {});
             }
             if (!Array.isArray(payload)) {
-                throw createRPCError("RpcFrameworkError", "Message must be an array", {});
+                throw (0, util_1.createRPCError)("RpcFrameworkError", "Message must be an array", {});
             }
             const [messageTypePart, msgIdPart, ...more] = payload;
             if (typeof messageTypePart !== 'number') {
-                throw createRPCError("RpcFrameworkError", "Message type must be a number", {});
+                throw (0, util_1.createRPCError)("RpcFrameworkError", "Message type must be a number", {});
             }
             // Extension fallback mechanism
             // (see section 4.4 of OCPP2.0.1J)
             if (![MsgType.CALL, MsgType.ERROR, MsgType.RESULT].includes(messageTypePart)) {
-                throw createRPCError("MessageTypeNotSupported", "Unrecognised message type", {});
+                throw (0, util_1.createRPCError)("MessageTypeNotSupported", "Unrecognised message type", {});
             }
             messageType = messageTypePart;
             if (typeof msgIdPart !== 'string') {
-                throw createRPCError("RpcFrameworkError", "Message ID must be a string", {});
+                throw (0, util_1.createRPCError)("RpcFrameworkError", "Message ID must be a string", {});
             }
             msgId = msgIdPart;
             switch (messageType) {
                 case MsgType.CALL:
                     const [method, params] = more;
                     if (typeof method !== 'string') {
-                        throw new RPCFrameworkError("Method must be a string");
+                        throw new errors_1.RPCFrameworkError("Method must be a string");
                     }
                     this.emit('call', { outbound: false, payload });
                     this._onCall(msgId, method, params);
@@ -505,7 +506,7 @@ export class RPCBaseClient extends EventEmitter {
                     this._onCallError(msgId, errorCode, errorDescription, errorDetails);
                     break;
                 default:
-                    throw new RPCMessageTypeNotSupportedError(`Unexpected message type: ${messageType}`);
+                    throw new errors_1.RPCMessageTypeNotSupportedError(`Unexpected message type: ${messageType}`);
             }
             this._badMessagesCount = 0;
         }
@@ -518,7 +519,7 @@ export class RPCBaseClient extends EventEmitter {
                 // to any CALL (or other unknown message type) with a CALLERROR
                 // (see section 4.4 of OCPP2.0.1J - Extension fallback mechanism)
                 const details = error?.details
-                    || (this._options.respondWithDetailedErrors ? getErrorPlainObject(error) : {});
+                    || (this._options.respondWithDetailedErrors ? (0, util_1.getErrorPlainObject)(error) : {});
                 errorMessage = error.message || error.rpcErrorMessage || "";
                 response = [
                     MsgType.ERROR,
@@ -532,7 +533,7 @@ export class RPCBaseClient extends EventEmitter {
             if (shouldClose) {
                 this.close({
                     code: 1002,
-                    reason: (error instanceof RPCGenericError) ? errorMessage : "Protocol error"
+                    reason: (error instanceof errors_1.RPCGenericError) ? errorMessage : "Protocol error"
                 });
             }
             else if (response && this._state === StateEnum.OPEN) {
@@ -549,14 +550,14 @@ export class RPCBaseClient extends EventEmitter {
             }
             try {
                 if (this._pendingResponses.has(msgId)) {
-                    throw createRPCError("RpcFrameworkError", `Already processing a call with message ID: ${msgId}`, {});
+                    throw (0, util_1.createRPCError)("RpcFrameworkError", `Already processing a call with message ID: ${msgId}`, {});
                 }
                 let handler = this._handlers.get(method);
                 if (!handler) {
                     handler = this._wildcardHandler;
                 }
                 if (!handler) {
-                    throw createRPCError("NotImplemented", `Unable to handle '${method}' calls`, {});
+                    throw (0, util_1.createRPCError)("NotImplemented", `Unable to handle '${method}' calls`, {});
                 }
                 if (this._protocol && this._strictProtocols.includes(this._protocol)) {
                     // perform some strict-mode checks
@@ -610,7 +611,7 @@ export class RPCBaseClient extends EventEmitter {
                     params,
                     result,
                 });
-                if (result === NOREPLY) {
+                if (result === symbols_1.NOREPLY) {
                     return; // don't send a reply
                 }
                 payload = [MsgType.RESULT, msgId, result];
@@ -630,14 +631,14 @@ export class RPCBaseClient extends EventEmitter {
                             outbound: true,
                             isCall: false,
                         });
-                        throw createRPCError("InternalError");
+                        throw (0, util_1.createRPCError)("InternalError");
                     }
                 }
             }
             catch (err) {
                 // catch here to prevent this error from being considered a 'badMessage'.
                 const details = err?.details
-                    || (this._options.respondWithDetailedErrors ? getErrorPlainObject(err) : {});
+                    || (this._options.respondWithDetailedErrors ? (0, util_1.getErrorPlainObject)(err) : {});
                 let rpcErrorCode = err.rpcErrorCode || 'GenericError';
                 if (this.protocol === 'ocpp1.6') {
                     // Workaround for some mistakes in the spec in OCPP1.6J
@@ -701,7 +702,7 @@ export class RPCBaseClient extends EventEmitter {
             return pendingCall.resolve(result);
         }
         else {
-            throw createRPCError("RpcFrameworkError", `Received CALLRESULT for unrecognised message ID: ${msgId}`, {
+            throw (0, util_1.createRPCError)("RpcFrameworkError", `Received CALLRESULT for unrecognised message ID: ${msgId}`, {
                 msgId,
                 result
             });
@@ -710,11 +711,11 @@ export class RPCBaseClient extends EventEmitter {
     _onCallError(msgId, errorCode, errorDescription, errorDetails) {
         const pendingCall = this._pendingCalls.get(msgId);
         if (pendingCall) {
-            const err = createRPCError(errorCode, errorDescription, errorDetails);
+            const err = (0, util_1.createRPCError)(errorCode, errorDescription, errorDetails);
             pendingCall.reject(err);
         }
         else {
-            throw createRPCError("RpcFrameworkError", `Received CALLERROR for unrecognised message ID: ${msgId}`, {
+            throw (0, util_1.createRPCError)("RpcFrameworkError", `Received CALLERROR for unrecognised message ID: ${msgId}`, {
                 msgId,
                 errorCode,
                 errorDescription,
@@ -723,3 +724,4 @@ export class RPCBaseClient extends EventEmitter {
         }
     }
 }
+exports.RPCBaseClient = RPCBaseClient;

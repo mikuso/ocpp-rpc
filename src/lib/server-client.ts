@@ -33,8 +33,4 @@ export class RPCServerClient extends RPCBaseClient {
     get session() {
         return this._session;
     }
-
-    async connect(): Promise<EventOpenResult> {
-        throw Error("Cannot connect from server to client");
-    }
 }

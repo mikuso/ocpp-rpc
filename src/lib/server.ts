@@ -369,7 +369,7 @@ export class RPCServer extends EventEmitter {
         });
 
         const complete = await Promise.race([
-            once(httpServer, 'listen', {signal: ac.signal}),
+            once(httpServer, 'listening', {signal: ac.signal}),
             once(httpServer, 'error', {signal: ac.signal}),
             once(ac.signal, 'abort')
         ]);

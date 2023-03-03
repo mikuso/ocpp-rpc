@@ -1,0 +1,2376 @@
+[
+    {
+        "$id": "urn:Authorize.req",
+        "$schema": "http://json-schema.org/draft-07/schema",
+        "additionalProperties": false,
+        "properties": {
+            "idTag": {
+                "type": "string",
+                "maxLength": 20
+            }
+        },
+        "required": [
+            "idTag"
+        ],
+        "type": "object"
+    },
+    {
+        "$id": "urn:Authorize.conf",
+        "$schema": "http://json-schema.org/draft-07/schema",
+        "additionalProperties": false,
+        "properties": {
+            "idTagInfo": {
+                "type": "object",
+                "properties": {
+                    "expiryDate": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "parentIdTag": {
+                        "type": "string",
+                        "maxLength": 20
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "Accepted",
+                            "Blocked",
+                            "Expired",
+                            "Invalid",
+                            "ConcurrentTx"
+                        ]
+                    }
+                },
+                "additionalProperties": false,
+                "required": [
+                    "status"
+                ]
+            }
+        },
+        "required": [
+            "idTagInfo"
+        ],
+        "type": "object"
+    },
+    {
+        "$id": "urn:BootNotification.req",
+        "$schema": "http://json-schema.org/draft-07/schema",
+        "additionalProperties": false,
+        "properties": {
+            "chargePointVendor": {
+                "type": "string",
+                "maxLength": 20
+            },
+            "chargePointModel": {
+                "type": "string",
+                "maxLength": 20
+            },
+            "chargePointSerialNumber": {
+                "type": "string",
+                "maxLength": 25
+            },
+            "chargeBoxSerialNumber": {
+                "type": "string",
+                "maxLength": 25
+            },
+            "firmwareVersion": {
+                "type": "string",
+                "maxLength": 50
+            },
+            "iccid": {
+                "type": "string",
+                "maxLength": 20
+            },
+            "imsi": {
+                "type": "string",
+                "maxLength": 20
+            },
+            "meterType": {
+                "type": "string",
+                "maxLength": 25
+            },
+            "meterSerialNumber": {
+                "type": "string",
+                "maxLength": 25
+            }
+        },
+        "required": [
+            "chargePointVendor",
+            "chargePointModel"
+        ],
+        "type": "object"
+    },
+    {
+        "$id": "urn:BootNotification.conf",
+        "$schema": "http://json-schema.org/draft-07/schema",
+        "additionalProperties": false,
+        "properties": {
+            "status": {
+                "type": "string",
+                "enum": [
+                    "Accepted",
+                    "Pending",
+                    "Rejected"
+                ]
+            },
+            "currentTime": {
+                "type": "string",
+                "format": "date-time"
+            },
+            "interval": {
+                "type": "integer"
+            }
+        },
+        "required": [
+            "status",
+            "currentTime",
+            "interval"
+        ],
+        "type": "object"
+    },
+    {
+        "$id": "urn:CancelReservation.req",
+        "$schema": "http://json-schema.org/draft-07/schema",
+        "additionalProperties": false,
+        "properties": {
+            "reservationId": {
+                "type": "integer"
+            }
+        },
+        "required": [
+            "reservationId"
+        ],
+        "type": "object"
+    },
+    {
+        "$id": "urn:CancelReservation.conf",
+        "$schema": "http://json-schema.org/draft-07/schema",
+        "additionalProperties": false,
+        "properties": {
+            "status": {
+                "type": "string",
+                "enum": [
+                    "Accepted",
+                    "Rejected"
+                ]
+            }
+        },
+        "required": [
+            "status"
+        ],
+        "type": "object"
+    },
+    {
+        "$id": "urn:CertificateSigned.req",
+        "$schema": "http://json-schema.org/draft-07/schema",
+        "additionalProperties": false,
+        "properties": {
+            "certificateChain": {
+                "type": "string",
+                "maxLength": 10000
+            }
+        },
+        "required": [
+            "certificateChain"
+        ],
+        "type": "object"
+    },
+    {
+        "$id": "urn:CertificateSigned.conf",
+        "$schema": "http://json-schema.org/draft-07/schema",
+        "additionalProperties": false,
+        "definitions": {
+            "CertificateSignedStatusEnumType": {
+                "type": "string",
+                "enum": [
+                    "Accepted",
+                    "Rejected"
+                ]
+            }
+        },
+        "properties": {
+            "status": {
+                "$ref": "#/definitions/CertificateSignedStatusEnumType"
+            }
+        },
+        "required": [
+            "status"
+        ],
+        "type": "object"
+    },
+    {
+        "$id": "urn:ChangeAvailability.req",
+        "$schema": "http://json-schema.org/draft-07/schema",
+        "additionalProperties": false,
+        "properties": {
+            "connectorId": {
+                "type": "integer"
+            },
+            "type": {
+                "type": "string",
+                "enum": [
+                    "Inoperative",
+                    "Operative"
+                ]
+            }
+        },
+        "required": [
+            "connectorId",
+            "type"
+        ],
+        "type": "object"
+    },
+    {
+        "$id": "urn:ChangeAvailability.conf",
+        "$schema": "http://json-schema.org/draft-07/schema",
+        "additionalProperties": false,
+        "properties": {
+            "status": {
+                "type": "string",
+                "enum": [
+                    "Accepted",
+                    "Rejected",
+                    "Scheduled"
+                ]
+            }
+        },
+        "required": [
+            "status"
+        ],
+        "type": "object"
+    },
+    {
+        "$id": "urn:ChangeConfiguration.req",
+        "$schema": "http://json-schema.org/draft-07/schema",
+        "additionalProperties": false,
+        "properties": {
+            "key": {
+                "type": "string",
+                "maxLength": 50
+            },
+            "value": {
+                "type": "string",
+                "maxLength": 500
+            }
+        },
+        "required": [
+            "key",
+            "value"
+        ],
+        "type": "object"
+    },
+    {
+        "$id": "urn:ChangeConfiguration.conf",
+        "$schema": "http://json-schema.org/draft-07/schema",
+        "additionalProperties": false,
+        "properties": {
+            "status": {
+                "type": "string",
+                "enum": [
+                    "Accepted",
+                    "Rejected",
+                    "RebootRequired",
+                    "NotSupported"
+                ]
+            }
+        },
+        "required": [
+            "status"
+        ],
+        "type": "object"
+    },
+    {
+        "$id": "urn:ClearCache.req",
+        "$schema": "http://json-schema.org/draft-07/schema",
+        "additionalProperties": false,
+        "properties": {},
+        "type": "object"
+    },
+    {
+        "$id": "urn:ClearCache.conf",
+        "$schema": "http://json-schema.org/draft-07/schema",
+        "additionalProperties": false,
+        "properties": {
+            "status": {
+                "type": "string",
+                "enum": [
+                    "Accepted",
+                    "Rejected"
+                ]
+            }
+        },
+        "required": [
+            "status"
+        ],
+        "type": "object"
+    },
+    {
+        "$id": "urn:ClearChargingProfile.req",
+        "$schema": "http://json-schema.org/draft-07/schema",
+        "additionalProperties": false,
+        "properties": {
+            "id": {
+                "type": "integer"
+            },
+            "connectorId": {
+                "type": "integer"
+            },
+            "chargingProfilePurpose": {
+                "type": "string",
+                "enum": [
+                    "ChargePointMaxProfile",
+                    "TxDefaultProfile",
+                    "TxProfile"
+                ]
+            },
+            "stackLevel": {
+                "type": "integer"
+            }
+        },
+        "type": "object"
+    },
+    {
+        "$id": "urn:ClearChargingProfile.conf",
+        "$schema": "http://json-schema.org/draft-07/schema",
+        "additionalProperties": false,
+        "properties": {
+            "status": {
+                "type": "string",
+                "enum": [
+                    "Accepted",
+                    "Unknown"
+                ]
+            }
+        },
+        "required": [
+            "status"
+        ],
+        "type": "object"
+    },
+    {
+        "$id": "urn:DataTransfer.req",
+        "$schema": "http://json-schema.org/draft-07/schema",
+        "additionalProperties": false,
+        "properties": {
+            "vendorId": {
+                "type": "string",
+                "maxLength": 255
+            },
+            "messageId": {
+                "type": "string",
+                "maxLength": 50
+            },
+            "data": {
+                "type": "string"
+            }
+        },
+        "required": [
+            "vendorId"
+        ],
+        "type": "object"
+    },
+    {
+        "$id": "urn:DataTransfer.conf",
+        "$schema": "http://json-schema.org/draft-07/schema",
+        "additionalProperties": false,
+        "properties": {
+            "status": {
+                "type": "string",
+                "enum": [
+                    "Accepted",
+                    "Rejected",
+                    "UnknownMessageId",
+                    "UnknownVendorId"
+                ]
+            },
+            "data": {
+                "type": "string"
+            }
+        },
+        "required": [
+            "status"
+        ],
+        "type": "object"
+    },
+    {
+        "$id": "urn:DeleteCertificate.req",
+        "$schema": "http://json-schema.org/draft-07/schema",
+        "additionalProperties": false,
+        "definitions": {
+            "HashAlgorithmEnumType": {
+                "type": "string",
+                "enum": [
+                    "SHA256",
+                    "SHA384",
+                    "SHA512"
+                ]
+            },
+            "CertificateHashDataType": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                    "hashAlgorithm": {
+                        "$ref": "#/definitions/HashAlgorithmEnumType"
+                    },
+                    "issuerNameHash": {
+                        "type": "string",
+                        "maxLength": 128
+                    },
+                    "issuerKeyHash": {
+                        "type": "string",
+                        "maxLength": 128
+                    },
+                    "serialNumber": {
+                        "type": "string",
+                        "maxLength": 40
+                    }
+                },
+                "required": [
+                    "hashAlgorithm",
+                    "issuerNameHash",
+                    "issuerKeyHash",
+                    "serialNumber"
+                ]
+            }
+        },
+        "properties": {
+            "certificateHashData": {
+                "$ref": "#/definitions/CertificateHashDataType"
+            }
+        },
+        "required": [
+            "certificateHashData"
+        ],
+        "type": "object"
+    },
+    {
+        "$id": "urn:DeleteCertificate.conf",
+        "$schema": "http://json-schema.org/draft-07/schema",
+        "additionalProperties": false,
+        "definitions": {
+            "DeleteCertificateStatusEnumType": {
+                "type": "string",
+                "enum": [
+                    "Accepted",
+                    "Failed",
+                    "NotFound"
+                ]
+            }
+        },
+        "properties": {
+            "status": {
+                "$ref": "#/definitions/DeleteCertificateStatusEnumType"
+            }
+        },
+        "required": [
+            "status"
+        ],
+        "type": "object"
+    },
+    {
+        "$id": "urn:DiagnosticsStatusNotification.req",
+        "$schema": "http://json-schema.org/draft-07/schema",
+        "additionalProperties": false,
+        "properties": {
+            "status": {
+                "type": "string",
+                "enum": [
+                    "Idle",
+                    "Uploaded",
+                    "UploadFailed",
+                    "Uploading"
+                ]
+            }
+        },
+        "required": [
+            "status"
+        ],
+        "type": "object"
+    },
+    {
+        "$id": "urn:DiagnosticsStatusNotification.conf",
+        "$schema": "http://json-schema.org/draft-07/schema",
+        "additionalProperties": false,
+        "properties": {},
+        "type": "object"
+    },
+    {
+        "$id": "urn:ExtendedTriggerMessage.req",
+        "$schema": "http://json-schema.org/draft-07/schema",
+        "additionalProperties": false,
+        "definitions": {
+            "MessageTriggerEnumType": {
+                "type": "string",
+                "enum": [
+                    "BootNotification",
+                    "LogStatusNotification",
+                    "FirmwareStatusNotification",
+                    "Heartbeat",
+                    "MeterValues",
+                    "SignChargePointCertificate",
+                    "StatusNotification"
+                ]
+            }
+        },
+        "properties": {
+            "requestedMessage": {
+                "$ref": "#/definitions/MessageTriggerEnumType"
+            },
+            "connectorId": {
+                "type": "integer"
+            }
+        },
+        "required": [
+            "requestedMessage"
+        ],
+        "type": "object"
+    },
+    {
+        "$id": "urn:ExtendedTriggerMessage.conf",
+        "$schema": "http://json-schema.org/draft-07/schema",
+        "additionalProperties": false,
+        "definitions": {
+            "TriggerMessageStatusEnumType": {
+                "type": "string",
+                "enum": [
+                    "Accepted",
+                    "Rejected",
+                    "NotImplemented"
+                ]
+            }
+        },
+        "properties": {
+            "status": {
+                "$ref": "#/definitions/TriggerMessageStatusEnumType"
+            }
+        },
+        "required": [
+            "status"
+        ],
+        "type": "object"
+    },
+    {
+        "$id": "urn:FirmwareStatusNotification.req",
+        "$schema": "http://json-schema.org/draft-07/schema",
+        "additionalProperties": false,
+        "properties": {
+            "status": {
+                "type": "string",
+                "enum": [
+                    "Downloaded",
+                    "DownloadFailed",
+                    "Downloading",
+                    "Idle",
+                    "InstallationFailed",
+                    "Installing",
+                    "Installed"
+                ]
+            }
+        },
+        "required": [
+            "status"
+        ],
+        "type": "object"
+    },
+    {
+        "$id": "urn:FirmwareStatusNotification.conf",
+        "$schema": "http://json-schema.org/draft-07/schema",
+        "additionalProperties": false,
+        "properties": {},
+        "type": "object"
+    },
+    {
+        "$id": "urn:GetCompositeSchedule.req",
+        "$schema": "http://json-schema.org/draft-07/schema",
+        "additionalProperties": false,
+        "properties": {
+            "connectorId": {
+                "type": "integer"
+            },
+            "duration": {
+                "type": "integer"
+            },
+            "chargingRateUnit": {
+                "type": "string",
+                "enum": [
+                    "A",
+                    "W"
+                ]
+            }
+        },
+        "required": [
+            "connectorId",
+            "duration"
+        ],
+        "type": "object"
+    },
+    {
+        "$id": "urn:GetCompositeSchedule.conf",
+        "$schema": "http://json-schema.org/draft-07/schema",
+        "additionalProperties": false,
+        "properties": {
+            "status": {
+                "type": "string",
+                "enum": [
+                    "Accepted",
+                    "Rejected"
+                ]
+            },
+            "connectorId": {
+                "type": "integer"
+            },
+            "scheduleStart": {
+                "type": "string",
+                "format": "date-time"
+            },
+            "chargingSchedule": {
+                "type": "object",
+                "properties": {
+                    "duration": {
+                        "type": "integer"
+                    },
+                    "startSchedule": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "chargingRateUnit": {
+                        "type": "string",
+                        "enum": [
+                            "A",
+                            "W"
+                        ]
+                    },
+                    "chargingSchedulePeriod": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "startPeriod": {
+                                    "type": "integer"
+                                },
+                                "limit": {
+                                    "type": "number",
+                                    "multipleOf": 0.1
+                                },
+                                "numberPhases": {
+                                    "type": "integer"
+                                }
+                            },
+                            "additionalProperties": false,
+                            "required": [
+                                "startPeriod",
+                                "limit"
+                            ]
+                        }
+                    },
+                    "minChargingRate": {
+                        "type": "number",
+                        "multipleOf": 0.1
+                    }
+                },
+                "additionalProperties": false,
+                "required": [
+                    "chargingRateUnit",
+                    "chargingSchedulePeriod"
+                ]
+            }
+        },
+        "required": [
+            "status"
+        ],
+        "type": "object"
+    },
+    {
+        "$id": "urn:GetConfiguration.req",
+        "$schema": "http://json-schema.org/draft-07/schema",
+        "additionalProperties": false,
+        "properties": {
+            "key": {
+                "type": "array",
+                "items": {
+                    "type": "string",
+                    "maxLength": 50
+                }
+            }
+        },
+        "type": "object"
+    },
+    {
+        "$id": "urn:GetConfiguration.conf",
+        "$schema": "http://json-schema.org/draft-07/schema",
+        "additionalProperties": false,
+        "properties": {
+            "configurationKey": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "key": {
+                            "type": "string",
+                            "maxLength": 50
+                        },
+                        "readonly": {
+                            "type": "boolean"
+                        },
+                        "value": {
+                            "type": "string",
+                            "maxLength": 500
+                        }
+                    },
+                    "additionalProperties": false,
+                    "required": [
+                        "key",
+                        "readonly"
+                    ]
+                }
+            },
+            "unknownKey": {
+                "type": "array",
+                "items": {
+                    "type": "string",
+                    "maxLength": 50
+                }
+            }
+        },
+        "type": "object"
+    },
+    {
+        "$id": "urn:GetDiagnostics.req",
+        "$schema": "http://json-schema.org/draft-07/schema",
+        "additionalProperties": false,
+        "properties": {
+            "location": {
+                "type": "string",
+                "format": "uri"
+            },
+            "retries": {
+                "type": "integer"
+            },
+            "retryInterval": {
+                "type": "integer"
+            },
+            "startTime": {
+                "type": "string",
+                "format": "date-time"
+            },
+            "stopTime": {
+                "type": "string",
+                "format": "date-time"
+            }
+        },
+        "required": [
+            "location"
+        ],
+        "type": "object"
+    },
+    {
+        "$id": "urn:GetDiagnostics.conf",
+        "$schema": "http://json-schema.org/draft-07/schema",
+        "additionalProperties": false,
+        "properties": {
+            "fileName": {
+                "type": "string",
+                "maxLength": 255
+            }
+        },
+        "type": "object"
+    },
+    {
+        "$id": "urn:GetInstalledCertificateIds.req",
+        "$schema": "http://json-schema.org/draft-07/schema",
+        "additionalProperties": false,
+        "definitions": {
+            "CertificateUseEnumType": {
+                "type": "string",
+                "enum": [
+                    "CentralSystemRootCertificate",
+                    "ManufacturerRootCertificate"
+                ]
+            }
+        },
+        "properties": {
+            "certificateType": {
+                "$ref": "#/definitions/CertificateUseEnumType"
+            }
+        },
+        "required": [
+            "certificateType"
+        ],
+        "type": "object"
+    },
+    {
+        "$id": "urn:GetInstalledCertificateIds.conf",
+        "$schema": "http://json-schema.org/draft-07/schema",
+        "additionalProperties": false,
+        "definitions": {
+            "GetInstalledCertificateStatusEnumType": {
+                "type": "string",
+                "enum": [
+                    "Accepted",
+                    "NotFound"
+                ]
+            },
+            "HashAlgorithmEnumType": {
+                "type": "string",
+                "enum": [
+                    "SHA256",
+                    "SHA384",
+                    "SHA512"
+                ]
+            },
+            "CertificateHashDataType": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                    "hashAlgorithm": {
+                        "$ref": "#/definitions/HashAlgorithmEnumType"
+                    },
+                    "issuerNameHash": {
+                        "type": "string",
+                        "maxLength": 128
+                    },
+                    "issuerKeyHash": {
+                        "type": "string",
+                        "maxLength": 128
+                    },
+                    "serialNumber": {
+                        "type": "string",
+                        "maxLength": 40
+                    }
+                },
+                "required": [
+                    "hashAlgorithm",
+                    "issuerNameHash",
+                    "issuerKeyHash",
+                    "serialNumber"
+                ]
+            }
+        },
+        "properties": {
+            "certificateHashData": {
+                "type": "array",
+                "items": {
+                    "$ref": "#/definitions/CertificateHashDataType"
+                },
+                "minItems": 1
+            },
+            "status": {
+                "$ref": "#/definitions/GetInstalledCertificateStatusEnumType"
+            }
+        },
+        "required": [
+            "status"
+        ],
+        "type": "object"
+    },
+    {
+        "$id": "urn:GetLocalListVersion.req",
+        "$schema": "http://json-schema.org/draft-07/schema",
+        "additionalProperties": false,
+        "properties": {},
+        "type": "object"
+    },
+    {
+        "$id": "urn:GetLocalListVersion.conf",
+        "$schema": "http://json-schema.org/draft-07/schema",
+        "additionalProperties": false,
+        "properties": {
+            "listVersion": {
+                "type": "integer"
+            }
+        },
+        "required": [
+            "listVersion"
+        ],
+        "type": "object"
+    },
+    {
+        "$id": "urn:GetLog.req",
+        "$schema": "http://json-schema.org/draft-07/schema",
+        "additionalProperties": false,
+        "definitions": {
+            "LogEnumType": {
+                "type": "string",
+                "enum": [
+                    "DiagnosticsLog",
+                    "SecurityLog"
+                ]
+            },
+            "LogParametersType": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                    "remoteLocation": {
+                        "type": "string",
+                        "maxLength": 512
+                    },
+                    "oldestTimestamp": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "latestTimestamp": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "required": [
+                    "remoteLocation"
+                ]
+            }
+        },
+        "properties": {
+            "log": {
+                "$ref": "#/definitions/LogParametersType"
+            },
+            "logType": {
+                "$ref": "#/definitions/LogEnumType"
+            },
+            "requestId": {
+                "type": "integer"
+            },
+            "retries": {
+                "type": "integer"
+            },
+            "retryInterval": {
+                "type": "integer"
+            }
+        },
+        "required": [
+            "logType",
+            "requestId",
+            "log"
+        ],
+        "type": "object"
+    },
+    {
+        "$id": "urn:GetLog.conf",
+        "$schema": "http://json-schema.org/draft-07/schema",
+        "additionalProperties": false,
+        "definitions": {
+            "LogStatusEnumType": {
+                "type": "string",
+                "enum": [
+                    "Accepted",
+                    "Rejected",
+                    "AcceptedCanceled"
+                ]
+            }
+        },
+        "properties": {
+            "status": {
+                "$ref": "#/definitions/LogStatusEnumType"
+            },
+            "filename": {
+                "type": "string",
+                "maxLength": 255
+            }
+        },
+        "required": [
+            "status"
+        ],
+        "type": "object"
+    },
+    {
+        "$id": "urn:Heartbeat.req",
+        "$schema": "http://json-schema.org/draft-07/schema",
+        "additionalProperties": false,
+        "properties": {},
+        "type": "object"
+    },
+    {
+        "$id": "urn:Heartbeat.conf",
+        "$schema": "http://json-schema.org/draft-07/schema",
+        "additionalProperties": false,
+        "properties": {
+            "currentTime": {
+                "type": "string",
+                "format": "date-time"
+            }
+        },
+        "required": [
+            "currentTime"
+        ],
+        "type": "object"
+    },
+    {
+        "$id": "urn:InstallCertificate.req",
+        "$schema": "http://json-schema.org/draft-07/schema",
+        "additionalProperties": false,
+        "definitions": {
+            "CertificateUseEnumType": {
+                "type": "string",
+                "enum": [
+                    "CentralSystemRootCertificate",
+                    "ManufacturerRootCertificate"
+                ]
+            }
+        },
+        "properties": {
+            "certificateType": {
+                "$ref": "#/definitions/CertificateUseEnumType"
+            },
+            "certificate": {
+                "type": "string",
+                "maxLength": 5500
+            }
+        },
+        "required": [
+            "certificateType",
+            "certificate"
+        ],
+        "type": "object"
+    },
+    {
+        "$id": "urn:InstallCertificate.conf",
+        "$schema": "http://json-schema.org/draft-07/schema",
+        "additionalProperties": false,
+        "definitions": {
+            "InstallCertificateStatusEnumType": {
+                "type": "string",
+                "enum": [
+                    "Accepted",
+                    "Failed",
+                    "Rejected"
+                ]
+            }
+        },
+        "properties": {
+            "status": {
+                "$ref": "#/definitions/InstallCertificateStatusEnumType"
+            }
+        },
+        "required": [
+            "status"
+        ],
+        "type": "object"
+    },
+    {
+        "$id": "urn:LogStatusNotification.req",
+        "$schema": "http://json-schema.org/draft-07/schema",
+        "additionalProperties": false,
+        "definitions": {
+            "UploadLogStatusEnumType": {
+                "type": "string",
+                "enum": [
+                    "BadMessage",
+                    "Idle",
+                    "NotSupportedOperation",
+                    "PermissionDenied",
+                    "Uploaded",
+                    "UploadFailure",
+                    "Uploading"
+                ]
+            }
+        },
+        "properties": {
+            "status": {
+                "$ref": "#/definitions/UploadLogStatusEnumType"
+            },
+            "requestId": {
+                "type": "integer"
+            }
+        },
+        "required": [
+            "status"
+        ],
+        "type": "object"
+    },
+    {
+        "$id": "urn:LogStatusNotification.conf",
+        "$schema": "http://json-schema.org/draft-07/schema",
+        "additionalProperties": false,
+        "type": "object"
+    },
+    {
+        "$id": "urn:MeterValues.req",
+        "$schema": "http://json-schema.org/draft-07/schema",
+        "additionalProperties": false,
+        "properties": {
+            "connectorId": {
+                "type": "integer"
+            },
+            "transactionId": {
+                "type": "integer"
+            },
+            "meterValue": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "timestamp": {
+                            "type": "string",
+                            "format": "date-time"
+                        },
+                        "sampledValue": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "value": {
+                                        "type": "string"
+                                    },
+                                    "context": {
+                                        "type": "string",
+                                        "enum": [
+                                            "Interruption.Begin",
+                                            "Interruption.End",
+                                            "Sample.Clock",
+                                            "Sample.Periodic",
+                                            "Transaction.Begin",
+                                            "Transaction.End",
+                                            "Trigger",
+                                            "Other"
+                                        ]
+                                    },
+                                    "format": {
+                                        "type": "string",
+                                        "enum": [
+                                            "Raw",
+                                            "SignedData"
+                                        ]
+                                    },
+                                    "measurand": {
+                                        "type": "string",
+                                        "enum": [
+                                            "Energy.Active.Export.Register",
+                                            "Energy.Active.Import.Register",
+                                            "Energy.Reactive.Export.Register",
+                                            "Energy.Reactive.Import.Register",
+                                            "Energy.Active.Export.Interval",
+                                            "Energy.Active.Import.Interval",
+                                            "Energy.Reactive.Export.Interval",
+                                            "Energy.Reactive.Import.Interval",
+                                            "Power.Active.Export",
+                                            "Power.Active.Import",
+                                            "Power.Offered",
+                                            "Power.Reactive.Export",
+                                            "Power.Reactive.Import",
+                                            "Power.Factor",
+                                            "Current.Import",
+                                            "Current.Export",
+                                            "Current.Offered",
+                                            "Voltage",
+                                            "Frequency",
+                                            "Temperature",
+                                            "SoC",
+                                            "RPM"
+                                        ]
+                                    },
+                                    "phase": {
+                                        "type": "string",
+                                        "enum": [
+                                            "L1",
+                                            "L2",
+                                            "L3",
+                                            "N",
+                                            "L1-N",
+                                            "L2-N",
+                                            "L3-N",
+                                            "L1-L2",
+                                            "L2-L3",
+                                            "L3-L1"
+                                        ]
+                                    },
+                                    "location": {
+                                        "type": "string",
+                                        "enum": [
+                                            "Cable",
+                                            "EV",
+                                            "Inlet",
+                                            "Outlet",
+                                            "Body"
+                                        ]
+                                    },
+                                    "unit": {
+                                        "type": "string",
+                                        "enum": [
+                                            "Wh",
+                                            "kWh",
+                                            "varh",
+                                            "kvarh",
+                                            "W",
+                                            "kW",
+                                            "VA",
+                                            "kVA",
+                                            "var",
+                                            "kvar",
+                                            "A",
+                                            "V",
+                                            "K",
+                                            "Celcius",
+                                            "Celsius",
+                                            "Fahrenheit",
+                                            "Percent"
+                                        ]
+                                    }
+                                },
+                                "additionalProperties": false,
+                                "required": [
+                                    "value"
+                                ]
+                            }
+                        }
+                    },
+                    "additionalProperties": false,
+                    "required": [
+                        "timestamp",
+                        "sampledValue"
+                    ]
+                }
+            }
+        },
+        "required": [
+            "connectorId",
+            "meterValue"
+        ],
+        "type": "object"
+    },
+    {
+        "$id": "urn:MeterValues.conf",
+        "$schema": "http://json-schema.org/draft-07/schema",
+        "additionalProperties": false,
+        "properties": {},
+        "type": "object"
+    },
+    {
+        "$id": "urn:RemoteStartTransaction.req",
+        "$schema": "http://json-schema.org/draft-07/schema",
+        "additionalProperties": false,
+        "properties": {
+            "connectorId": {
+                "type": "integer"
+            },
+            "idTag": {
+                "type": "string",
+                "maxLength": 20
+            },
+            "chargingProfile": {
+                "type": "object",
+                "properties": {
+                    "chargingProfileId": {
+                        "type": "integer"
+                    },
+                    "transactionId": {
+                        "type": "integer"
+                    },
+                    "stackLevel": {
+                        "type": "integer"
+                    },
+                    "chargingProfilePurpose": {
+                        "type": "string",
+                        "enum": [
+                            "ChargePointMaxProfile",
+                            "TxDefaultProfile",
+                            "TxProfile"
+                        ]
+                    },
+                    "chargingProfileKind": {
+                        "type": "string",
+                        "enum": [
+                            "Absolute",
+                            "Recurring",
+                            "Relative"
+                        ]
+                    },
+                    "recurrencyKind": {
+                        "type": "string",
+                        "enum": [
+                            "Daily",
+                            "Weekly"
+                        ]
+                    },
+                    "validFrom": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "validTo": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "chargingSchedule": {
+                        "type": "object",
+                        "properties": {
+                            "duration": {
+                                "type": "integer"
+                            },
+                            "startSchedule": {
+                                "type": "string",
+                                "format": "date-time"
+                            },
+                            "chargingRateUnit": {
+                                "type": "string",
+                                "enum": [
+                                    "A",
+                                    "W"
+                                ]
+                            },
+                            "chargingSchedulePeriod": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "startPeriod": {
+                                            "type": "integer"
+                                        },
+                                        "limit": {
+                                            "type": "number",
+                                            "multipleOf": 0.1
+                                        },
+                                        "numberPhases": {
+                                            "type": "integer"
+                                        }
+                                    },
+                                    "additionalProperties": false,
+                                    "required": [
+                                        "startPeriod",
+                                        "limit"
+                                    ]
+                                }
+                            },
+                            "minChargingRate": {
+                                "type": "number",
+                                "multipleOf": 0.1
+                            }
+                        },
+                        "additionalProperties": false,
+                        "required": [
+                            "chargingRateUnit",
+                            "chargingSchedulePeriod"
+                        ]
+                    }
+                },
+                "additionalProperties": false,
+                "required": [
+                    "chargingProfileId",
+                    "stackLevel",
+                    "chargingProfilePurpose",
+                    "chargingProfileKind",
+                    "chargingSchedule"
+                ]
+            }
+        },
+        "required": [
+            "idTag"
+        ],
+        "type": "object"
+    },
+    {
+        "$id": "urn:RemoteStartTransaction.conf",
+        "$schema": "http://json-schema.org/draft-07/schema",
+        "additionalProperties": false,
+        "properties": {
+            "status": {
+                "type": "string",
+                "enum": [
+                    "Accepted",
+                    "Rejected"
+                ]
+            }
+        },
+        "required": [
+            "status"
+        ],
+        "type": "object"
+    },
+    {
+        "$id": "urn:RemoteStopTransaction.req",
+        "$schema": "http://json-schema.org/draft-07/schema",
+        "additionalProperties": false,
+        "properties": {
+            "transactionId": {
+                "type": "integer"
+            }
+        },
+        "required": [
+            "transactionId"
+        ],
+        "type": "object"
+    },
+    {
+        "$id": "urn:RemoteStopTransaction.conf",
+        "$schema": "http://json-schema.org/draft-07/schema",
+        "additionalProperties": false,
+        "properties": {
+            "status": {
+                "type": "string",
+                "enum": [
+                    "Accepted",
+                    "Rejected"
+                ]
+            }
+        },
+        "required": [
+            "status"
+        ],
+        "type": "object"
+    },
+    {
+        "$id": "urn:ReserveNow.req",
+        "$schema": "http://json-schema.org/draft-07/schema",
+        "additionalProperties": false,
+        "properties": {
+            "connectorId": {
+                "type": "integer"
+            },
+            "expiryDate": {
+                "type": "string",
+                "format": "date-time"
+            },
+            "idTag": {
+                "type": "string",
+                "maxLength": 20
+            },
+            "parentIdTag": {
+                "type": "string",
+                "maxLength": 20
+            },
+            "reservationId": {
+                "type": "integer"
+            }
+        },
+        "required": [
+            "connectorId",
+            "expiryDate",
+            "idTag",
+            "reservationId"
+        ],
+        "type": "object"
+    },
+    {
+        "$id": "urn:ReserveNow.conf",
+        "$schema": "http://json-schema.org/draft-07/schema",
+        "additionalProperties": false,
+        "properties": {
+            "status": {
+                "type": "string",
+                "enum": [
+                    "Accepted",
+                    "Faulted",
+                    "Occupied",
+                    "Rejected",
+                    "Unavailable"
+                ]
+            }
+        },
+        "required": [
+            "status"
+        ],
+        "type": "object"
+    },
+    {
+        "$id": "urn:Reset.req",
+        "$schema": "http://json-schema.org/draft-07/schema",
+        "additionalProperties": false,
+        "properties": {
+            "type": {
+                "type": "string",
+                "enum": [
+                    "Hard",
+                    "Soft"
+                ]
+            }
+        },
+        "required": [
+            "type"
+        ],
+        "type": "object"
+    },
+    {
+        "$id": "urn:Reset.conf",
+        "$schema": "http://json-schema.org/draft-07/schema",
+        "additionalProperties": false,
+        "properties": {
+            "status": {
+                "type": "string",
+                "enum": [
+                    "Accepted",
+                    "Rejected"
+                ]
+            }
+        },
+        "required": [
+            "status"
+        ],
+        "type": "object"
+    },
+    {
+        "$id": "urn:SecurityEventNotification.req",
+        "$schema": "http://json-schema.org/draft-07/schema",
+        "additionalProperties": false,
+        "properties": {
+            "type": {
+                "type": "string",
+                "maxLength": 50
+            },
+            "timestamp": {
+                "type": "string",
+                "format": "date-time"
+            },
+            "techInfo": {
+                "type": "string",
+                "maxLength": 255
+            }
+        },
+        "required": [
+            "type",
+            "timestamp"
+        ],
+        "type": "object"
+    },
+    {
+        "$id": "urn:SecurityEventNotification.conf",
+        "$schema": "http://json-schema.org/draft-07/schema",
+        "additionalProperties": false,
+        "type": "object"
+    },
+    {
+        "$id": "urn:SendLocalList.req",
+        "$schema": "http://json-schema.org/draft-07/schema",
+        "additionalProperties": false,
+        "properties": {
+            "listVersion": {
+                "type": "integer"
+            },
+            "localAuthorizationList": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "idTag": {
+                            "type": "string",
+                            "maxLength": 20
+                        },
+                        "idTagInfo": {
+                            "type": "object",
+                            "properties": {
+                                "expiryDate": {
+                                    "type": "string",
+                                    "format": "date-time"
+                                },
+                                "parentIdTag": {
+                                    "type": "string",
+                                    "maxLength": 20
+                                },
+                                "status": {
+                                    "type": "string",
+                                    "enum": [
+                                        "Accepted",
+                                        "Blocked",
+                                        "Expired",
+                                        "Invalid",
+                                        "ConcurrentTx"
+                                    ]
+                                }
+                            },
+                            "additionalProperties": false,
+                            "required": [
+                                "status"
+                            ]
+                        }
+                    },
+                    "additionalProperties": false,
+                    "required": [
+                        "idTag"
+                    ]
+                }
+            },
+            "updateType": {
+                "type": "string",
+                "enum": [
+                    "Differential",
+                    "Full"
+                ]
+            }
+        },
+        "required": [
+            "listVersion",
+            "updateType"
+        ],
+        "type": "object"
+    },
+    {
+        "$id": "urn:SendLocalList.conf",
+        "$schema": "http://json-schema.org/draft-07/schema",
+        "additionalProperties": false,
+        "properties": {
+            "status": {
+                "type": "string",
+                "enum": [
+                    "Accepted",
+                    "Failed",
+                    "NotSupported",
+                    "VersionMismatch"
+                ]
+            }
+        },
+        "required": [
+            "status"
+        ],
+        "type": "object"
+    },
+    {
+        "$id": "urn:SetChargingProfile.req",
+        "$schema": "http://json-schema.org/draft-07/schema",
+        "additionalProperties": false,
+        "properties": {
+            "connectorId": {
+                "type": "integer"
+            },
+            "csChargingProfiles": {
+                "type": "object",
+                "properties": {
+                    "chargingProfileId": {
+                        "type": "integer"
+                    },
+                    "transactionId": {
+                        "type": "integer"
+                    },
+                    "stackLevel": {
+                        "type": "integer"
+                    },
+                    "chargingProfilePurpose": {
+                        "type": "string",
+                        "enum": [
+                            "ChargePointMaxProfile",
+                            "TxDefaultProfile",
+                            "TxProfile"
+                        ]
+                    },
+                    "chargingProfileKind": {
+                        "type": "string",
+                        "enum": [
+                            "Absolute",
+                            "Recurring",
+                            "Relative"
+                        ]
+                    },
+                    "recurrencyKind": {
+                        "type": "string",
+                        "enum": [
+                            "Daily",
+                            "Weekly"
+                        ]
+                    },
+                    "validFrom": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "validTo": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "chargingSchedule": {
+                        "type": "object",
+                        "properties": {
+                            "duration": {
+                                "type": "integer"
+                            },
+                            "startSchedule": {
+                                "type": "string",
+                                "format": "date-time"
+                            },
+                            "chargingRateUnit": {
+                                "type": "string",
+                                "enum": [
+                                    "A",
+                                    "W"
+                                ]
+                            },
+                            "chargingSchedulePeriod": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "startPeriod": {
+                                            "type": "integer"
+                                        },
+                                        "limit": {
+                                            "type": "number",
+                                            "multipleOf": 0.1
+                                        },
+                                        "numberPhases": {
+                                            "type": "integer"
+                                        }
+                                    },
+                                    "additionalProperties": false,
+                                    "required": [
+                                        "startPeriod",
+                                        "limit"
+                                    ]
+                                }
+                            },
+                            "minChargingRate": {
+                                "type": "number",
+                                "multipleOf": 0.1
+                            }
+                        },
+                        "additionalProperties": false,
+                        "required": [
+                            "chargingRateUnit",
+                            "chargingSchedulePeriod"
+                        ]
+                    }
+                },
+                "additionalProperties": false,
+                "required": [
+                    "chargingProfileId",
+                    "stackLevel",
+                    "chargingProfilePurpose",
+                    "chargingProfileKind",
+                    "chargingSchedule"
+                ]
+            }
+        },
+        "required": [
+            "connectorId",
+            "csChargingProfiles"
+        ],
+        "type": "object"
+    },
+    {
+        "$id": "urn:SetChargingProfile.conf",
+        "$schema": "http://json-schema.org/draft-07/schema",
+        "additionalProperties": false,
+        "properties": {
+            "status": {
+                "type": "string",
+                "enum": [
+                    "Accepted",
+                    "Rejected",
+                    "NotSupported"
+                ]
+            }
+        },
+        "required": [
+            "status"
+        ],
+        "type": "object"
+    },
+    {
+        "$id": "urn:SignCertificate.req",
+        "$schema": "http://json-schema.org/draft-07/schema",
+        "additionalProperties": false,
+        "properties": {
+            "csr": {
+                "type": "string",
+                "maxLength": 5500
+            }
+        },
+        "required": [
+            "csr"
+        ],
+        "type": "object"
+    },
+    {
+        "$id": "urn:SignCertificate.conf",
+        "$schema": "http://json-schema.org/draft-07/schema",
+        "additionalProperties": false,
+        "definitions": {
+            "GenericStatusEnumType": {
+                "type": "string",
+                "enum": [
+                    "Accepted",
+                    "Rejected"
+                ]
+            }
+        },
+        "properties": {
+            "status": {
+                "$ref": "#/definitions/GenericStatusEnumType"
+            }
+        },
+        "required": [
+            "status"
+        ],
+        "type": "object"
+    },
+    {
+        "$id": "urn:SignedFirmwareStatusNotification.req",
+        "$schema": "http://json-schema.org/draft-07/schema",
+        "additionalProperties": false,
+        "definitions": {
+            "FirmwareStatusEnumType": {
+                "type": "string",
+                "enum": [
+                    "Downloaded",
+                    "DownloadFailed",
+                    "Downloading",
+                    "DownloadScheduled",
+                    "DownloadPaused",
+                    "Idle",
+                    "InstallationFailed",
+                    "Installing",
+                    "Installed",
+                    "InstallRebooting",
+                    "InstallScheduled",
+                    "InstallVerificationFailed",
+                    "InvalidSignature",
+                    "SignatureVerified"
+                ]
+            }
+        },
+        "properties": {
+            "status": {
+                "$ref": "#/definitions/FirmwareStatusEnumType"
+            },
+            "requestId": {
+                "type": "integer"
+            }
+        },
+        "required": [
+            "status"
+        ],
+        "type": "object"
+    },
+    {
+        "$id": "urn:SignedFirmwareStatusNotification.conf",
+        "$schema": "http://json-schema.org/draft-07/schema",
+        "additionalProperties": false,
+        "type": "object"
+    },
+    {
+        "$id": "urn:SignedUpdateFirmware.req",
+        "$schema": "http://json-schema.org/draft-07/schema",
+        "additionalProperties": false,
+        "definitions": {
+            "FirmwareType": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                    "location": {
+                        "type": "string",
+                        "maxLength": 512
+                    },
+                    "retrieveDateTime": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "installDateTime": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "signingCertificate": {
+                        "type": "string",
+                        "maxLength": 5500
+                    },
+                    "signature": {
+                        "type": "string",
+                        "maxLength": 800
+                    }
+                },
+                "required": [
+                    "location",
+                    "retrieveDateTime",
+                    "signingCertificate",
+                    "signature"
+                ]
+            }
+        },
+        "properties": {
+            "retries": {
+                "type": "integer"
+            },
+            "retryInterval": {
+                "type": "integer"
+            },
+            "requestId": {
+                "type": "integer"
+            },
+            "firmware": {
+                "$ref": "#/definitions/FirmwareType"
+            }
+        },
+        "required": [
+            "requestId",
+            "firmware"
+        ],
+        "type": "object"
+    },
+    {
+        "$id": "urn:SignedUpdateFirmware.conf",
+        "$schema": "http://json-schema.org/draft-07/schema",
+        "additionalProperties": false,
+        "definitions": {
+            "UpdateFirmwareStatusEnumType": {
+                "type": "string",
+                "enum": [
+                    "Accepted",
+                    "Rejected",
+                    "AcceptedCanceled",
+                    "InvalidCertificate",
+                    "RevokedCertificate"
+                ]
+            }
+        },
+        "properties": {
+            "status": {
+                "$ref": "#/definitions/UpdateFirmwareStatusEnumType"
+            }
+        },
+        "required": [
+            "status"
+        ],
+        "type": "object"
+    },
+    {
+        "$id": "urn:StartTransaction.req",
+        "$schema": "http://json-schema.org/draft-07/schema",
+        "additionalProperties": false,
+        "properties": {
+            "connectorId": {
+                "type": "integer"
+            },
+            "idTag": {
+                "type": "string",
+                "maxLength": 20
+            },
+            "meterStart": {
+                "type": "integer"
+            },
+            "reservationId": {
+                "type": "integer"
+            },
+            "timestamp": {
+                "type": "string",
+                "format": "date-time"
+            }
+        },
+        "required": [
+            "connectorId",
+            "idTag",
+            "meterStart",
+            "timestamp"
+        ],
+        "type": "object"
+    },
+    {
+        "$id": "urn:StartTransaction.conf",
+        "$schema": "http://json-schema.org/draft-07/schema",
+        "additionalProperties": false,
+        "properties": {
+            "idTagInfo": {
+                "type": "object",
+                "properties": {
+                    "expiryDate": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "parentIdTag": {
+                        "type": "string",
+                        "maxLength": 20
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "Accepted",
+                            "Blocked",
+                            "Expired",
+                            "Invalid",
+                            "ConcurrentTx"
+                        ]
+                    }
+                },
+                "additionalProperties": false,
+                "required": [
+                    "status"
+                ]
+            },
+            "transactionId": {
+                "type": "integer"
+            }
+        },
+        "required": [
+            "idTagInfo",
+            "transactionId"
+        ],
+        "type": "object"
+    },
+    {
+        "$id": "urn:StatusNotification.req",
+        "$schema": "http://json-schema.org/draft-07/schema",
+        "additionalProperties": false,
+        "properties": {
+            "connectorId": {
+                "type": "integer"
+            },
+            "errorCode": {
+                "type": "string",
+                "enum": [
+                    "ConnectorLockFailure",
+                    "EVCommunicationError",
+                    "GroundFailure",
+                    "HighTemperature",
+                    "InternalError",
+                    "LocalListConflict",
+                    "NoError",
+                    "OtherError",
+                    "OverCurrentFailure",
+                    "PowerMeterFailure",
+                    "PowerSwitchFailure",
+                    "ReaderFailure",
+                    "ResetFailure",
+                    "UnderVoltage",
+                    "OverVoltage",
+                    "WeakSignal"
+                ]
+            },
+            "info": {
+                "type": "string",
+                "maxLength": 50
+            },
+            "status": {
+                "type": "string",
+                "enum": [
+                    "Available",
+                    "Preparing",
+                    "Charging",
+                    "SuspendedEVSE",
+                    "SuspendedEV",
+                    "Finishing",
+                    "Reserved",
+                    "Unavailable",
+                    "Faulted"
+                ]
+            },
+            "timestamp": {
+                "type": "string",
+                "format": "date-time"
+            },
+            "vendorId": {
+                "type": "string",
+                "maxLength": 255
+            },
+            "vendorErrorCode": {
+                "type": "string",
+                "maxLength": 50
+            }
+        },
+        "required": [
+            "connectorId",
+            "errorCode",
+            "status"
+        ],
+        "type": "object"
+    },
+    {
+        "$id": "urn:StatusNotification.conf",
+        "$schema": "http://json-schema.org/draft-07/schema",
+        "additionalProperties": false,
+        "properties": {},
+        "type": "object"
+    },
+    {
+        "$id": "urn:StopTransaction.req",
+        "$schema": "http://json-schema.org/draft-07/schema",
+        "additionalProperties": false,
+        "properties": {
+            "idTag": {
+                "type": "string",
+                "maxLength": 20
+            },
+            "meterStop": {
+                "type": "integer"
+            },
+            "timestamp": {
+                "type": "string",
+                "format": "date-time"
+            },
+            "transactionId": {
+                "type": "integer"
+            },
+            "reason": {
+                "type": "string",
+                "enum": [
+                    "EmergencyStop",
+                    "EVDisconnected",
+                    "HardReset",
+                    "Local",
+                    "Other",
+                    "PowerLoss",
+                    "Reboot",
+                    "Remote",
+                    "SoftReset",
+                    "UnlockCommand",
+                    "DeAuthorized"
+                ]
+            },
+            "transactionData": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "timestamp": {
+                            "type": "string",
+                            "format": "date-time"
+                        },
+                        "sampledValue": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "value": {
+                                        "type": "string"
+                                    },
+                                    "context": {
+                                        "type": "string",
+                                        "enum": [
+                                            "Interruption.Begin",
+                                            "Interruption.End",
+                                            "Sample.Clock",
+                                            "Sample.Periodic",
+                                            "Transaction.Begin",
+                                            "Transaction.End",
+                                            "Trigger",
+                                            "Other"
+                                        ]
+                                    },
+                                    "format": {
+                                        "type": "string",
+                                        "enum": [
+                                            "Raw",
+                                            "SignedData"
+                                        ]
+                                    },
+                                    "measurand": {
+                                        "type": "string",
+                                        "enum": [
+                                            "Energy.Active.Export.Register",
+                                            "Energy.Active.Import.Register",
+                                            "Energy.Reactive.Export.Register",
+                                            "Energy.Reactive.Import.Register",
+                                            "Energy.Active.Export.Interval",
+                                            "Energy.Active.Import.Interval",
+                                            "Energy.Reactive.Export.Interval",
+                                            "Energy.Reactive.Import.Interval",
+                                            "Power.Active.Export",
+                                            "Power.Active.Import",
+                                            "Power.Offered",
+                                            "Power.Reactive.Export",
+                                            "Power.Reactive.Import",
+                                            "Power.Factor",
+                                            "Current.Import",
+                                            "Current.Export",
+                                            "Current.Offered",
+                                            "Voltage",
+                                            "Frequency",
+                                            "Temperature",
+                                            "SoC",
+                                            "RPM"
+                                        ]
+                                    },
+                                    "phase": {
+                                        "type": "string",
+                                        "enum": [
+                                            "L1",
+                                            "L2",
+                                            "L3",
+                                            "N",
+                                            "L1-N",
+                                            "L2-N",
+                                            "L3-N",
+                                            "L1-L2",
+                                            "L2-L3",
+                                            "L3-L1"
+                                        ]
+                                    },
+                                    "location": {
+                                        "type": "string",
+                                        "enum": [
+                                            "Cable",
+                                            "EV",
+                                            "Inlet",
+                                            "Outlet",
+                                            "Body"
+                                        ]
+                                    },
+                                    "unit": {
+                                        "type": "string",
+                                        "enum": [
+                                            "Wh",
+                                            "kWh",
+                                            "varh",
+                                            "kvarh",
+                                            "W",
+                                            "kW",
+                                            "VA",
+                                            "kVA",
+                                            "var",
+                                            "kvar",
+                                            "A",
+                                            "V",
+                                            "K",
+                                            "Celcius",
+                                            "Celsius",
+                                            "Fahrenheit",
+                                            "Percent"
+                                        ]
+                                    }
+                                },
+                                "additionalProperties": false,
+                                "required": [
+                                    "value"
+                                ]
+                            }
+                        }
+                    },
+                    "additionalProperties": false,
+                    "required": [
+                        "timestamp",
+                        "sampledValue"
+                    ]
+                }
+            }
+        },
+        "required": [
+            "transactionId",
+            "timestamp",
+            "meterStop"
+        ],
+        "type": "object"
+    },
+    {
+        "$id": "urn:StopTransaction.conf",
+        "$schema": "http://json-schema.org/draft-07/schema",
+        "additionalProperties": false,
+        "properties": {
+            "idTagInfo": {
+                "type": "object",
+                "properties": {
+                    "expiryDate": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "parentIdTag": {
+                        "type": "string",
+                        "maxLength": 20
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "Accepted",
+                            "Blocked",
+                            "Expired",
+                            "Invalid",
+                            "ConcurrentTx"
+                        ]
+                    }
+                },
+                "additionalProperties": false,
+                "required": [
+                    "status"
+                ]
+            }
+        },
+        "type": "object"
+    },
+    {
+        "$id": "urn:TriggerMessage.req",
+        "$schema": "http://json-schema.org/draft-07/schema",
+        "additionalProperties": false,
+        "properties": {
+            "requestedMessage": {
+                "type": "string",
+                "enum": [
+                    "BootNotification",
+                    "DiagnosticsStatusNotification",
+                    "FirmwareStatusNotification",
+                    "Heartbeat",
+                    "MeterValues",
+                    "StatusNotification"
+                ]
+            },
+            "connectorId": {
+                "type": "integer"
+            }
+        },
+        "required": [
+            "requestedMessage"
+        ],
+        "type": "object"
+    },
+    {
+        "$id": "urn:TriggerMessage.conf",
+        "$schema": "http://json-schema.org/draft-07/schema",
+        "additionalProperties": false,
+        "properties": {
+            "status": {
+                "type": "string",
+                "enum": [
+                    "Accepted",
+                    "Rejected",
+                    "NotImplemented"
+                ]
+            }
+        },
+        "required": [
+            "status"
+        ],
+        "type": "object"
+    },
+    {
+        "$id": "urn:UnlockConnector.req",
+        "$schema": "http://json-schema.org/draft-07/schema",
+        "additionalProperties": false,
+        "properties": {
+            "connectorId": {
+                "type": "integer"
+            }
+        },
+        "required": [
+            "connectorId"
+        ],
+        "type": "object"
+    },
+    {
+        "$id": "urn:UnlockConnector.conf",
+        "$schema": "http://json-schema.org/draft-07/schema",
+        "additionalProperties": false,
+        "properties": {
+            "status": {
+                "type": "string",
+                "enum": [
+                    "Unlocked",
+                    "UnlockFailed",
+                    "NotSupported"
+                ]
+            }
+        },
+        "required": [
+            "status"
+        ],
+        "type": "object"
+    },
+    {
+        "$id": "urn:UpdateFirmware.req",
+        "$schema": "http://json-schema.org/draft-07/schema",
+        "additionalProperties": false,
+        "properties": {
+            "location": {
+                "type": "string",
+                "format": "uri"
+            },
+            "retries": {
+                "type": "integer"
+            },
+            "retrieveDate": {
+                "type": "string",
+                "format": "date-time"
+            },
+            "retryInterval": {
+                "type": "integer"
+            }
+        },
+        "required": [
+            "location",
+            "retrieveDate"
+        ],
+        "type": "object"
+    },
+    {
+        "$id": "urn:UpdateFirmware.conf",
+        "$schema": "http://json-schema.org/draft-07/schema",
+        "additionalProperties": false,
+        "properties": {},
+        "type": "object"
+    }
+]

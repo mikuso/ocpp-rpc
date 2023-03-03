@@ -119,7 +119,6 @@ export class RPCBaseClient extends EventEmitter {
     private _badMessagesCount: number;
     protected _reconnectAttempt: number;
     protected _options: RPCBaseClientOptions;
-    protected _connectionUrl: URL;
     protected _connectPromise?: Promise<EventOpenResult>;
     private _nextPingTimeout?: NodeJS.Timeout;
 
@@ -131,7 +130,6 @@ export class RPCBaseClient extends EventEmitter {
         this._handlers = new Map();
         this._state = StateEnum.CLOSED;
         this._callQueue = new Queue();
-        this._connectionUrl = new URL('');
         
         this._ws = undefined;
         this._wsAbortController = undefined;

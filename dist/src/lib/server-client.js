@@ -1,13 +1,16 @@
-import { RPCBaseClient } from "./baseclient";
-import { StateEnum } from "./client";
-export class RPCServerClient extends RPCBaseClient {
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.RPCServerClient = void 0;
+const baseclient_1 = require("./baseclient");
+const client_1 = require("./client");
+class RPCServerClient extends baseclient_1.RPCBaseClient {
     _session;
     _handshake;
     constructor(options, { ws, handshake, session }) {
         super(options);
         this._session = session;
         this._handshake = handshake;
-        this._state = StateEnum.OPEN;
+        this._state = client_1.StateEnum.OPEN;
         this._identity = this._options.identity;
         this._ws = ws;
         this._protocol = ws.protocol;
@@ -19,7 +22,5 @@ export class RPCServerClient extends RPCBaseClient {
     get session() {
         return this._session;
     }
-    async connect() {
-        throw Error("Cannot connect from server to client");
-    }
 }
+exports.RPCServerClient = RPCServerClient;

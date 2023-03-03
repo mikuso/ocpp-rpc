@@ -1,4 +1,6 @@
-export default class Queue {
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+class Queue {
     _queue;
     _pending;
     _concurrency;
@@ -40,3 +42,4 @@ export default class Queue {
         this._next();
     }
 }
+exports.default = Queue;

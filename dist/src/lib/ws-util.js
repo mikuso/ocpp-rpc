@@ -1,4 +1,7 @@
+"use strict";
 // Excerpt of code taken from the 'ws' module (necessary because it is not exported)
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.isValidStatusCode = exports.parseSubprotocols = exports.abortHandshake = void 0;
 // Copyright (c) 2011 Einar Otto Stangvik <einaros@gmail.com>
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -15,17 +18,17 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
-import { STATUS_CODES } from 'node:http';
-export function abortHandshake(socket, code, message, headers) {
+const node_http_1 = require("node:http");
+function abortHandshake(socket, code, message, headers) {
     if (socket.writable) {
-        message = message ?? STATUS_CODES[code] ?? 'Aborted';
+        message = message ?? node_http_1.STATUS_CODES[code] ?? 'Aborted';
         headers = {
             Connection: 'close',
             'Content-Type': 'text/html',
             'Content-Length': String(Buffer.byteLength(message)),
             ...headers
         };
-        socket.write(`HTTP/1.1 ${code} ${STATUS_CODES[code]}\r\n` +
+        socket.write(`HTTP/1.1 ${code} ${node_http_1.STATUS_CODES[code]}\r\n` +
             Object.entries(headers)
                 .map(([k, v]) => `${k}: ${v}`)
                 .join('\r\n') +
@@ -35,6 +38,7 @@ export function abortHandshake(socket, code, message, headers) {
     socket.removeAllListeners('error');
     socket.destroy();
 }
+exports.abortHandshake = abortHandshake;
 const tokenChars = [
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -45,7 +49,7 @@ const tokenChars = [
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0 // 112 - 127
 ];
-export function parseSubprotocols(header) {
+function parseSubprotocols(header) {
     const protocols = new Set();
     let start = -1;
     let end = -1;
@@ -88,6 +92,7 @@ export function parseSubprotocols(header) {
     protocols.add(protocol);
     return protocols;
 }
+exports.parseSubprotocols = parseSubprotocols;
 /**
  * Checks if a status code is allowed in a close frame.
  *
@@ -95,7 +100,7 @@ export function parseSubprotocols(header) {
  * @return {Boolean} `true` if the status code is valid, else `false`
  * @public
  */
-export function isValidStatusCode(code) {
+function isValidStatusCode(code) {
     return ((code >= 1000 &&
         code <= 1014 &&
         code !== 1004 &&
@@ -103,3 +108,4 @@ export function isValidStatusCode(code) {
         code !== 1006) ||
         (code >= 3000 && code <= 4999));
 }
+exports.isValidStatusCode = isValidStatusCode;

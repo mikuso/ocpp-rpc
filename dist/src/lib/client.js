@@ -1,24 +1,28 @@
-import { setTimeout } from 'node:timers/promises';
-import { WebSocket } from 'ws';
-import { ExponentialStrategy } from 'backoff';
-import { UnexpectedHttpResponse } from './errors';
-import { getPackageIdent } from './util';
-import EventBuffer from './event-buffer';
-import { RPCBaseClient } from './baseclient';
-export var StateEnum;
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.RPCClient = exports.StateEnum = void 0;
+const promises_1 = require("node:timers/promises");
+const ws_1 = require("ws");
+const backoff_1 = require("backoff");
+const errors_1 = require("./errors");
+const util_1 = require("./util");
+const event_buffer_1 = require("./event-buffer");
+const baseclient_1 = require("./baseclient");
+var StateEnum;
 (function (StateEnum) {
-    StateEnum[StateEnum["CONNECTING"] = WebSocket.CONNECTING] = "CONNECTING";
-    StateEnum[StateEnum["OPEN"] = WebSocket.OPEN] = "OPEN";
-    StateEnum[StateEnum["CLOSING"] = WebSocket.CLOSING] = "CLOSING";
-    StateEnum[StateEnum["CLOSED"] = WebSocket.CLOSED] = "CLOSED";
-})(StateEnum || (StateEnum = {}));
-export class RPCClient extends RPCBaseClient {
+    StateEnum[StateEnum["CONNECTING"] = ws_1.WebSocket.CONNECTING] = "CONNECTING";
+    StateEnum[StateEnum["OPEN"] = ws_1.WebSocket.OPEN] = "OPEN";
+    StateEnum[StateEnum["CLOSING"] = ws_1.WebSocket.CLOSING] = "CLOSING";
+    StateEnum[StateEnum["CLOSED"] = ws_1.WebSocket.CLOSED] = "CLOSED";
+})(StateEnum = exports.StateEnum || (exports.StateEnum = {}));
+class RPCClient extends baseclient_1.RPCBaseClient {
     _identity;
     _state;
     _ws;
     _protocol;
     _options;
     _backoffStrategy;
+    _connectionUrl;
     constructor(options) {
         super(options);
         this._identity = options.identity;
@@ -54,7 +58,7 @@ export class RPCClient extends RPCBaseClient {
     }
     reconfigure(options) {
         super.reconfigure(options);
-        this._backoffStrategy = new ExponentialStrategy(this._options.backoff);
+        this._backoffStrategy = new backoff_1.ExponentialStrategy(this._options.backoff);
     }
     /**
      * Attempt to connect to the RPCServer.
@@ -117,7 +121,7 @@ export class RPCClient extends RPCBaseClient {
                 noDelay: true,
                 signal: this._wsAbortController.signal,
                 headers: {
-                    'user-agent': getPackageIdent()
+                    'user-agent': (0, util_1.getPackageIdent)()
                 },
             }, this._options.wsOpts ?? {});
             Object.assign(wsOpts.headers, this._options.headers);
@@ -130,8 +134,8 @@ export class RPCClient extends RPCBaseClient {
                 const b64 = Buffer.concat([usernameBuffer, passwordBuffer]).toString('base64');
                 wsOpts.headers.authorization = 'Basic ' + b64;
             }
-            this._ws = new WebSocket(this._connectionUrl, this._protocolOptions, wsOpts);
-            const leadMsgBuffer = new EventBuffer(this._ws, 'message');
+            this._ws = new ws_1.WebSocket(this._connectionUrl, this._protocolOptions, wsOpts);
+            const leadMsgBuffer = new event_buffer_1.default(this._ws, 'message');
             let upgradeResponse;
             try {
                 await new Promise((resolve, reject) => {
@@ -139,7 +143,7 @@ export class RPCClient extends RPCBaseClient {
                         return reject(Error("WebSocket missing"));
                     }
                     this._ws.once('unexpected-response', (request, response) => {
-                        const err = new UnexpectedHttpResponse(response.statusMessage);
+                        const err = new errors_1.UnexpectedHttpResponse(response.statusMessage);
                         err.code = response.statusCode;
                         err.request = request;
                         err.response = response;
@@ -195,7 +199,7 @@ export class RPCClient extends RPCBaseClient {
             try {
                 this._state = StateEnum.CONNECTING;
                 const delay = this._backoffStrategy.next();
-                await setTimeout(delay, null, { signal: this._wsAbortController?.signal });
+                await (0, promises_1.setTimeout)(delay, null, { signal: this._wsAbortController?.signal });
                 await this._beginConnect().catch(async (err) => {
                     const intolerableErrors = [
                         'Maximum redirects exceeded',
@@ -219,3 +223,4 @@ export class RPCClient extends RPCBaseClient {
         }
     }
 }
+exports.RPCClient = RPCClient;

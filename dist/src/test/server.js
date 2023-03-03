@@ -2,9 +2,9 @@
 const assert = require('assert/strict');
 const http = require('http');
 const { once } = require('events');
-const RPCClient = require("../lib/client");
-const { TimeoutError, UnexpectedHttpResponse, WebsocketUpgradeError } = require('../lib/errors');
-const RPCServer = require("../lib/server");
+const { RPCClient } = require("../lib/client");
+const { UnexpectedHttpResponse, WebsocketUpgradeError } = require('../lib/errors');
+const { RPCServer } = require("../lib/server");
 const { setTimeout } = require('timers/promises');
 const { createValidator } = require('../lib/validator');
 const { abortHandshake } = require('../lib/ws-util');

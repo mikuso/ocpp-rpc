@@ -2,14 +2,14 @@
 const assert = require('assert/strict');
 const http = require('http');
 const { once } = require('events');
-const RPCClient = require("../lib/client");
+const { RPCClient, StateEnum } = require("../lib/client");
+const { CLOSING, CLOSED, CONNECTING } = StateEnum;
 const { TimeoutError, RPCFrameworkError, RPCError, RPCProtocolError, RPCTypeConstraintViolationError, RPCOccurenceConstraintViolationError, RPCPropertyConstraintViolationError, RPCOccurrenceConstraintViolationError, RPCFormationViolationError } = require('../lib/errors');
-const RPCServer = require("../lib/server");
+const { RPCServer } = require("../lib/server");
 const { setTimeout } = require('timers/promises');
 const { createValidator } = require('../lib/validator');
 const { createRPCError } = require('../lib/util');
 const { NOREPLY } = require('../lib/symbols');
-const { CLOSING, CLOSED, CONNECTING } = RPCClient;
 describe('RPCClient', function () {
     this.timeout(500);
     async function createServer(options = {}, extra = {}) {

@@ -1,9 +1,13 @@
-import { RPCGenericError, RPCNotImplementedError, RPCNotSupportedError, RPCInternalError, RPCProtocolError, RPCSecurityError, RPCFormationViolationError, RPCFormatViolationError, RPCPropertyConstraintViolationError, RPCOccurenceConstraintViolationError, RPCOccurrenceConstraintViolationError, RPCTypeConstraintViolationError, RPCMessageTypeNotSupportedError, RPCFrameworkError, } from './errors';
-import { name, version } from '../../package.json';
-export function getPackageIdent() {
-    return `${name}/${version} (${process.platform})`;
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.createRPCError = exports.getErrorPlainObject = exports.translateErrorToOCPPCode = exports.getPackageIdent = void 0;
+const errors_1 = require("./errors");
+const package_json_1 = require("../../package.json");
+function getPackageIdent() {
+    return `${package_json_1.name}/${package_json_1.version} (${process.platform})`;
 }
-export function translateErrorToOCPPCode(keyword) {
+exports.getPackageIdent = getPackageIdent;
+function translateErrorToOCPPCode(keyword) {
     switch (keyword) {
         default:
         case 'maximum':
@@ -29,23 +33,24 @@ export function translateErrorToOCPPCode(keyword) {
             return "TypeConstraintViolation";
     }
 }
+exports.translateErrorToOCPPCode = translateErrorToOCPPCode;
 const rpcErrorLUT = {
-    'GenericError': RPCGenericError,
-    'NotImplemented': RPCNotImplementedError,
-    'NotSupported': RPCNotSupportedError,
-    'InternalError': RPCInternalError,
-    'ProtocolError': RPCProtocolError,
-    'SecurityError': RPCSecurityError,
-    'FormationViolation': RPCFormationViolationError,
-    'FormatViolation': RPCFormatViolationError,
-    'PropertyConstraintViolation': RPCPropertyConstraintViolationError,
-    'OccurenceConstraintViolation': RPCOccurenceConstraintViolationError,
-    'OccurrenceConstraintViolation': RPCOccurrenceConstraintViolationError,
-    'TypeConstraintViolation': RPCTypeConstraintViolationError,
-    'MessageTypeNotSupported': RPCMessageTypeNotSupportedError,
-    'RpcFrameworkError': RPCFrameworkError,
+    'GenericError': errors_1.RPCGenericError,
+    'NotImplemented': errors_1.RPCNotImplementedError,
+    'NotSupported': errors_1.RPCNotSupportedError,
+    'InternalError': errors_1.RPCInternalError,
+    'ProtocolError': errors_1.RPCProtocolError,
+    'SecurityError': errors_1.RPCSecurityError,
+    'FormationViolation': errors_1.RPCFormationViolationError,
+    'FormatViolation': errors_1.RPCFormatViolationError,
+    'PropertyConstraintViolation': errors_1.RPCPropertyConstraintViolationError,
+    'OccurenceConstraintViolation': errors_1.RPCOccurenceConstraintViolationError,
+    'OccurrenceConstraintViolation': errors_1.RPCOccurrenceConstraintViolationError,
+    'TypeConstraintViolation': errors_1.RPCTypeConstraintViolationError,
+    'MessageTypeNotSupported': errors_1.RPCMessageTypeNotSupportedError,
+    'RpcFrameworkError': errors_1.RPCFrameworkError,
 };
-export function getErrorPlainObject(err) {
+function getErrorPlainObject(err) {
     try {
         // (nasty hack)
         // attempt to serialise into JSON to ensure the error is, in fact, serialisable
@@ -60,9 +65,11 @@ export function getErrorPlainObject(err) {
         };
     }
 }
-export function createRPCError(type, message, details) {
-    const E = rpcErrorLUT[type] ?? RPCGenericError;
+exports.getErrorPlainObject = getErrorPlainObject;
+function createRPCError(type, message, details) {
+    const E = rpcErrorLUT[type] ?? errors_1.RPCGenericError;
     const err = new E(message ?? '');
     err.details = details ?? {};
     return err;
 }
+exports.createRPCError = createRPCError;

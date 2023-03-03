@@ -47,6 +47,7 @@ export class RPCClient extends RPCBaseClient {
     protected _protocol?: string;
     protected _options: RPCClientOptions;
     private _backoffStrategy!: ExponentialStrategy;
+    protected _connectionUrl!: URL;
 
     constructor(options: RPCClientOptions) {
         super(options);

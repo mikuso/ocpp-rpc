@@ -1,7 +1,6 @@
 const assert = require('assert/strict');
-const { once } = require('events');
-const RPCClient = require("../lib/client");
-const RPCServer = require("../lib/server");
+const {RPCClient} = require("../lib/client");
+const {RPCServer} = require("../lib/server");
 const { setTimeout } = require('timers/promises');
 const { createValidator } = require('../lib/validator');
 
@@ -79,7 +78,7 @@ describe('RPCServerClient', function(){
             });
 
             await cli.connect();
-            await assert.rejects(servCli.connect());
+            await assert.throws(() => servCli.connect());
 
             await cli.close();
             await close();

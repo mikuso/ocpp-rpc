@@ -1,4 +1,6 @@
-export default class EventBuffer {
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+class EventBuffer {
     _emitter;
     _event;
     _collector;
@@ -17,3 +19,4 @@ export default class EventBuffer {
         return this._buffer;
     }
 }
+exports.default = EventBuffer;
