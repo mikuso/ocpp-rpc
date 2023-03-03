@@ -2,10 +2,15 @@
   "name": "ocpp-rpc",
   "version": "2.0.0",
   "description": "A client & server implementation of the WAMP-like RPC-over-websocket system defined in the OCPP protocols (e.g. OCPP1.6-J and OCPP2.0.1).",
-  "main": "./src",
   "scripts": {
     "test": "mocha",
-    "coverage": "nyc --reporter=lcov --reporter=text mocha"
+    "coverage": "nyc --reporter=lcov --reporter=text mocha",
+    "clean": "rm -rf ./dist",
+    "build": "npm run clean && npm run build:types && npm run build:esm && npm run build:cjs",
+    "build:types": "tsc -p ./tsconfig/types.json",
+    "build:esm": "tsc -p ./tsconfig/node-esm.json && mv dist/esm/src/index.js dist/esm/src/index.mjs",
+    "build:cjs": "tsc -p ./tsconfig/node-cjs.json",
+    "prepack": "npm run build"
   },
   "engines": {
     "node": ">=17.3.0"
@@ -45,9 +50,23 @@
   "devDependencies": {
     "@types/ajv": "^1.0.0",
     "@types/backoff": "^2.5.2",
+    "@types/mocha": "^10.0.1",
     "@types/node": "^18.14.1",
     "@types/ws": "^8.5.4",
     "mocha": "^10.2.0",
-    "nyc": "^15.1.0"
-  }
+    "nyc": "^15.1.0",
+    "ts-node": "^10.9.1",
+    "typescript": "^4.9.5"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/esm/src/index.mjs",
+      "require": "./dist/cjs/src/index.js"
+    }
+  },
+  "files": [
+    "./dist/**/*"
+  ],
+  "types": "./dist/types/src/index.d.ts",
+  "main": "./dist/cjs/src/index.js"
 }

@@ -1,0 +1,18 @@
+{
+    "compilerOptions": {
+        "types": ["mocha", "node"],
+        "strict": true,
+        "forceConsistentCasingInFileNames": true,
+        "noUnusedLocals": true,
+        "sourceMap": false,
+        "removeComments": true,
+        "allowJs": true,
+        "skipLibCheck": true,
+        "noImplicitAny": true,
+        "moduleResolution": "node",
+        "resolveJsonModule": true,
+        "target": "ES2019",
+        "declaration": false
+    },
+    "files": ["../src/index.ts"]
+}
