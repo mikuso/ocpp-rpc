@@ -58,9 +58,9 @@ interface HandlerCallbackArgs {
     params: any;
     signal: AbortSignal;
     messageId: string;
-    reply: (payload: HandlerReplyPayload) => void;
+    reply: (payload: HandlerReplyPayload) => any;
 }
-type HandlerCallback = (options: HandlerCallbackArgs) => {};
+type HandlerCallback = (options: HandlerCallbackArgs) => any;
 interface CallOptions {
     noReply?: boolean;
     callTimeoutMs?: number;

@@ -1,6 +1,7 @@
-const assert = require('assert');
-const { createRPCError, getErrorPlainObject } = require("../src/lib/util");
-const errors = require('../src/lib/errors');
+import 'mocha';
+import * as assert from 'assert';
+import { createRPCError, getErrorPlainObject } from "./util";
+import * as errors from './errors';
 
 describe('util', function(){
 
@@ -27,7 +28,7 @@ describe('util', function(){
 
         it('should create generic error if code not found', () => {
 
-            assert.ok(createRPCError('_NOTFOUND_') instanceof errors.RPCGenericError);
+            assert.ok(createRPCError('_NOTFOUND_' as any) instanceof errors.RPCGenericError);
 
         });
 

@@ -11,7 +11,6 @@ import EventBuffer from './event-buffer';
 import standardValidators from './standard-validators';
 import { Validator } from './validator';
 import { isValidStatusCode } from './ws-util';
-import { IncomingMessage } from 'node:http';
 
 export enum MsgType {
     UNKNOWN = -1,
@@ -20,18 +19,18 @@ export enum MsgType {
     ERROR = 4,
 }
 
-export interface EventOpenResult {
-    response: IncomingMessage;
+export interface CloseEvent {
+    code?: number;
+    reason?: string | Buffer;
 }
 
 type BufferLike = string | RawData;
 type CallReplyValue = object | typeof NOREPLY;
 
 export interface RPCBaseClientOptions {
-    query?: string | string[][] | URLSearchParams;
     identity: string;
     endpoint: URL | string;
-    password?: Buffer;
+    password?: Buffer | string;
     callTimeoutMs?: number;
     pingIntervalMs?: number;
     deferPingsOnActivity?: boolean;
@@ -59,22 +58,17 @@ interface CloseOptions {
     force?: boolean;
 }
 
-export interface CloseEvent {
-    code?: number;
-    reason?: string | Buffer;
-}
-
 type HandlerReplyPayload = object | Error | Promise<object> | Promise<Error>;
 
-interface HandlerCallbackArgs {
+export interface HandlerCallbackArgs {
     method: string;
     params: any;
     signal: AbortSignal;
     messageId: string;
-    reply: (payload: HandlerReplyPayload) => void;
+    reply: (payload: HandlerReplyPayload) => any;
 }
 
-type HandlerCallback = (options: HandlerCallbackArgs) => {};
+type HandlerCallback = (options: HandlerCallbackArgs) => any;
 
 interface CallOptions {
     noReply?: boolean;
@@ -178,7 +172,6 @@ export class RPCBaseClient extends EventEmitter {
     private _badMessagesCount: number;
     protected _reconnectAttempt: number;
     protected _options: RPCBaseClientOptions;
-    protected _connectPromise?: Promise<EventOpenResult>;
     private _nextPingTimeout?: NodeJS.Timeout;
 
     constructor(options: RPCBaseClientOptions) {
@@ -242,7 +235,7 @@ export class RPCBaseClient extends EventEmitter {
         return this._state;
     }
 
-    reconfigure(options: RPCBaseClientOptions) {
+    reconfigure(options: Partial<RPCBaseClientOptions>) {
         const newOpts = Object.assign(this._options, options);
 
         if (!newOpts.identity) {
@@ -411,11 +404,13 @@ export class RPCBaseClient extends EventEmitter {
      * @param {boolean} options.noReply - If set to true, the call will return immediately.
      * @returns Promise<*> - Response value from the remote handler.
      */
-    async call(method: string, params: object, options: CallOptions = {}) {
+    async call(method: string, params?: object, options?: CallOptions & {noReply: true}): Promise<undefined>;
+    async call(method: string, params?: object, options?: CallOptions): Promise<object>;
+    async call(method: string, params: object = {}, options: CallOptions = {}) {
         return await this._callQueue.push(this._call.bind(this, method, params, options));
     }
 
-    async _call(method: string, params: object, options: CallOptions = {}) {
+    async _call(method: string, params: object, options: CallOptions = {}): Promise<object | undefined> {
         const timeoutMs = options.callTimeoutMs ?? this._options.callTimeoutMs;
 
         if ([StateEnum.CLOSED, StateEnum.CLOSING].includes(this._state)) {

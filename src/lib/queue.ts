@@ -20,7 +20,7 @@ export default class Queue {
         this._next();
     }
 
-    push(fn: Function) {
+    push<T>(fn: () => Promise<T>): Promise<T> {
         return new Promise((resolve, reject) => {
             this._queue.push({
                 fn,

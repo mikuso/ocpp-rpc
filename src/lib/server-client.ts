@@ -4,6 +4,7 @@ import { StateEnum } from "./client";
 import { RPCServerClientHandshake } from "./server";
 
 export interface RPCServerClientDependencies {
+    query?: string | string[][] | URLSearchParams;
     ws: WebSocket;
     handshake: RPCServerClientHandshake;
     session: any;

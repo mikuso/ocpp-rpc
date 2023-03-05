@@ -7,11 +7,12 @@ import EventBuffer from './event-buffer';
 import { IncomingMessage } from 'node:http';
 import { CloseEvent, RPCBaseClient, RPCBaseClientEvents, RPCBaseClientOptions } from './baseclient';
 
-export interface EventOpenResult {
+export interface OpenEvent {
     response: IncomingMessage;
 }
 
 export interface RPCClientOptions extends RPCBaseClientOptions {
+    query?: string | string[][] | URLSearchParams | Record<string, string>;
     wsOpts?: ClientOptions;
     maxReconnects?: number;
     backoff?: ExponentialOptions;
@@ -26,7 +27,7 @@ export enum StateEnum {
 
 interface RPCClientEvents extends RPCBaseClientEvents {
     'protocol': (protocol?: string) => void;
-    'open': (result: EventOpenResult) => void;
+    'open': (result: OpenEvent) => void;
     'connecting': (event: {protocols: string[]}) => void;
 }
 
@@ -47,6 +48,7 @@ export class RPCClient extends RPCBaseClient {
     protected _protocol?: string;
     protected _options: RPCClientOptions;
     private _backoffStrategy!: ExponentialStrategy;
+    protected _connectPromise?: Promise<OpenEvent>;
     protected _connectionUrl!: URL;
 
     constructor(options: RPCClientOptions) {
@@ -87,7 +89,7 @@ export class RPCClient extends RPCBaseClient {
         this.reconfigure(options || {});
     }
 
-    reconfigure(options: RPCClientOptions) {
+    reconfigure(options: Partial<RPCClientOptions>) {
         super.reconfigure(options);
         this._backoffStrategy = new ExponentialStrategy(this._options.backoff);
     }
@@ -96,7 +98,7 @@ export class RPCClient extends RPCBaseClient {
      * Attempt to connect to the RPCServer.
      * @returns {Promise<undefined>} Resolves when connected, rejects on failure
      */
-    async connect(): Promise<EventOpenResult> {
+    async connect(): Promise<OpenEvent> {
         this._protocolOptions = this._options.protocols ?? [];
         this._protocol = undefined;
         this._identity = this._options.identity;
@@ -235,7 +237,7 @@ export class RPCClient extends RPCBaseClient {
                     buff.forEach(msg => this.sendRaw(msg));
                 }
 
-                const result: EventOpenResult = {
+                const result: OpenEvent = {
                     response: upgradeResponse!,
                 };
 

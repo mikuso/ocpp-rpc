@@ -48,7 +48,7 @@ export type AuthCallback = (
     reject: (code?: number, message?: string) => void,
     handshake: RPCServerClientHandshake,
     signal: AbortSignal
-) => {};
+) => void;
 
 export interface ServerCloseOptions {
     code?: number;
