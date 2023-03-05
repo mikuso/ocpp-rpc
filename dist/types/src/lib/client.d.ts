@@ -2,7 +2,7 @@
 import { WebSocket, ClientOptions } from 'ws';
 import { ExponentialOptions } from 'backoff';
 import { IncomingMessage } from 'node:http';
-import { CloseEvent, RPCBaseClient, RPCBaseClientOptions } from './baseclient';
+import { CloseEvent, RPCBaseClient, RPCBaseClientEvents, RPCBaseClientOptions } from './baseclient';
 export interface EventOpenResult {
     response: IncomingMessage;
 }
@@ -17,14 +17,16 @@ export declare enum StateEnum {
     CLOSING,
     CLOSED
 }
-export declare interface RPCClient {
-    on(event: 'close', listener: (event: CloseEvent) => void): this;
-    on(event: 'disconnect', listener: (event: CloseEvent) => void): this;
-    on(event: 'protocol', listener: (protocol?: string) => void): this;
-    on(event: 'open', listener: (result: EventOpenResult) => void): this;
-    on(event: 'connecting', listener: (event: {
+interface RPCClientEvents extends RPCBaseClientEvents {
+    'protocol': (protocol?: string) => void;
+    'open': (result: EventOpenResult) => void;
+    'connecting': (event: {
         protocols: string[];
-    }) => void): this;
+    }) => void;
+}
+export declare interface RPCClient {
+    on<U extends keyof RPCClientEvents>(event: U, listener: RPCClientEvents[U]): this;
+    emit<U extends keyof RPCClientEvents>(event: U, ...args: Parameters<RPCClientEvents[U]>): boolean;
 }
 export declare class RPCClient extends RPCBaseClient {
     protected _identity: string;
@@ -45,3 +47,4 @@ export declare class RPCClient extends RPCBaseClient {
     private _beginConnect;
     private _tryReconnect;
 }
+export {};

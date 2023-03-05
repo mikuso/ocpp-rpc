@@ -3,6 +3,7 @@
 /// <reference types="node" />
 import { EventEmitter } from 'node:events';
 import { WebSocket, RawData } from 'ws';
+import { NOREPLY } from './symbols';
 import { OCPPErrorType } from './util';
 import EventBuffer from './event-buffer';
 import { Validator } from './validator';
@@ -16,7 +17,8 @@ export declare enum MsgType {
 export interface EventOpenResult {
     response: IncomingMessage;
 }
-type BufferLike = string | Buffer;
+type BufferLike = string | RawData;
+type CallReplyValue = object | typeof NOREPLY;
 export interface RPCBaseClientOptions {
     query?: string | string[][] | URLSearchParams;
     identity: string;
@@ -63,6 +65,63 @@ interface CallOptions {
     noReply?: boolean;
     callTimeoutMs?: number;
     signal?: AbortSignal;
+}
+type OCPPCallPayload = [MsgType.CALL, string, string, object];
+type OCPPResultPayload = [MsgType.RESULT, string, object];
+type OCPPErrorPayload = [MsgType.ERROR, string, string, string, object];
+interface BadMessageEvent {
+    buffer: RawData;
+    error: Error;
+    response?: OCPPErrorPayload;
+}
+export interface RPCBaseClientEvents {
+    'badMessage': (event: BadMessageEvent) => void;
+    'call': (event: {
+        outbound: boolean;
+        payload: OCPPCallPayload;
+    }) => void;
+    'callResult': (event: {
+        outbound: boolean;
+        messageId: string;
+        method: string;
+        params: object;
+        result: object;
+    }) => void;
+    'callError': (event: {
+        outbound: boolean;
+        messageId: string;
+        method: string;
+        params: object;
+        error: Error;
+    }) => void;
+    'close': (event: CloseEvent) => void;
+    'closing': () => void;
+    'disconnect': (event: CloseEvent) => void;
+    'message': (event: {
+        message: BufferLike;
+        outbound: boolean;
+    }) => void;
+    'ping': (event: {
+        rtt: number;
+    }) => void;
+    'response': (event: {
+        outbound: boolean;
+        payload: OCPPResultPayload | OCPPErrorPayload;
+    }) => void;
+    'socketError': (error: Error) => void;
+    'strictValidationFailure': (event: {
+        messageId: string;
+        method: string;
+        params: object;
+        result: object | null;
+        error: Error;
+        outbound: boolean;
+        isCall: boolean;
+    }) => void;
+}
+export declare interface RPCBaseClient {
+    on<U extends keyof RPCBaseClientEvents>(event: U, listener: RPCBaseClientEvents[U]): this;
+    emit<U extends keyof RPCBaseClientEvents>(event: U, ...args: Parameters<RPCBaseClientEvents[U]>): boolean;
 }
 export declare class RPCBaseClient extends EventEmitter {
     protected _identity: string;
@@ -129,7 +188,7 @@ export declare class RPCBaseClient extends EventEmitter {
      * @returns Promise<*> - Response value from the remote handler.
      */
     call(method: string, params: object, options?: CallOptions): Promise<unknown>;
-    _call(method: string, params: object, options?: CallOptions): Promise<object | undefined>;
+    _call(method: string, params: object, options?: CallOptions): Promise<any>;
     /**
      * Start consuming from a WebSocket
      * @param {WebSocket} ws - A WebSocket instance
@@ -137,13 +196,13 @@ export declare class RPCBaseClient extends EventEmitter {
      */
     protected _attachWebsocket(ws: WebSocket, leadMsgBuffer?: EventBuffer): void;
     _rejectPendingCalls(abortReason: string): void;
-    _awaitUntilPendingSettled(): Promise<PromiseSettledResult<any>[]>;
+    _awaitUntilPendingSettled(): Promise<PromiseSettledResult<CallReplyValue | OCPPErrorPayload | OCPPResultPayload>[]>;
     protected _handleDisconnect({ code, reason }: CloseEvent): void;
     _deferNextPing(): void;
     _keepAlive(): Promise<void>;
     _onMessage(buffer: RawData): void;
     _onCall(msgId: string, method: string, params: object): Promise<void>;
-    _onCallResult(msgId: string, result: object): any;
+    _onCallResult(msgId: string, result: object): void;
     _onCallError(msgId: string, errorCode: OCPPErrorType, errorDescription: string, errorDetails: object): void;
 }
 export {};

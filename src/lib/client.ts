@@ -5,7 +5,7 @@ import { UnexpectedHttpResponse } from './errors';
 import { getPackageIdent } from './util';
 import EventBuffer from './event-buffer';
 import { IncomingMessage } from 'node:http';
-import { CloseEvent, RPCBaseClient, RPCBaseClientOptions } from './baseclient';
+import { CloseEvent, RPCBaseClient, RPCBaseClientEvents, RPCBaseClientOptions } from './baseclient';
 
 export interface EventOpenResult {
     response: IncomingMessage;
@@ -24,10 +24,20 @@ export enum StateEnum {
     CLOSED = WebSocket.CLOSED,
 }
 
+interface RPCClientEvents extends RPCBaseClientEvents {
+    'protocol': (protocol?: string) => void;
+    'open': (result: EventOpenResult) => void;
+    'connecting': (event: {protocols: string[]}) => void;
+}
+
 export declare interface RPCClient {
-    on(event: 'protocol', listener: (protocol?: string) => void): this;
-    on(event: 'open', listener: (result: EventOpenResult) => void): this;
-    on(event: 'connecting', listener: (event: {protocols: string[]}) => void): this;
+    on<U extends keyof RPCClientEvents>(
+      event: U, listener: RPCClientEvents[U]
+    ): this;
+  
+    emit<U extends keyof RPCClientEvents>(
+      event: U, ...args: Parameters<RPCClientEvents[U]>
+    ): boolean;
 }
 
 export class RPCClient extends RPCBaseClient {

@@ -221,7 +221,11 @@ class RPCBaseClient extends node_events_1.EventEmitter {
                 throw error;
             }
         }
-        const pendingCall = { msgId, method, params };
+        const pendingCall = {
+            msgId,
+            method,
+            params
+        };
         if (!options.noReply) {
             const timeoutAc = new AbortController();
             const cleanup = () => {
@@ -243,13 +247,13 @@ class RPCBaseClient extends node_events_1.EventEmitter {
                 });
             }
             pendingCall.promise = new Promise((resolve, reject) => {
-                pendingCall.resolve = (...args) => {
+                pendingCall.resolve = (result) => {
                     cleanup();
-                    resolve(...args);
+                    resolve(result);
                 };
-                pendingCall.reject = (...args) => {
+                pendingCall.reject = (err) => {
                     cleanup();
-                    reject(...args);
+                    reject(err);
                 };
             });
             if (timeoutMs && timeoutMs > 0 && timeoutMs < Infinity) {
@@ -426,17 +430,17 @@ class RPCBaseClient extends node_events_1.EventEmitter {
                     if (typeof method !== 'string') {
                         throw new errors_1.RPCFrameworkError("Method must be a string");
                     }
-                    this.emit('call', { outbound: false, payload });
+                    this.emit('call', { outbound: false, payload: payload });
                     this._onCall(msgId, method, params);
                     break;
                 case MsgType.RESULT:
                     const [result] = more;
-                    this.emit('response', { outbound: false, payload });
+                    this.emit('response', { outbound: false, payload: payload });
                     this._onCallResult(msgId, result);
                     break;
                 case MsgType.ERROR:
                     const [errorCode, errorDescription, errorDetails] = more;
-                    this.emit('response', { outbound: false, payload });
+                    this.emit('response', { outbound: false, payload: payload });
                     this._onCallError(msgId, errorCode, errorDescription, errorDetails);
                     break;
                 default:
@@ -446,7 +450,7 @@ class RPCBaseClient extends node_events_1.EventEmitter {
         }
         catch (error) {
             const shouldClose = ++this._badMessagesCount > this._options.maxBadMessages;
-            let response = [];
+            let response;
             let errorMessage = '';
             if (![MsgType.ERROR, MsgType.RESULT].includes(messageType)) {
                 const details = (error === null || error === void 0 ? void 0 : error.details)
@@ -533,6 +537,9 @@ class RPCBaseClient extends node_events_1.EventEmitter {
                 const pending = { abort: ac.abort.bind(ac), promise: callPromise };
                 this._pendingResponses.set(msgId, pending);
                 const result = await callPromise;
+                if (result === symbols_1.NOREPLY) {
+                    return;
+                }
                 this.emit('callResult', {
                     outbound: false,
                     messageId: msgId,
@@ -540,9 +547,6 @@ class RPCBaseClient extends node_events_1.EventEmitter {
                     params,
                     result,
                 });
-                if (result === symbols_1.NOREPLY) {
-                    return;
-                }
                 payload = [MsgType.RESULT, msgId, result];
                 if (this._protocol && this._strictProtocols.includes(this._protocol)) {
                     const validator = this._strictValidators.get(this._protocol);
