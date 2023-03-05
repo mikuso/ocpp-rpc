@@ -2,9 +2,12 @@
 /// <reference types="node" />
 /// <reference types="node" />
 /// <reference types="node" />
+/// <reference types="node" />
+/// <reference types="node" />
 import { EventEmitter } from 'events';
 import { WebSocket } from 'ws';
 import { IncomingMessage } from 'node:http';
+import { RPCServerClient } from './server-client';
 import { Validator } from './validator';
 import { Socket } from 'net';
 import { TLSSocket } from 'tls';
@@ -19,29 +22,41 @@ export interface RPCServerClientHandshake {
     headers: object;
     request: IncomingMessage;
 }
-interface RPCServerOptionsReconfigurable {
-    protocols: string[];
-    callTimeoutMs: number;
-    pingIntervalMs: number;
-    deferPingsOnActivity: boolean;
-    respondWithDetailedErrors: boolean;
-    callConcurrency: number;
-    maxBadMessages: number;
-    strictMode: boolean | string[];
-    strictModeValidators: Validator[];
+export interface RPCServerOptionsReconfigurable {
+    protocols?: string[];
+    callTimeoutMs?: number;
+    pingIntervalMs?: number;
+    deferPingsOnActivity?: boolean;
+    respondWithDetailedErrors?: boolean;
+    callConcurrency?: number;
+    maxBadMessages?: number;
+    strictMode?: boolean | string[];
+    strictModeValidators?: Validator[];
 }
-interface ListenOptions {
+export interface ListenOptions {
     signal?: AbortSignal;
 }
-interface RPCServerOptions extends RPCServerOptionsReconfigurable {
-    wssOptions: object;
+export interface RPCServerOptions extends RPCServerOptionsReconfigurable {
+    wssOptions?: object;
 }
-type AuthCallback = (accept: (session?: any, protocol?: string) => void, reject: (code?: number, message?: string) => void, handshake: RPCServerClientHandshake, signal: AbortSignal) => {};
-interface ServerCloseOptions {
+export type AuthCallback = (accept: (session?: any, protocol?: string) => void, reject: (code?: number, message?: string) => void, handshake: RPCServerClientHandshake, signal: AbortSignal) => {};
+export interface ServerCloseOptions {
     code?: number;
     reason?: string;
     awaitPending?: boolean;
     force?: boolean;
+}
+export declare interface RPCServer {
+    on(event: 'client', listener: (client: RPCServerClient) => void): this;
+    on(event: 'error', listener: (error: Error) => void): this;
+    on(event: 'upgradeAborted', listener: (event: {
+        error: Error;
+        socket: Socket | TLSSocket;
+        request: IncomingMessage;
+        identity: string;
+    }) => void): this;
+    on(event: 'closing', listener: () => void): this;
+    on(event: 'close', listener: () => void): this;
 }
 export declare class RPCServer extends EventEmitter {
     private _httpServerAbortControllers;
@@ -57,7 +72,6 @@ export declare class RPCServer extends EventEmitter {
     get handleUpgrade(): (request: IncomingMessage, socket: Socket | TLSSocket, head: Buffer) => Promise<void>;
     _onConnection(websocket: WebSocket, request: IncomingMessage): Promise<void>;
     auth(cb?: AuthCallback): void;
-    listen(port: number, host: string, options?: ListenOptions): Promise<import("http").Server<typeof IncomingMessage, typeof import("http").ServerResponse>>;
+    listen(port: number, host?: string, options?: ListenOptions): Promise<import("http").Server<typeof IncomingMessage, typeof import("http").ServerResponse>>;
     close({ code, reason, awaitPending, force }?: ServerCloseOptions): Promise<void>;
 }
-export {};

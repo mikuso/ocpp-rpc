@@ -1,9 +1,10 @@
 import * as assert from 'assert/strict';
-import {RPCClient} from "../src/lib/client";
-import {RPCServer, RPCServerOptions} from "../src/lib/server";
+import {RPCClient} from "./client";
+import {RPCServer, RPCServerOptions, ServerCloseOptions} from "./server";
 import { setTimeout } from 'timers/promises';
-import { createValidator } from '../src/lib/validator';
+import { createValidator } from './validator';
 import { AddressInfo } from 'net';
+import { RPCServerClient } from './server-client';
 
 function getEchoValidator() {
     return createValidator('echo1.0', [
@@ -42,7 +43,7 @@ describe('RPCServerClient', function(){
         const httpServer = await server.listen(0);
         const port = (httpServer.address() as AddressInfo).port;
         const endpoint = `ws://localhost:${port}`;
-        const close = (...args) => server.close(...args);
+        const close = (options?: ServerCloseOptions) => server.close(options);
         server.on('client', client => {
             client.handle('Echo', async ({params}) => {
                 return params;
@@ -67,10 +68,10 @@ describe('RPCServerClient', function(){
 
         it('should throw', async () => {
 
-            let servCli;
+            let servCli: RPCClient;
             const {endpoint, close} = await createServer({}, {
-                withClient: cli => {
-                    servCli = cli;
+                withClient: (cli: RPCServerClient) => {
+                    servCli = cli as unknown as RPCClient;
                 }
             });
             const cli = new RPCClient({
@@ -108,14 +109,15 @@ describe('RPCServerClient', function(){
             ...inheritableOptions
         });
         const httpServer = await server.listen(0);
-        const port = httpServer.address().port;
+        const port = (httpServer.address() as AddressInfo).port;
         const endpoint = `ws://localhost:${port}`;
 
-        const test = new Promise((resolve, reject) => {
+        const test = new Promise<void>((resolve, reject) => {
             server.on('client', cli => {
                 const optionKeys = Object.keys(inheritableOptions);
+                const _options: any = cli['_options'];
                 for (const optionKey of optionKeys) {
-                    const option = cli._options[optionKey];
+                    const option = _options[optionKey];
                     if (option !== inheritableOptions[optionKey]) {
                         reject(Error(`RPCServerClient did not inherit option "${optionKey}" from RPCServer`));
                     }
@@ -134,7 +136,7 @@ describe('RPCServerClient', function(){
         await cli.connect();
         await cli.close();
         await server.close();
-        await test;
+        await assert.doesNotReject(test);
     });
 
 });

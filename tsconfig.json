@@ -1,3 +1,6 @@
 {
-    "extends": "./tsconfig/node-cjs.json"
+    "extends": "./tsconfig/node-cjs.json",
+    "compilerOptions": {
+        "types": ["mocha"]
+    }
 }

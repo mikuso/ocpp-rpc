@@ -1,24 +1,26 @@
-const assert = require('assert/strict');
-const http = require('http');
-const { once } = require('events');
-const {RPCClient, StateEnum} = require("../src/lib/client");
+import 'mocha';
+import * as assert from 'assert/strict';
+import http from 'http';
+import { once } from 'events';
+import {RPCClient, StateEnum} from "./client";
+import { TimeoutError, RPCFrameworkError, RPCError, RPCProtocolError, RPCTypeConstraintViolationError, RPCOccurenceConstraintViolationError, RPCPropertyConstraintViolationError, RPCOccurrenceConstraintViolationError, RPCFormationViolationError } from './errors';
+import {RPCServer, RPCServerOptions, ServerCloseOptions} from "./server";
+import { setTimeout } from 'timers/promises';
+import { createValidator } from './validator';
+import { createRPCError } from './util';
+import { NOREPLY } from './symbols';
+import { AddressInfo } from 'net';
 const {CLOSING, CLOSED, CONNECTING} = StateEnum;
-const { TimeoutError, RPCFrameworkError, RPCError, RPCProtocolError, RPCTypeConstraintViolationError, RPCOccurenceConstraintViolationError, RPCPropertyConstraintViolationError, RPCOccurrenceConstraintViolationError, RPCFormationViolationError } = require('../src/lib/errors');
-const {RPCServer} = require("../src/lib/server");
-const { setTimeout } = require('timers/promises');
-const { createValidator } = require('../src/lib/validator');
-const { createRPCError } = require('../src/lib/util');
-const { NOREPLY } = require('../src/lib/symbols');
 
 describe('RPCClient', function(){
     this.timeout(500);
 
-    async function createServer(options = {}, extra = {}) {
+    async function createServer(options: RPCServerOptions, extra:any = {}) {
         const server = new RPCServer(options);
         const httpServer = await server.listen(0);
-        const port = httpServer.address().port;
+        const port = (httpServer.address() as AddressInfo).port;
         const endpoint = `ws://localhost:${port}`;
-        const close = (...args) => server.close(...args);
+        const close = (options?: ServerCloseOptions) => server.close(options);
         server.on('client', client => {
             client.handle('Echo', async ({params}) => {
                 return params;
@@ -78,6 +80,7 @@ describe('RPCClient', function(){
             assert.throws(() => {
                 new RPCClient({
                     endpoint: 'ws://localhost',
+                    identity: undefined!,
                 });
             });
 

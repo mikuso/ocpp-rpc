@@ -9,7 +9,7 @@ import { getErrorPlainObject, createRPCError } from './util';
 import Queue from './queue';
 import standardValidators from './standard-validators';
 import { isValidStatusCode } from './ws-util';
-var MsgType;
+export var MsgType;
 (function (MsgType) {
     MsgType[MsgType["UNKNOWN"] = -1] = "UNKNOWN";
     MsgType[MsgType["CALL"] = 2] = "CALL";
@@ -96,6 +96,9 @@ export class RPCBaseClient extends EventEmitter {
             this._strictProtocols = newOpts.strictMode;
         }
         else if (newOpts.strictMode) {
+            if (!newOpts.protocols) {
+                throw Error(`To use strictMode, you must specify at least one subprotocol in options.protocols or pass a list of protocols to options.strictMode`);
+            }
             this._strictProtocols = newOpts.protocols;
         }
         const missingValidator = this._strictProtocols.find(protocol => !this._strictValidators.has(protocol));
@@ -440,7 +443,7 @@ export class RPCBaseClient extends EventEmitter {
         }
         catch (error) {
             const shouldClose = ++this._badMessagesCount > this._options.maxBadMessages;
-            let response = null;
+            let response = [];
             let errorMessage = '';
             if (![MsgType.ERROR, MsgType.RESULT].includes(messageType)) {
                 const details = (error === null || error === void 0 ? void 0 : error.details)

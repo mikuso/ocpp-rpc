@@ -22,7 +22,7 @@
 
 import 'mocha';
 import * as assert from 'assert';
-import { parseSubprotocols as parse } from '../src/lib/ws-util';
+import { parseSubprotocols as parse } from './ws-util';
 
 describe('subprotocol', () => {
     describe('parse', () => {

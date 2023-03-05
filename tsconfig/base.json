@@ -1,6 +1,6 @@
 {
     "compilerOptions": {
-        "types": ["mocha", "node"],
+        "types": ["node"],
         "strict": true,
         "forceConsistentCasingInFileNames": true,
         "noUnusedLocals": true,

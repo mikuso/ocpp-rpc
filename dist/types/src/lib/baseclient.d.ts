@@ -7,6 +7,12 @@ import { OCPPErrorType } from './util';
 import EventBuffer from './event-buffer';
 import { Validator } from './validator';
 import { IncomingMessage } from 'node:http';
+export declare enum MsgType {
+    UNKNOWN = -1,
+    CALL = 2,
+    RESULT = 3,
+    ERROR = 4
+}
 export interface EventOpenResult {
     response: IncomingMessage;
 }
@@ -16,17 +22,17 @@ export interface RPCBaseClientOptions {
     identity: string;
     endpoint: URL | string;
     password?: Buffer;
-    callTimeoutMs: number;
-    pingIntervalMs: number;
-    deferPingsOnActivity: boolean;
-    headers: {};
-    protocols: string[];
-    reconnect: boolean;
-    respondWithDetailedErrors: boolean;
-    callConcurrency: number;
-    maxBadMessages: number;
-    strictMode: boolean | string[];
-    strictModeValidators: Validator[];
+    callTimeoutMs?: number;
+    pingIntervalMs?: number;
+    deferPingsOnActivity?: boolean;
+    headers?: {};
+    protocols?: string[];
+    reconnect?: boolean;
+    respondWithDetailedErrors?: boolean;
+    callConcurrency?: number;
+    maxBadMessages?: number;
+    strictMode?: boolean | string[];
+    strictModeValidators?: Validator[];
 }
 export declare enum StateEnum {
     CONNECTING,
@@ -47,7 +53,7 @@ export interface CloseEvent {
 type HandlerReplyPayload = object | Error | Promise<object> | Promise<Error>;
 interface HandlerCallbackArgs {
     method: string;
-    params: object;
+    params: any;
     signal: AbortSignal;
     messageId: string;
     reply: (payload: HandlerReplyPayload) => void;

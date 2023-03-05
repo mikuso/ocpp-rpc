@@ -1,37 +1,30 @@
 /// <reference types="node" />
-/// <reference types="node" />
 import { WebSocket, ClientOptions } from 'ws';
 import { ExponentialOptions } from 'backoff';
-import { Validator } from './validator';
 import { IncomingMessage } from 'node:http';
 import { CloseEvent, RPCBaseClient, RPCBaseClientOptions } from './baseclient';
 export interface EventOpenResult {
     response: IncomingMessage;
 }
 export interface RPCClientOptions extends RPCBaseClientOptions {
-    identity: string;
-    endpoint: URL | string;
-    password?: Buffer;
-    callTimeoutMs: number;
-    pingIntervalMs: number;
-    deferPingsOnActivity: boolean;
-    wsOpts: ClientOptions;
-    headers: {};
-    protocols: string[];
-    reconnect: boolean;
-    maxReconnects: number;
-    respondWithDetailedErrors: boolean;
-    callConcurrency: number;
-    maxBadMessages: number;
-    strictMode: boolean;
-    strictModeValidators: Validator[];
-    backoff: ExponentialOptions;
+    wsOpts?: ClientOptions;
+    maxReconnects?: number;
+    backoff?: ExponentialOptions;
 }
 export declare enum StateEnum {
     CONNECTING,
     OPEN,
     CLOSING,
     CLOSED
+}
+export declare interface RPCClient {
+    on(event: 'close', listener: (event: CloseEvent) => void): this;
+    on(event: 'disconnect', listener: (event: CloseEvent) => void): this;
+    on(event: 'protocol', listener: (protocol?: string) => void): this;
+    on(event: 'open', listener: (result: EventOpenResult) => void): this;
+    on(event: 'connecting', listener: (event: {
+        protocols: string[];
+    }) => void): this;
 }
 export declare class RPCClient extends RPCBaseClient {
     protected _identity: string;

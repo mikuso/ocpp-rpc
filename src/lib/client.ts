@@ -4,7 +4,6 @@ import { ExponentialOptions, ExponentialStrategy } from 'backoff';
 import { UnexpectedHttpResponse } from './errors';
 import { getPackageIdent } from './util';
 import EventBuffer from './event-buffer';
-import { Validator } from './validator';
 import { IncomingMessage } from 'node:http';
 import { CloseEvent, RPCBaseClient, RPCBaseClientOptions } from './baseclient';
 
@@ -13,23 +12,9 @@ export interface EventOpenResult {
 }
 
 export interface RPCClientOptions extends RPCBaseClientOptions {
-    identity: string;
-    endpoint: URL | string;
-    password?: Buffer;
-    callTimeoutMs: number;
-    pingIntervalMs: number;
-    deferPingsOnActivity: boolean;
-    wsOpts: ClientOptions;
-    headers: {};
-    protocols: string[];
-    reconnect: boolean;
-    maxReconnects: number;
-    respondWithDetailedErrors: boolean;
-    callConcurrency: number;
-    maxBadMessages: number;
-    strictMode: boolean;
-    strictModeValidators: Validator[];
-    backoff: ExponentialOptions;
+    wsOpts?: ClientOptions;
+    maxReconnects?: number;
+    backoff?: ExponentialOptions;
 }
 
 export enum StateEnum {
@@ -37,6 +22,12 @@ export enum StateEnum {
     OPEN = WebSocket.OPEN,
     CLOSING = WebSocket.CLOSING,
     CLOSED = WebSocket.CLOSED,
+}
+
+export declare interface RPCClient {
+    on(event: 'protocol', listener: (protocol?: string) => void): this;
+    on(event: 'open', listener: (result: EventOpenResult) => void): this;
+    on(event: 'connecting', listener: (event: {protocols: string[]}) => void): this;
 }
 
 export class RPCClient extends RPCBaseClient {
@@ -256,7 +247,7 @@ export class RPCClient extends RPCBaseClient {
 
     private async _tryReconnect() {
         this._reconnectAttempt++;
-        if (this._reconnectAttempt > this._options.maxReconnects) {
+        if (this._reconnectAttempt > this._options.maxReconnects!) {
             // give up
             this.close({code: 1001, reason: "Giving up"});
         } else {

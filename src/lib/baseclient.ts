@@ -4,7 +4,7 @@ import { setTimeout } from 'node:timers/promises';
 import { setTimeout as setTimeoutCb } from 'node:timers';
 import { WebSocket, RawData } from 'ws';
 import { NOREPLY } from './symbols';
-import { TimeoutError, RPCFrameworkError, RPCGenericError, RPCMessageTypeNotSupportedError } from './errors';
+import { TimeoutError, RPCFrameworkError, RPCGenericError, RPCMessageTypeNotSupportedError, RPCError } from './errors';
 import { getErrorPlainObject, createRPCError, OCPPErrorType } from './util';
 import Queue from './queue';
 import EventBuffer from './event-buffer';
@@ -24,7 +24,7 @@ export interface EventOpenResult {
     response: IncomingMessage;
 }
 
-type BufferLike = string | Buffer;
+type BufferLike = string | RawData;
 type CallReplyValue = object | typeof NOREPLY;
 
 export interface RPCBaseClientOptions {
@@ -68,7 +68,7 @@ type HandlerReplyPayload = object | Error | Promise<object> | Promise<Error>;
 
 interface HandlerCallbackArgs {
     method: string;
-    params: object;
+    params: any;
     signal: AbortSignal;
     messageId: string;
     reply: (payload: HandlerReplyPayload) => void;
@@ -87,14 +87,63 @@ interface PendingCall {
     method: string;
     params: object;
     timeout?: Promise<void>;
-    abort?: (reason: string) => void;
-    resolve?: (payload: object) => void;
-    reject?: (err: Error) => void;
-    promise?: Promise<object>;
+    abort: (reason?: string) => void;
+    resolve: (payload: object) => void;
+    reject: (err: Error) => void;
+    promise: Promise<OCPPErrorPayload | OCPPResultPayload>;
 }
 
+interface PendingResponse {
+    abort: (reason?: string) => void;
+    promise: Promise<CallReplyValue>;
+}
+
+
+type OCPPCallPayload = [MsgType.CALL, string, string, object];
 type OCPPResultPayload = [MsgType.RESULT, string, object];
 type OCPPErrorPayload = [MsgType.ERROR, string, string, string, object];
+type OCPPPayload = OCPPCallPayload | OCPPResultPayload | OCPPErrorPayload;
+
+interface BadMessageEvent {
+    buffer: RawData;
+    error: Error;
+    response?: OCPPErrorPayload;
+}
+
+export declare interface RPCBaseClient {
+    on(event: 'badMessage', listener: (event: BadMessageEvent) => void): this;
+    on(event: 'call', listener: (event: {outbound: boolean, payload: OCPPCallPayload}) => void): this;
+    on(event: 'callResult', listener: (event: {
+        outbound: boolean,
+        messageId: string,
+        method: string,
+        params: object,
+        result: object,
+    }) => void): this;
+    on(event: 'callError', listener: (event: {
+        outbound: boolean,
+        messageId: string,
+        method: string,
+        params: object,
+        error: Error,
+    }) => void): this;
+    on(event: 'close', listener: (event: CloseEvent) => void): this;
+    on(event: 'closing', listener: () => void): this;
+    on(event: 'disconnect', listener: (event: CloseEvent) => void): this;
+    on(event: 'message', listener: (event: {message: BufferLike, outbound: boolean}) => void): this;
+    on(event: 'ping', listener: (event: {rtt: number}) => void): this;
+    on(event: 'response', listener: (event: {outbound: boolean, payload: OCPPResultPayload | OCPPErrorPayload}) => void): this;
+    on(event: 'socketError', listener: (error: Error) => void): this;
+    on(event: 'strictValidationFailure', listener: (event: {
+        messageId: string,
+        method: string,
+        params: string,
+        result: object | null,
+        error: Error,
+        outbound: boolean,
+        isCall: boolean,
+    }) => void): this;
+}
 
 export class RPCBaseClient extends EventEmitter {
     protected _identity: string;
@@ -112,8 +161,8 @@ export class RPCBaseClient extends EventEmitter {
     protected _protocol?: string;
     private _strictProtocols: string[];
     private _strictValidators: Map<string, Validator>;
-    private _pendingCalls: Map<any, any>;
-    private _pendingResponses: Map<any, any>;
+    private _pendingCalls: Map<string, PendingCall>;
+    private _pendingResponses: Map<string, PendingResponse>;
     protected _outboundMsgBuffer: BufferLike[];
     protected _connectedOnce: boolean;
     private _badMessagesCount: number;
@@ -364,14 +413,14 @@ export class RPCBaseClient extends EventEmitter {
         }
 
         const msgId = randomUUID();
-        const payload = [MsgType.CALL, msgId, method, params];
+        const payload: OCPPCallPayload = [MsgType.CALL, msgId, method, params];
 
         if (typeof this._protocol === 'string' && this._strictProtocols.includes(this._protocol)) {
             // perform some strict-mode checks
             const validator = this._strictValidators.get(this._protocol)!;
             try {
                 validator.validate(`urn:${method}.req`, params);
-            } catch (error) {
+            } catch (error: any) {
                 this.emit('strictValidationFailure', {
                     messageId: msgId,
                     method,
@@ -385,7 +434,11 @@ export class RPCBaseClient extends EventEmitter {
             }
         }
 
-        const pendingCall: PendingCall = {msgId, method, params};
+        const pendingCall: any = {
+            msgId,
+            method,
+            params
+        };
 
         if (!options.noReply) {
             const timeoutAc = new AbortController();
@@ -410,13 +463,13 @@ export class RPCBaseClient extends EventEmitter {
             }
 
             pendingCall.promise = new Promise((resolve, reject) => {
-                pendingCall.resolve = (...args) => {
+                pendingCall.resolve = (result: object) => {
                     cleanup();
-                    resolve(...args);
+                    resolve(result);
                 };
-                pendingCall.reject = (...args) => {
+                pendingCall.reject = (err: RPCError) => {
                     cleanup();
-                    reject(...args);
+                    reject(err);
                 };
             });
 
@@ -614,7 +667,7 @@ export class RPCBaseClient extends EventEmitter {
         let messageType: MsgType = MsgType.UNKNOWN;
         
         try {
-            let payload;
+            let payload: OCPPPayload;
             try {
                 payload = JSON.parse(message);
             } catch (err) {
@@ -647,7 +700,7 @@ export class RPCBaseClient extends EventEmitter {
             
             switch (messageType) {
                 case MsgType.CALL:
-                    const [method, params] = more;
+                    const [method, params] = more as [string, object];
                     if (typeof method !== 'string') {
                         throw new RPCFrameworkError("Method must be a string");
                     }
@@ -655,12 +708,12 @@ export class RPCBaseClient extends EventEmitter {
                     this._onCall(msgId, method, params);
                     break;
                 case MsgType.RESULT:
-                    const [result] = more;
+                    const [result] = more as [object];
                     this.emit('response', {outbound: false, payload});
                     this._onCallResult(msgId, result);
                     break;
                 case MsgType.ERROR:
-                    const [errorCode, errorDescription, errorDetails] = more;
+                    const [errorCode, errorDescription, errorDetails] = more as [OCPPErrorType, string, object];
                     this.emit('response', {outbound: false, payload});
                     this._onCallError(msgId, errorCode, errorDescription, errorDetails);
                     break;
@@ -674,7 +727,7 @@ export class RPCBaseClient extends EventEmitter {
             
             const shouldClose = ++this._badMessagesCount > this._options.maxBadMessages!;
 
-            let response: any[] = [];
+            let response!: OCPPErrorPayload;
             let errorMessage = '';
 
             if (![MsgType.ERROR, MsgType.RESULT].includes(messageType)) {
@@ -774,7 +827,7 @@ export class RPCBaseClient extends EventEmitter {
                     }
                 });
                 
-                const pending = {abort: ac.abort.bind(ac), promise: callPromise};
+                const pending: PendingResponse = {abort: ac.abort.bind(ac), promise: callPromise};
                 this._pendingResponses.set(msgId, pending);
                 const result = await callPromise;
 
@@ -869,7 +922,7 @@ export class RPCBaseClient extends EventEmitter {
                 const validator = this._strictValidators.get(this._protocol)!;
                 try {
                     validator.validate(`urn:${pendingCall.method}.conf`, result);
-                } catch (error) {
+                } catch (error: any) {
                     this.emit('strictValidationFailure', {
                         messageId: msgId,
                         method: pendingCall.method,

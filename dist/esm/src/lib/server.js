@@ -60,6 +60,9 @@ export class RPCServer extends EventEmitter {
             strictProtocols = newOpts.strictMode;
         }
         else if (newOpts.strictMode) {
+            if (!newOpts.protocols) {
+                throw Error(`To use strictMode, you must specify at least one subprotocol in options.protocols or pass a list of protocols to options.strictMode`);
+            }
             strictProtocols = newOpts.protocols;
         }
         const missingValidator = strictProtocols.find(protocol => !this._strictValidators.has(protocol));
