@@ -1,29 +1,27 @@
 /// <reference types="node" />
 /// <reference types="node" />
-/// <reference types="node" />
 import { EventEmitter } from 'node:events';
 import { WebSocket, RawData } from 'ws';
 import { NOREPLY } from './symbols';
 import { OCPPErrorType } from './util';
 import EventBuffer from './event-buffer';
 import { Validator } from './validator';
-import { IncomingMessage } from 'node:http';
 export declare enum MsgType {
     UNKNOWN = -1,
     CALL = 2,
     RESULT = 3,
     ERROR = 4
 }
-export interface EventOpenResult {
-    response: IncomingMessage;
+export interface CloseEvent {
+    code?: number;
+    reason?: string | Buffer;
 }
 type BufferLike = string | RawData;
 type CallReplyValue = object | typeof NOREPLY;
 export interface RPCBaseClientOptions {
-    query?: string | string[][] | URLSearchParams;
     identity: string;
     endpoint: URL | string;
-    password?: Buffer;
+    password?: Buffer | string;
     callTimeoutMs?: number;
     pingIntervalMs?: number;
     deferPingsOnActivity?: boolean;
@@ -48,12 +46,8 @@ interface CloseOptions {
     awaitPending?: boolean;
     force?: boolean;
 }
-export interface CloseEvent {
-    code?: number;
-    reason?: string | Buffer;
-}
-type HandlerReplyPayload = object | Error | Promise<object> | Promise<Error>;
-interface HandlerCallbackArgs {
+type HandlerReplyPayload = object | Error | Promise<object> | Promise<Error> | typeof NOREPLY;
+export interface HandlerCallbackArgs {
     method: string;
     params: any;
     signal: AbortSignal;
@@ -66,6 +60,9 @@ interface CallOptions {
     callTimeoutMs?: number;
     signal?: AbortSignal;
 }
+type CallOptionsWithNoReply = CallOptions & {
+    noReply: true;
+};
 type OCPPCallPayload = [MsgType.CALL, string, string, object];
 type OCPPResultPayload = [MsgType.RESULT, string, object];
 type OCPPErrorPayload = [MsgType.ERROR, string, string, string, object];
@@ -146,13 +143,12 @@ export declare class RPCBaseClient extends EventEmitter {
     private _badMessagesCount;
     protected _reconnectAttempt: number;
     protected _options: RPCBaseClientOptions;
-    protected _connectPromise?: Promise<EventOpenResult>;
     private _nextPingTimeout?;
     constructor(options: RPCBaseClientOptions);
     get identity(): string;
     get protocol(): string | undefined;
     get state(): StateEnum;
-    reconfigure(options: RPCBaseClientOptions): void;
+    reconfigure(options: Partial<RPCBaseClientOptions>): void;
     /**
      * Send a message to the RPCServer. While socket is connecting, the message is queued and send when open.
      * @param {Buffer|String} message - String to send via websocket
@@ -187,8 +183,9 @@ export declare class RPCBaseClient extends EventEmitter {
      * @param {boolean} options.noReply - If set to true, the call will return immediately.
      * @returns Promise<*> - Response value from the remote handler.
      */
-    call(method: string, params: object, options?: CallOptions): Promise<unknown>;
-    _call(method: string, params: object, options?: CallOptions): Promise<any>;
+    call(method: string, params: object, options: CallOptionsWithNoReply): Promise<undefined>;
+    call(method: string, params?: object, options?: CallOptions): Promise<any>;
+    _call(method: string, params: object, options?: CallOptions): Promise<any | undefined>;
     /**
      * Start consuming from a WebSocket
      * @param {WebSocket} ws - A WebSocket instance

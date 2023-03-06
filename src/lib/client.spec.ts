@@ -1,9 +1,9 @@
 import 'mocha';
 import * as assert from 'assert/strict';
-import http from 'http';
+import * as http from 'http';
 import { once } from 'events';
 import {RPCClient, StateEnum} from "./client";
-import { TimeoutError, RPCFrameworkError, RPCError, RPCProtocolError, RPCTypeConstraintViolationError, RPCOccurenceConstraintViolationError, RPCPropertyConstraintViolationError, RPCOccurrenceConstraintViolationError, RPCFormationViolationError } from './errors';
+import { TimeoutError, RPCFrameworkError, RPCProtocolError, RPCTypeConstraintViolationError, RPCOccurenceConstraintViolationError, RPCPropertyConstraintViolationError, RPCOccurrenceConstraintViolationError, RPCFormationViolationError } from './errors';
 import {RPCServer, RPCServerOptions, ServerCloseOptions} from "./server";
 import { setTimeout } from 'timers/promises';
 import { createValidator } from './validator';
@@ -11,18 +11,23 @@ import { createRPCError } from './util';
 import { NOREPLY } from './symbols';
 import { AddressInfo } from 'net';
 import { CloseEvent, HandlerCallbackArgs } from './baseclient';
+import { RPCServerClient } from './server-client';
 const {CLOSING, CLOSED, CONNECTING} = StateEnum;
 
 describe('RPCClient', function(){
     this.timeout(500);
 
-    async function createServer(options: RPCServerOptions = {}, extra:any = {}) {
+    interface ExtraOptions {
+        withClient?: (cli: RPCServerClient) => void;
+    }
+
+    async function createServer(options: RPCServerOptions = {}, extra: ExtraOptions = {}) {
         const server = new RPCServer(options);
         const httpServer = await server.listen(0);
         const port = (httpServer.address() as AddressInfo).port;
         const endpoint = `ws://localhost:${port}`;
         const close = (options?: ServerCloseOptions) => server.close(options);
-        server.on('client', client => {
+        server.on('client', (client: RPCServerClient) => {
             client.handle('Echo', async ({params}) => {
                 return params;
             });
@@ -198,8 +203,8 @@ describe('RPCClient', function(){
                 identity: 'X',
             });
 
-            let result;
-            let error;
+            let result: any;
+            let error: any;
 
             cli.on('callResult', evt => {
                 result = evt;
@@ -215,6 +220,9 @@ describe('RPCClient', function(){
             await cli.close();
             await close();
 
+            assert.ok(result);
+            assert.ok(error);
+
             assert.equal(result.method, 'Echo');
             assert.equal(result.outbound, true);
             assert.equal(result.params.txt, 'Test');
@@ -229,7 +237,7 @@ describe('RPCClient', function(){
 
         it('should emit callResult and callError events for inbound calls', async () => {
 
-            let resolveReceived;
+            let resolveReceived: any;
             let received = new Promise(r => {resolveReceived = r});
 
             const {endpoint, close} = await createServer({}, {
@@ -253,8 +261,8 @@ describe('RPCClient', function(){
                 throw err;
             });
 
-            let result;
-            let error;
+            let result: any;
+            let error: any;
 
             cli.on('callResult', evt => {
                 result = evt;
@@ -269,6 +277,9 @@ describe('RPCClient', function(){
             await received;
             await cli.close();
             await close();
+
+            assert.ok(result);
+            assert.ok(error);
 
             assert.equal(result.method, 'Echo');
             assert.equal(result.outbound, false);
@@ -312,7 +323,7 @@ describe('RPCClient', function(){
 
         it('should emit 2 message events after handle', async () => {
             
-            let complete;
+            let complete: any;
             let done = new Promise(r=>{complete = r;});
             const {endpoint, close} = await createServer({}, {
                 withClient: async (cli) => {
@@ -350,7 +361,7 @@ describe('RPCClient', function(){
         });
 
         it("should emit 'badMessage' with 'RpcFrameworkError' when message is not a JSON structure", async () => {
-            const {endpoint, close, server} = await createServer({}, {
+            const {endpoint, close} = await createServer({}, {
                 withClient: cli => {
                     cli.sendRaw('{]');
                 }
@@ -371,7 +382,7 @@ describe('RPCClient', function(){
         });
 
         it("should emit 'badMessage' with 'RpcFrameworkError' when message is not an array", async () => {
-            const {endpoint, close, server} = await createServer({}, {
+            const {endpoint, close} = await createServer({}, {
                 withClient: cli => {
                     cli.sendRaw('{}');
                 }
@@ -392,7 +403,7 @@ describe('RPCClient', function(){
         });
 
         it("should emit 'badMessage' with 'RpcFrameworkError' when message type is not a number", async () => {
-            const {endpoint, close, server} = await createServer({}, {
+            const {endpoint, close} = await createServer({}, {
                 withClient: cli => {
                     cli.sendRaw('["a", "123", "Echo", {}]');
                 }
@@ -413,7 +424,7 @@ describe('RPCClient', function(){
         });
 
         it("should emit 'badMessage' with 'MessageTypeNotSupported' when message type unrecognised", async () => {
-            const {endpoint, close, server} = await createServer({}, {
+            const {endpoint, close} = await createServer({}, {
                 withClient: cli => {
                     cli.sendRaw('[0, "123", "Echo", {}]');
                 }
@@ -434,7 +445,7 @@ describe('RPCClient', function(){
         });
 
         it("should emit 'badMessage' with 'RpcFrameworkError' when message ID is not a string", async () => {
-            const {endpoint, close, server} = await createServer({}, {
+            const {endpoint, close} = await createServer({}, {
                 withClient: cli => {
                     cli.sendRaw('[2, 123, "Echo", {}]');
                 }
@@ -455,7 +466,7 @@ describe('RPCClient', function(){
         });
 
         it("should emit 'badMessage' with 'RpcFrameworkError' when method is not a string", async () => {
-            const {endpoint, close, server} = await createServer({}, {
+            const {endpoint, close} = await createServer({}, {
                 withClient: cli => {
                     cli.sendRaw('[2, "123", 123, {}]');
                 }
@@ -476,8 +487,8 @@ describe('RPCClient', function(){
         });
 
         it("should emit 'badMessage' with 'RpcFrameworkError' when message ID is repeated", async () => {
-            const {endpoint, close, server} = await createServer({}, {
-                withClient: cli => {
+            const {endpoint, close} = await createServer({}, {
+                withClient: () => {
 
                 }
             });
@@ -526,7 +537,7 @@ describe('RPCClient', function(){
                 res.end();
             });
             const httpServerAbort = new AbortController();
-            await new Promise((resolve, reject) => {
+            await new Promise((resolve) => {
                 httpServer.listen({
                     port: 0,
                     host: 'localhost',
@@ -637,7 +648,7 @@ describe('RPCClient', function(){
 
         it('should pass query string to server (as object)', async () => {
             
-            let shake;
+            let shake: any;
             const {endpoint, close, server} = await createServer({}, {
                 withClient: client => {
                     client.handle('GetQuery', () => client.handshake.query.toString());
@@ -669,7 +680,7 @@ describe('RPCClient', function(){
 
         it('should pass query string to server (as string)', async () => {
             
-            let shake;
+            let shake: any;
             const {endpoint, close, server} = await createServer();
             server.auth((accept, reject, handshake) => {
                 shake = handshake;
@@ -694,7 +705,7 @@ describe('RPCClient', function(){
 
         it('should pass headers to server', async () => {
             
-            let shake;
+            let shake: any;
             const {endpoint, close, server} = await createServer({}, {
                 withClient: client => {
                     client.handle('GetHeaders', () => client.handshake.headers);
@@ -728,7 +739,7 @@ describe('RPCClient', function(){
 
         it('should also pass headers to server via wsOpts (but can be overridden by headers option)', async () => {
             
-            let shake;
+            let shake: any;
             const {endpoint, close, server} = await createServer({}, {
                 withClient: client => {
                     client.handle('GetHeaders', () => client.handshake.headers);
@@ -772,7 +783,7 @@ describe('RPCClient', function(){
 
         it('should reject while closing', async () => {
             
-            const {endpoint, close, server} = await createServer();
+            const {endpoint, close} = await createServer();
 
             const cli = new RPCClient({
                 endpoint,
@@ -800,7 +811,7 @@ describe('RPCClient', function(){
 
         it('should do nothing if already connected', async () => {
             
-            const {endpoint, close, server} = await createServer();
+            const {endpoint, close} = await createServer();
 
             const cli = new RPCClient({
                 endpoint,
@@ -818,7 +829,7 @@ describe('RPCClient', function(){
 
         it('should resolve to the same result when called simultaneously', async () => {
             
-            const {endpoint, close, server} = await createServer();
+            const {endpoint, close} = await createServer();
 
             const cli = new RPCClient({
                 endpoint,
@@ -843,7 +854,7 @@ describe('RPCClient', function(){
         it('should authenticate with string passwords', async () => {
             
             const password = 'hunter2';
-            let recPass;
+            let recPass: any;
 
             const {endpoint, close, server} = await createServer();
             server.auth((accept, reject, handshake) => {
@@ -874,7 +885,7 @@ describe('RPCClient', function(){
                 65,66,67,68,69,
                 251,252,253,254,255,
             ]);
-            let recPass;
+            let recPass: any;
 
             const {endpoint, close, server} = await createServer();
             server.auth((accept, reject, handshake) => {
@@ -1009,7 +1020,7 @@ describe('RPCClient', function(){
 
         it('should abort all outbound calls when {awaitPending: false}', async () => {
 
-            const {endpoint, close, server} = await createServer();
+            const {endpoint, close} = await createServer();
             const cli = new RPCClient({endpoint, identity: 'X'});
 
             try {
@@ -1029,8 +1040,8 @@ describe('RPCClient', function(){
 
         it('should abort all inbound calls when {awaitPending: false}', async () => {
             
-            let serverInitiatedCall = null;
-            const {endpoint, close, server} = await createServer({}, {
+            let serverInitiatedCall: any;
+            const {endpoint, close} = await createServer({}, {
                 withClient: client => {
                     serverInitiatedCall = client.call('Sleep', {ms: 50});
                 }
@@ -1059,7 +1070,7 @@ describe('RPCClient', function(){
 
         it('should wait for all outbound calls to settle when {awaitPending: true}', async () => {
 
-            const {endpoint, close, server} = await createServer({respondWithDetailedErrors: true});
+            const {endpoint, close} = await createServer({respondWithDetailedErrors: true});
             const cli = new RPCClient({endpoint, identity: 'X', callConcurrency: 2});
 
             try {
@@ -1084,8 +1095,8 @@ describe('RPCClient', function(){
         it('should wait for all inbound calls to settle when {awaitPending: true}', async () => {
             
             const echoVal = 'TEST123';
-            let serverInitiatedCall = null;
-            const {endpoint, close, server} = await createServer({}, {
+            let serverInitiatedCall: any;
+            const {endpoint, close} = await createServer({}, {
                 withClient: client => {
                     serverInitiatedCall = client.call('SlowEcho', {ms: 50, val: echoVal});
                 }
@@ -1117,7 +1128,7 @@ describe('RPCClient', function(){
 
         it('should close immediately with code 1006 when {force: true}', async () => {
             
-            const {endpoint, close, server} = await createServer();
+            const {endpoint, close} = await createServer();
             const cli = new RPCClient({endpoint, identity: 'X'});
 
             try {
@@ -1134,8 +1145,8 @@ describe('RPCClient', function(){
 
         it('should immediately reject any in-flight calls when {force: true}', async () => {
             
-            let serverInitiatedCall;
-            const {endpoint, close, server} = await createServer({}, {
+            let serverInitiatedCall: any;
+            const {endpoint, close} = await createServer({}, {
                 withClient: client => {
                     serverInitiatedCall = client.call('Sleep', {ms: 5000});
                 }
@@ -1169,7 +1180,7 @@ describe('RPCClient', function(){
 
         it('should not reconnect even when {reconnect: true}', async () => {
             
-            const {endpoint, close, server} = await createServer({
+            const {endpoint, close} = await createServer({
                 protocols: ['a'],
             });
 
@@ -1205,7 +1216,7 @@ describe('RPCClient', function(){
 
         it("should reject with 'RPCError' after invalid payload with client strictMode", async () => {
             
-            const {endpoint, close, server} = await createServer({
+            const {endpoint, close} = await createServer({
                 protocols: ['echo1.0']
             });
             const cli = new RPCClient({
@@ -1243,7 +1254,7 @@ describe('RPCClient', function(){
 
         it("should reject with 'RPCError' after invalid payload with server strictMode", async () => {
             
-            const {endpoint, close, server} = await createServer({
+            const {endpoint, close} = await createServer({
                 protocols: ['ocpp1.6'],
                 strictMode: true,
             }, {withClient: cli => {
@@ -1283,7 +1294,7 @@ describe('RPCClient', function(){
 
         
         it("should reject with 'RPCProtocolError' after invalid response with strictMode", async () => {
-            const {endpoint, close, server} = await createServer({
+            const {endpoint, close} = await createServer({
                 protocols: ['echo1.0']
             }, {withClient: cli => {
                 cli.handle('Echo', async ({params}) => {
@@ -1335,11 +1346,11 @@ describe('RPCClient', function(){
         
         it("should emit 'strictValidationFailure' when incoming call is rejected by strictMode", async () => {
             
-            const {endpoint, close, server} = await createServer({
+            const {endpoint, close} = await createServer({
                 protocols: ['echo1.0']
             }, {withClient: async (cli) => {
                 await cli.call('Echo', {bad: true}).catch(()=>{});
-                await cli.call('Echo').catch(()=>{});
+                await cli.call('Echo', {val: 1}).catch(()=>{});
                 await cli.call('Unknown').catch(()=>{});
             }});
             const cli = new RPCClient({
@@ -1384,7 +1395,7 @@ describe('RPCClient', function(){
 
         
         it("should emit 'strictValidationFailure' when outgoing response is discarded by strictMode", async () => {
-            const {endpoint, close, server} = await createServer({
+            const {endpoint, close} = await createServer({
                 protocols: ['echo1.0']
             }, {withClient: cli => {
                 cli.handle('Echo', async ({params}) => {
@@ -1435,7 +1446,7 @@ describe('RPCClient', function(){
 
         it("should validate calls using in-built validators", async () => {
             
-            const {endpoint, close, server} = await createServer({
+            const {endpoint, close} = await createServer({
                 protocols: ['ocpp1.6'],
                 strictMode: true,
             });
@@ -1452,7 +1463,7 @@ describe('RPCClient', function(){
                 const [c1, c2, c3] = await Promise.allSettled([
                     cli.call('Heartbeat', {}),
                     cli.call('Heartbeat', {a:1}),
-                    cli.call('Heartbeat', {a:'1'}),
+                    cli.call('Heartbeat', '1' as any),
                 ]);
                 
                 assert.equal(c1.status, 'fulfilled');
@@ -1471,7 +1482,7 @@ describe('RPCClient', function(){
 
         it("should reject call validation failure with FormationViolation on ocpp1.6", async () => {
             
-            const {endpoint, close, server} = await createServer({
+            const {endpoint, close} = await createServer({
                 protocols: ['ocpp1.6'],
                 strictMode: true,
             }, {withClient: cli => {
@@ -1505,7 +1516,7 @@ describe('RPCClient', function(){
 
         it('should reject when method is not a string', async () => {
 
-            const {endpoint, close, server} = await createServer();
+            const {endpoint, close} = await createServer();
             const cli = new RPCClient({
                 endpoint,
                 identity: 'X',
@@ -1530,7 +1541,7 @@ describe('RPCClient', function(){
 
         it('should timeout after client callTimeoutMs option', async () => {
 
-            const {endpoint, close, server} = await createServer();
+            const {endpoint, close} = await createServer();
             const cli = new RPCClient({
                 endpoint,
                 identity: 'X',
@@ -1549,7 +1560,7 @@ describe('RPCClient', function(){
 
         it('should not timeout after call callTimeoutMs option override', async () => {
 
-            const {endpoint, close, server} = await createServer();
+            const {endpoint, close} = await createServer();
             const cli = new RPCClient({
                 endpoint,
                 identity: 'X',
@@ -1568,7 +1579,7 @@ describe('RPCClient', function(){
 
         it('should reject when state === CLOSING with {awaitPending: true}', async () => {
 
-            const {endpoint, close, server} = await createServer();
+            const {endpoint, close} = await createServer();
             const cli = new RPCClient({endpoint, identity: 'X'});
 
             try {
@@ -1593,7 +1604,7 @@ describe('RPCClient', function(){
 
         it('should reject when state === CLOSING', async () => {
 
-            const {endpoint, close, server} = await createServer();
+            const {endpoint, close} = await createServer();
             const cli = new RPCClient({endpoint, identity: 'X'});
 
             try {
@@ -1612,7 +1623,7 @@ describe('RPCClient', function(){
 
         it('should reject when state === CLOSED', async () => {
 
-            const {endpoint, close, server} = await createServer();
+            const {endpoint, close} = await createServer();
             const cli = new RPCClient({endpoint, identity: 'X'});
 
             try {
@@ -1629,7 +1640,7 @@ describe('RPCClient', function(){
 
         it('should queue when state === CONNECTING', async () => {
 
-            const {endpoint, close, server} = await createServer();
+            const {endpoint, close} = await createServer();
             const cli = new RPCClient({endpoint, identity: 'X'});
 
             try {
@@ -1638,7 +1649,7 @@ describe('RPCClient', function(){
 
                 assert.equal(cli.state, CONNECTING);
                 await assert.doesNotReject(resPromise);
-                await assert.equal(await resPromise, {test: 123});
+                await assert.deepEqual(await resPromise, {test: 123});
 
             } finally {
                 await cli.close();
@@ -1777,6 +1788,7 @@ describe('RPCClient', function(){
                 const [mType, mId, mVal] = JSON.parse(bad.buffer.toString('utf8'));
 
                 assert.equal(mType, 3);
+                assert.equal(typeof mId, 'string');
                 assert.deepEqual(mVal, echoPayload);
                 assert.equal(res, undefined);
 
@@ -1815,7 +1827,7 @@ describe('RPCClient', function(){
 
         it('client should disconnect when server closes', async () => {
 
-            const {endpoint, close, server} = await createServer();
+            const {endpoint, close} = await createServer();
             const cli = new RPCClient({endpoint, identity: 'X', reconnect: false});
 
             await cli.connect();
@@ -1827,7 +1839,7 @@ describe('RPCClient', function(){
 
         it('should reject outbound call in-flight when connection drops', async () => {
 
-            const {endpoint, close, server} = await createServer({}, {
+            const {endpoint, close} = await createServer({}, {
                 withClient: async (client) => {
                     await client.close({code: 4001});
                 }
@@ -1851,7 +1863,7 @@ describe('RPCClient', function(){
         it('should reconnect if using option {reconnect: true} without subprotocols', async () => {
 
             let disconnectedOnce = false;
-            const {endpoint, close, server} = await createServer({}, {
+            const {endpoint, close} = await createServer({}, {
                 withClient: async (client) => {
                     if (!disconnectedOnce) {
                         disconnectedOnce = true;
@@ -1879,7 +1891,7 @@ describe('RPCClient', function(){
                 await assert.rejects(test1);
                 
                 const test2 = await cli.call('Echo', {test: 456});
-                assert.equal(test2, {test: 456});
+                assert.deepEqual(test2, {test: 456});
 
             } finally {
                 await cli.close();
@@ -1891,7 +1903,7 @@ describe('RPCClient', function(){
         it('should reconnect if using option {reconnect: true} with subprotocols', async () => {
 
             let disconnectedOnce = false;
-            const {endpoint, close, server} = await createServer({
+            const {endpoint, close} = await createServer({
                 protocols: ['a'],
             }, {
                 withClient: async (client) => {
@@ -1922,7 +1934,7 @@ describe('RPCClient', function(){
                 await assert.rejects(test1);
                 
                 const test2 = await cli.call('Echo', {test: 789});
-                assert.equal(test2, {test: 789});
+                assert.deepEqual(test2, {test: 789});
 
             } finally {
                 await cli.close();
@@ -1934,7 +1946,7 @@ describe('RPCClient', function(){
         it('should reconnect exactly {maxReconnects} times before giving up', async () => {
 
             const maxReconnects = 3;
-            const {endpoint, close, server} = await createServer();
+            const {endpoint, close} = await createServer();
             const cli = new RPCClient({
                 endpoint,
                 identity: 'X',
@@ -1963,7 +1975,7 @@ describe('RPCClient', function(){
                 protocols: ['b', 'a'],
             });
 
-            const {endpoint, close, server, port} = await createServer({
+            const {endpoint, close, port} = await createServer({
                 protocols: ['a', 'b'],
             }, {withClient: client => {
                 client.handle('Switcheroo', async () => {
@@ -2006,7 +2018,7 @@ describe('RPCClient', function(){
                 protocols: ['b'],
             });
 
-            const {endpoint, close, server, port} = await createServer({
+            const {endpoint, close, port} = await createServer({
                 protocols: ['a', 'b'],
             }, {withClient: client => {
                 client.handle('Switcheroo', async () => {
@@ -2044,7 +2056,7 @@ describe('RPCClient', function(){
 
         it('should close with code 1001 after failed reconnect', async () => {
 
-            const {endpoint, close, server} = await createServer();
+            const {endpoint, close} = await createServer();
             const cli = new RPCClient({
                 endpoint,
                 identity: 'X',
@@ -2079,7 +2091,7 @@ describe('RPCClient', function(){
 
         it('should close connections with code 1002 when receiving too many malformed messages', async () => {
             
-            const {endpoint, close, server} = await createServer({}, {
+            const {endpoint, close} = await createServer({}, {
                 withClient: async (client) => {
                     client.sendRaw('x');
                     client.sendRaw('x');
@@ -2107,7 +2119,7 @@ describe('RPCClient', function(){
 
         it('should tolerate bad messages within the configured limits', async () => {
             
-            const {endpoint, close, server} = await createServer({}, {
+            const {endpoint, close} = await createServer({}, {
                 withClient: async (client) => {
                     client.sendRaw('x');
                     client.sendRaw('x');
@@ -2125,7 +2137,7 @@ describe('RPCClient', function(){
             });
 
             try {
-                let resolve;
+                let resolve: any;
                 let prom = new Promise(r => {resolve = r;});
 
                 cli.handle('Ok', () => ({}));
@@ -2150,7 +2162,7 @@ describe('RPCClient', function(){
 
         it('should only start handling one tick after connection opened', async () => {
             
-            const {endpoint, close, server} = await createServer({protocols: ['b', 'c']}, {
+            const {endpoint, close} = await createServer({protocols: ['b', 'c']}, {
                 withClient: client => {
                     client.call('Test', {val: 123});
                 }
@@ -2181,7 +2193,7 @@ describe('RPCClient', function(){
 
         it('should not invoke handler if client closes fast', async () => {
             
-            const {endpoint, close, server} = await createServer({protocols: ['b', 'c']}, {
+            const {endpoint, close} = await createServer({protocols: ['b', 'c']}, {
                 withClient: client => {
                     client.call('Test', {val: 123});
                 }
@@ -2260,7 +2272,7 @@ describe('RPCClient', function(){
                 await cli.connect();
 
                 const callOutProm = once(cli, 'call');
-                const man = await cli.call('Manual');
+                const man = await cli.call('Manual', {});
                 const messageId = man.messageId;
                 const [callOut] = await callOutProm;
                 
@@ -2282,11 +2294,11 @@ describe('RPCClient', function(){
             const {endpoint, close} = await createServer({}, {
                 withClient: cli => {
                     cli.handle('ResolveEarly', async ({reply}) => {
-                        reply("early");
-                        return "late";
+                        reply({r:"early"});
+                        return {r:"late"};
                     });
                     cli.handle('ResolveBeforeThrow', async ({reply}) => {
-                        reply("early");
+                        reply({r:"early"});
                         throw Error("late");
                     });
                     cli.handle('RejectEarly', async ({reply}) => {
@@ -2295,7 +2307,7 @@ describe('RPCClient', function(){
                     });
                     cli.handle('RejectBeforeReturn', async ({reply}) => {
                         reply(Error("early"));
-                        return "late";
+                        return {r:"late"};
                     });
                 }
             });
@@ -2307,11 +2319,11 @@ describe('RPCClient', function(){
             try {
                 await cli.connect();
 
-                assert.equal(await cli.call('ResolveEarly'), "early");
+                assert.deepEqual(await cli.call('ResolveEarly'), {r:"early"});
                 const err = await cli.call('RejectEarly').catch(e=>e);
-                assert.equal(err.message, "early");
+                assert.deepEqual(err.message, "early");
                 await assert.rejects(cli.call('RejectBeforeReturn'));
-                assert.equal(await cli.call("ResolveBeforeThrow"), "early");
+                assert.deepEqual(await cli.call("ResolveBeforeThrow"), {r:"early"});
 
             } finally {
                 await cli.close();
@@ -2328,8 +2340,8 @@ describe('RPCClient', function(){
         it('should prevent wildcard handler from running again', async () => {
             
             let runs = 0;
-            const {endpoint, close, server} = await createServer({}, {withClient: cli => {
-                cli.handle(({method, params}) => {
+            const {endpoint, close} = await createServer({}, {withClient: cli => {
+                cli.handle(({method}) => {
                     runs++;
                     cli.removeHandler();
                     return method;
@@ -2348,9 +2360,9 @@ describe('RPCClient', function(){
                 ]);
 
                 assert.equal(runs, 1);
-                assert.equal(res[0].value, 'Any1');
-                assert.equal(res[1].reason.rpcErrorCode, 'NotImplemented');
-                assert.equal(res[2].reason.rpcErrorCode, 'NotImplemented');
+                assert.equal((res[0] as any).value, 'Any1');
+                assert.equal((res[1] as any).reason.rpcErrorCode, 'NotImplemented');
+                assert.equal((res[2] as any).reason.rpcErrorCode, 'NotImplemented');
                 
             } finally {
                 await cli.close();
@@ -2362,8 +2374,8 @@ describe('RPCClient', function(){
         it('should prevent handled methods from running again', async () => {
 
             let runs = 0;
-            const {endpoint, close, server} = await createServer({}, {withClient: cli => {
-                cli.handle('Test', ({method, params}) => {
+            const {endpoint, close} = await createServer({}, {withClient: cli => {
+                cli.handle('Test', () => {
                     runs++;
                     cli.removeHandler('Test');
                     return runs;
@@ -2378,13 +2390,13 @@ describe('RPCClient', function(){
                 const res = await Promise.allSettled([
                     cli.call('Test'),
                     cli.call('Test'),
-                    cli.call('Echo', 'TEST'),
+                    cli.call('Echo', {val: 'test'}),
                 ]);
 
                 assert.equal(runs, 1);
-                assert.equal(res[0].value, 1);
-                assert.equal(res[1].reason.rpcErrorCode, 'NotImplemented');
-                assert.equal(res[2].value, 'TEST');
+                assert.equal((res[0] as any).value, 1);
+                assert.equal((res[1] as any).reason.rpcErrorCode, 'NotImplemented');
+                assert.deepEqual((res[2] as any).value, {val: 'test'});
                 
             } finally {
                 await cli.close();
@@ -2400,14 +2412,14 @@ describe('RPCClient', function(){
         it('should prevent all handled methods from running again', async () => {
 
             let runs = 0;
-            const {endpoint, close, server} = await createServer({}, {withClient: cli => {
-                cli.handle('Test', ({method, params}) => {
+            const {endpoint, close} = await createServer({}, {withClient: cli => {
+                cli.handle('Test', () => {
                     runs++;
                     cli.removeAllHandlers();
                     return runs;
                 });
 
-                cli.handle(({method, params}) => {
+                cli.handle(() => {
                     throw Error('GenericError');
                 });
             }});
@@ -2420,15 +2432,15 @@ describe('RPCClient', function(){
                 const res = await Promise.allSettled([
                     cli.call('Test'),
                     cli.call('Test'),
-                    cli.call('Echo', 'TEST'),
+                    cli.call('Echo', {test: 123}),
                     cli.call('Unknown'),
                 ]);
 
                 assert.equal(runs, 1);
-                assert.equal(res[0].value, 1);
-                assert.equal(res[1].reason.rpcErrorCode, 'NotImplemented');
-                assert.equal(res[2].reason.rpcErrorCode, 'NotImplemented');
-                assert.equal(res[3].reason.rpcErrorCode, 'NotImplemented');
+                assert.equal((res[0] as any).value, 1);
+                assert.equal((res[1] as any).reason.rpcErrorCode, 'NotImplemented');
+                assert.equal((res[2] as any).reason.rpcErrorCode, 'NotImplemented');
+                assert.equal((res[3] as any).reason.rpcErrorCode, 'NotImplemented');
                 
             } finally {
                 await cli.close();
@@ -2445,7 +2457,7 @@ describe('RPCClient', function(){
             
             const pingIntervalMs = 40;
 
-            const {endpoint, close, server} = await createServer();
+            const {endpoint, close} = await createServer();
             const cli = new RPCClient({
                 endpoint,
                 identity: 'X',
@@ -2470,10 +2482,10 @@ describe('RPCClient', function(){
 
         it('should force close client if no pong between pings', async () => {
             
-            const {endpoint, close, server} = await createServer({}, {
+            const {endpoint, close} = await createServer({}, {
                 withClient: client => {
                     // a hack to prevent WebSocket from responding to pings
-                    client._ws._receiver.removeAllListeners('ping');
+                    (client as unknown as any)._ws._receiver.removeAllListeners('ping');
                 }
             });
             const cli = new RPCClient({
@@ -2498,12 +2510,12 @@ describe('RPCClient', function(){
         it('should process pings normally after keepAlive forces a reconnect', async () => {
             
             let doneOnce = false;
-            const {endpoint, close, server} = await createServer({}, {
+            const {endpoint, close} = await createServer({}, {
                 withClient: client => {
                     if (!doneOnce) {
                         doneOnce = true;
                         // a hack to prevent WebSocket from responding to pings
-                        client._ws._receiver.removeAllListeners('ping');
+                        (client as unknown as any)._ws._receiver.removeAllListeners('ping');
                     }
                 }
             });
@@ -2537,7 +2549,7 @@ describe('RPCClient', function(){
         it('should not auto-ping server if other activity received with option deferPingsOnActivity', async () => {
             
             let pings = 0;
-            const {endpoint, close, server} = await createServer({}, {
+            const {endpoint, close} = await createServer({}, {
                 withClient: async (client) => {
                     // send some rapid activity from the server
                     for (let i = 0; i < 4; i++) {
@@ -2575,7 +2587,7 @@ describe('RPCClient', function(){
         it('should auto-ping server even if other activity received without option deferPingsOnActivity', async () => {
             
             let pings = 0;
-            const {endpoint, close, server} = await createServer({}, {
+            const {endpoint, close} = await createServer({}, {
                 withClient: async (client) => {
                     // send some rapid activity from the server
                     for (let i = 0; i < 4; i++) {
@@ -2614,7 +2626,7 @@ describe('RPCClient', function(){
         it('should not auto-ping server if ping received with option deferPingsOnActivity', async () => {
             
             let pings = 0;
-            const {endpoint, close, server} = await createServer({
+            const {endpoint, close} = await createServer({
                 pingIntervalMs: 25,
                 deferPingsOnActivity: false,
             }, {
@@ -2649,7 +2661,7 @@ describe('RPCClient', function(){
         it('should auto-ping server even if ping received without option deferPingsOnActivity', async () => {
             
             let pings = 0;
-            const {endpoint, close, server} = await createServer({
+            const {endpoint, close} = await createServer({
                 pingIntervalMs: 25,
                 deferPingsOnActivity: false,
             }, {
@@ -2688,7 +2700,7 @@ describe('RPCClient', function(){
 
         it("should cause a 'badMessage' event when used incorrectly", async () => {
             
-            const {endpoint, close, server} = await createServer({}, {
+            const {endpoint, close} = await createServer({}, {
                 withClient: cli => {
                     cli.sendRaw('x');
                 }
@@ -2721,7 +2733,7 @@ describe('RPCClient', function(){
 
         it("should not change identity on reconnect", async () => {
             
-            const {endpoint, close, server} = await createServer({}, {
+            const {endpoint, close} = await createServer({}, {
                 withClient: cli => {
                     cli.handle('Drop', () => cli.close());
                     cli.handle('GetID', () => cli.identity);
@@ -2754,7 +2766,7 @@ describe('RPCClient', function(){
 
         it("should change identity on explicit close and connect", async () => {
 
-            const {endpoint, close, server} = await createServer({}, {
+            const {endpoint, close} = await createServer({}, {
                 withClient: cli => {
                     cli.handle('Drop', () => cli.close());
                     cli.handle('GetID', () => cli.identity);
@@ -2784,7 +2796,7 @@ describe('RPCClient', function(){
 
         it("should be able to adjust queue concurrency", async () => {
             
-            const {endpoint, close, server} = await createServer({}, {
+            const {endpoint, close} = await createServer({}, {
                 withClient: cli => {
                     let processing = 0;
                     cli.handle('Max', async () => {
@@ -2805,9 +2817,9 @@ describe('RPCClient', function(){
                 
                 const arr = [1,2,3,4,5,6];
 
-                const cc1 = await Promise.all(arr.map(x => cli.call('Max')));
+                const cc1 = await Promise.all(arr.map(() => cli.call('Max')));
                 cli.reconfigure({callConcurrency: 3});
-                const cc3 = await Promise.all(arr.map(x => cli.call('Max')));
+                const cc3 = await Promise.all(arr.map(() => cli.call('Max')));
 
                 assert.equal(Math.max(...cc1), 1);
                 assert.equal(Math.max(...cc3), 3);
@@ -2821,7 +2833,7 @@ describe('RPCClient', function(){
 
         it("should be able to adjust backoff configuration", async () => {
             
-            const {endpoint, close, server} = await createServer({}, {
+            const {endpoint, close} = await createServer({}, {
                 withClient: cli => {
                     cli.handle('Drop', () => cli.close());
                 }
@@ -2867,7 +2879,7 @@ describe('RPCClient', function(){
 
         it("should be able to adjust ping interval", async () => {
             
-            const {endpoint, close, server} = await createServer();
+            const {endpoint, close} = await createServer();
             const cli = new RPCClient({
                 endpoint,
                 identity: 'X',

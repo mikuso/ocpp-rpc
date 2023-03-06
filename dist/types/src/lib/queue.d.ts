@@ -4,6 +4,6 @@ export default class Queue {
     private _concurrency;
     constructor();
     setConcurrency(concurrency: number): void;
-    push(fn: Function): Promise<unknown>;
+    push<T>(fn: () => Promise<T>): Promise<T>;
     _next(): Promise<false | undefined>;
 }

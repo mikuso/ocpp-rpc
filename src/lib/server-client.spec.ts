@@ -114,11 +114,12 @@ describe('RPCServerClient', function(){
 
         const test = new Promise<void>((resolve, reject) => {
             server.on('client', cli => {
-                const optionKeys = Object.keys(inheritableOptions);
+                const optionKeys: any[] = Object.keys(inheritableOptions);
                 const _options: any = cli['_options'];
                 for (const optionKey of optionKeys) {
                     const option = _options[optionKey];
-                    if (option !== inheritableOptions[optionKey]) {
+                    const inheritedOption: string = (inheritableOptions as any)[optionKey];
+                    if (option !== inheritedOption) {
                         reject(Error(`RPCServerClient did not inherit option "${optionKey}" from RPCServer`));
                     }
                 }

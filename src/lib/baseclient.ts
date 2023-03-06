@@ -58,7 +58,7 @@ interface CloseOptions {
     force?: boolean;
 }
 
-type HandlerReplyPayload = object | Error | Promise<object> | Promise<Error>;
+type HandlerReplyPayload = object | Error | Promise<object> | Promise<Error> | typeof NOREPLY;
 
 export interface HandlerCallbackArgs {
     method: string;
@@ -75,6 +75,7 @@ interface CallOptions {
     callTimeoutMs?: number;
     signal?: AbortSignal;
 }
+type CallOptionsWithNoReply = CallOptions & {noReply: true};
 
 interface PendingCall {
     msgId: string;
@@ -404,13 +405,13 @@ export class RPCBaseClient extends EventEmitter {
      * @param {boolean} options.noReply - If set to true, the call will return immediately.
      * @returns Promise<*> - Response value from the remote handler.
      */
-    async call(method: string, params?: object, options?: CallOptions & {noReply: true}): Promise<undefined>;
-    async call(method: string, params?: object, options?: CallOptions): Promise<object>;
+    async call(method: string, params: object, options: CallOptionsWithNoReply): Promise<undefined>;
+    async call(method: string, params?: object, options?: CallOptions): Promise<any>;
     async call(method: string, params: object = {}, options: CallOptions = {}) {
         return await this._callQueue.push(this._call.bind(this, method, params, options));
     }
 
-    async _call(method: string, params: object, options: CallOptions = {}): Promise<object | undefined> {
+    async _call(method: string, params: object, options: CallOptions = {}): Promise<any | undefined> {
         const timeoutMs = options.callTimeoutMs ?? this._options.callTimeoutMs;
 
         if ([StateEnum.CLOSED, StateEnum.CLOSING].includes(this._state)) {

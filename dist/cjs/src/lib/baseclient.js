@@ -192,7 +192,7 @@ class RPCBaseClient extends node_events_1.EventEmitter {
         this._wildcardHandler = undefined;
         this._handlers.clear();
     }
-    async call(method, params, options = {}) {
+    async call(method, params = {}, options = {}) {
         return await this._callQueue.push(this._call.bind(this, method, params, options));
     }
     async _call(method, params, options = {}) {

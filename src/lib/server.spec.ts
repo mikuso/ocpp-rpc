@@ -1,23 +1,30 @@
-const assert = require('assert/strict');
-const http = require('http');
-const { once } = require('events');
-const {RPCClient} = require("../src/lib/client");
-const { UnexpectedHttpResponse, WebsocketUpgradeError } = require('../src/lib/errors');
-const {RPCServer} = require("../src/lib/server");
-const { setTimeout } = require('timers/promises');
-const { createValidator } = require('../src/lib/validator');
-const { abortHandshake } = require('../src/lib/ws-util');
+import * as assert from 'assert/strict';
+import * as http from 'http';
+import { once } from 'events';
+import {RPCClient} from "./client";
+import { UnexpectedHttpResponse, WebsocketUpgradeError } from './errors';
+import {AbortEvent, RPCServer, RPCServerClientHandshake, RPCServerOptions, ServerCloseOptions} from "./server";
+import { setTimeout } from 'timers/promises';
+import { createValidator } from './validator';
+import { abortHandshake } from './ws-util';
+import { RPCServerClient } from './server-client';
+import { AddressInfo, Socket } from 'net';
+import { TLSSocket } from 'tls';
 
 describe('RPCServer', function(){
     this.timeout(500);
 
-    async function createServer(options = {}, extra = {}) {
+    interface ExtraOptions {
+        withClient?: (cli: RPCServerClient) => void;
+    }
+
+    async function createServer(options: RPCServerOptions = {}, extra: ExtraOptions = {}) {
         const server = new RPCServer(options);
         const httpServer = await server.listen(0);
-        const port = httpServer.address().port;
+        const port = (httpServer.address() as AddressInfo).port;
         const endpoint = `ws://localhost:${port}`;
-        const close = (...args) => server.close(...args);
-        server.on('client', client => {
+        const close = (options?: ServerCloseOptions) => server.close(options);
+        server.on('client', (client: RPCServerClient) => {
             client.handle('Echo', async ({params}) => {
                 return params;
             });
@@ -29,6 +36,9 @@ describe('RPCServer', function(){
                 const err = Error("Rejecting");
                 Object.assign(err, params);
                 throw err;
+            });
+            client.handle('Heartbeat', () => {
+                return {currentTime: new Date().toISOString()};
             });
             if (extra.withClient) {
                 extra.withClient(client);
@@ -170,7 +180,7 @@ describe('RPCServer', function(){
 
             const {endpoint, close, server} = await createServer({protocols: ['a', 'b']});
 
-            server.auth((accept, reject, handshake) => {
+            server.auth((accept) => {
                 accept({}, 'b');
             });
 
@@ -195,10 +205,10 @@ describe('RPCServer', function(){
 
             const {endpoint, close, server} = await createServer();
 
-            let allOk;
-            let waitOk = new Promise(r => {allOk = r;});
+            let allOk: () => void;
+            let waitOk = new Promise<void>(r => {allOk = r;});
 
-            server.auth((accept, reject, handshake) => {
+            server.auth((accept) => {
                 accept();
                 accept();
                 allOk();
@@ -223,10 +233,10 @@ describe('RPCServer', function(){
 
             const {endpoint, close, server} = await createServer();
 
-            let allOk;
-            let waitOk = new Promise(r => {allOk = r;});
+            let allOk: () => void;
+            let waitOk = new Promise<void>(r => {allOk = r;});
 
-            server.auth((accept, reject, handshake) => {
+            server.auth((accept, reject) => {
                 reject();
                 reject();
                 allOk();
@@ -251,10 +261,10 @@ describe('RPCServer', function(){
 
             const {endpoint, close, server} = await createServer();
 
-            let allOk;
-            let waitOk = new Promise(r => {allOk = r;});
+            let allOk: () => void;
+            let waitOk = new Promise<void>(r => {allOk = r;});
 
-            server.auth((accept, reject, handshake) => {
+            server.auth((accept, reject) => {
                 accept();
                 reject();
                 allOk();
@@ -279,10 +289,10 @@ describe('RPCServer', function(){
 
             const {endpoint, close, server} = await createServer();
 
-            let allOk;
-            let waitOk = new Promise(r => {allOk = r;});
+            let allOk: () => void;
+            let waitOk = new Promise<void>(r => {allOk = r;});
 
-            server.auth((accept, reject, handshake) => {
+            server.auth((accept, reject) => {
                 reject();
                 accept();
                 allOk();
@@ -316,7 +326,7 @@ describe('RPCServer', function(){
 
             try {
                 
-                let hs;
+                let hs: RPCServerClientHandshake;
                 server.auth((accept, reject, handshake) => {
                     hs = handshake;
                     accept();
@@ -325,6 +335,9 @@ describe('RPCServer', function(){
                 const serverClientProm = once(server, 'client');
                 await cli.connect();
                 const [serverClient] = await serverClientProm;
+
+                assert.ok(hs!);
+                assert.ok(serverClient);
 
                 assert.equal(serverClient.identity, identity);
                 assert.equal(hs.identity, identity);
@@ -343,7 +356,7 @@ describe('RPCServer', function(){
 
         it('should attach session properties to client', async () => {
 
-            let serverClient;
+            let serverClient: RPCServerClient;
             const extraPath = '/extra/path';
             const identity = 'X';
             const proto = 'a';
@@ -355,7 +368,7 @@ describe('RPCServer', function(){
                 }
             });
             
-            server.auth((accept, reject, handshake) => {
+            server.auth((accept) => {
                 accept(sessionData, proto);
             });
 
@@ -368,6 +381,9 @@ describe('RPCServer', function(){
             try {
                 
                 await cli.connect();
+
+                assert.ok(serverClient!);
+
                 assert.deepEqual(serverClient.session, sessionData);
                 assert.equal(serverClient.protocol, proto);
                 assert.equal(cli.protocol, proto);
@@ -398,7 +414,7 @@ describe('RPCServer', function(){
         it("should disconnect client if server closes during auth", async () => {
 
             const {endpoint, close, server} = await createServer();
-            server.auth((accept, reject) => {
+            server.auth((accept) => {
                 close();
                 accept();
             });
@@ -427,7 +443,7 @@ describe('RPCServer', function(){
             }});
 
             server.auth((accept, reject, handshake) => {
-                accept({pwd: handshake.password.toString('utf8')});
+                accept({pwd: handshake.password?.toString('utf8')});
             });
 
             const cli = new RPCClient({
@@ -452,8 +468,8 @@ describe('RPCServer', function(){
             const identity = 'a:colonified:ident';
             const password = 'a:colonified:p4ss';
             
-            let recIdent;
-            let recPass;
+            let recIdent: string;
+            let recPass: any;
 
             const {endpoint, close, server} = await createServer();
             server.auth((accept, reject, handshake) => {
@@ -471,7 +487,7 @@ describe('RPCServer', function(){
             try {
                 await cli.connect();
                 assert.equal(password, recPass.toString('utf8'));
-                assert.equal(identity, recIdent);
+                assert.equal(identity, recIdent!);
 
             } finally {
                 cli.close();
@@ -482,11 +498,11 @@ describe('RPCServer', function(){
         it('should recognise empty passwords', async () => {
             
             const password = '';
-            let recPass;
+            let recPass: Buffer;
 
             const {endpoint, close, server} = await createServer();
             server.auth((accept, reject, handshake) => {
-                recPass = handshake.password;
+                recPass = handshake.password!;
                 accept();
             });
 
@@ -498,7 +514,7 @@ describe('RPCServer', function(){
 
             try {
                 await cli.connect();
-                assert.equal(password, recPass.toString('utf8'));
+                assert.equal(password, recPass!.toString('utf8'));
 
             } finally {
                 cli.close();
@@ -602,7 +618,7 @@ describe('RPCServer', function(){
             }});
 
             server.auth((accept, reject, handshake) => {
-                accept({pwd: handshake.password.toString('hex')});
+                accept({pwd: handshake.password?.toString('hex')});
             });
 
             const cli = new RPCClient({
@@ -629,10 +645,10 @@ describe('RPCServer', function(){
 
         it('should not allow new connections after close (before clients kicked)', async () => {
 
-            let callReceived;
-            const callReceivedPromise = new Promise(r => {callReceived = r;});
+            let callReceived: () => void;
+            const callReceivedPromise = new Promise<void>(r => {callReceived = r;});
 
-            const {endpoint, close, server} = await createServer({}, {
+            const {endpoint, close} = await createServer({}, {
                 withClient: client => {
                     client.handle('Test', async () => {
                         callReceived();
@@ -663,10 +679,10 @@ describe('RPCServer', function(){
                     cli2.connect()
                 ]);
 
-                assert.equal(callResult.status, 'fulfilled');
-                assert.equal(callResult.value, 123);
-                assert.equal(connResult.status, 'rejected');
-                assert.equal(connResult.reason.code, 'ECONNREFUSED');
+                assert.equal((callResult as any).status, 'fulfilled');
+                assert.equal((callResult as any).value, 123);
+                assert.equal((connResult as any).status, 'rejected');
+                assert.equal((connResult as any).reason.code, 'ECONNREFUSED');
 
             } finally {
                 close();
@@ -689,11 +705,11 @@ describe('RPCServer', function(){
 
             const httpServer = http.createServer({}, (req, res) => res.end());
             httpServer.on('upgrade', server.handleUpgrade);
-            await new Promise((resolve, reject) => {
-                httpServer.listen({port: 0}, err => err ? reject(err) : resolve());
+            await new Promise<void>((resolve) => {
+                httpServer.listen({port: 0}, resolve);
             });
 
-            const endpoint = 'ws://localhost:'+httpServer.address().port;
+            const endpoint = 'ws://localhost:'+(httpServer.address() as AddressInfo).port;
 
             const cli1 = new RPCClient({
                 endpoint,
@@ -712,10 +728,10 @@ describe('RPCServer', function(){
             ]);
             await cli1.close(); // httpServer.close() won't kick clients
             
-            assert.equal(callResult.status, 'fulfilled');
-            assert.equal(callResult.value, 123);
-            assert.equal(connResult.status, 'rejected');
-            assert.equal(connResult.reason.code, 'ECONNREFUSED');
+            assert.equal((callResult as any).status, 'fulfilled');
+            assert.equal((callResult as any).value, 123);
+            assert.equal((connResult as any).status, 'rejected');
+            assert.equal((connResult as any).reason.code, 'ECONNREFUSED');
 
         });
 
@@ -723,9 +739,9 @@ describe('RPCServer', function(){
 
             const server = new RPCServer();
             const s1 = await server.listen();
-            const e1 = 'ws://localhost:'+s1.address().port;
+            const e1 = 'ws://localhost:'+(s1.address() as AddressInfo).port;
             const s2 = await server.listen();
-            const e2 = 'ws://localhost:'+s2.address().port;
+            const e2 = 'ws://localhost:'+(s2.address() as AddressInfo).port;
 
             const cli1 = new RPCClient({endpoint: e1, identity: '1', reconnect: false});
             const cli2 = new RPCClient({endpoint: e2, identity: '2', reconnect: false});
@@ -748,7 +764,7 @@ describe('RPCServer', function(){
             const ac = new AbortController();
             const server = new RPCServer();
             const httpServer = await server.listen(undefined, undefined, {signal: ac.signal});
-            const port = httpServer.address().port;
+            const port = (httpServer.address() as AddressInfo).port;
             const endpoint = 'ws://localhost:'+port;
 
             const cli = new RPCClient({endpoint, identity: 'X', reconnect: false});
@@ -770,10 +786,10 @@ describe('RPCServer', function(){
         it('should automatically ping clients', async () => {
             
             const pingIntervalMs = 40;
-            let pingResolve;
-            let pingPromise = new Promise(r => {pingResolve = r;})
+            let pingResolve: any;
+            let pingPromise = new Promise<{rtt: number}>(r => {pingResolve = r;})
 
-            const {endpoint, close, server} = await createServer({
+            const {endpoint, close} = await createServer({
                 pingIntervalMs,
             }, {
                 withClient: async (client) => {
@@ -804,7 +820,7 @@ describe('RPCServer', function(){
 
         it('should reject non-websocket requests with a 404', async () => {
             
-            const {port, close, server} = await createServer();
+            const {port, close} = await createServer();
 
             try {
                 
@@ -833,7 +849,7 @@ describe('RPCServer', function(){
                 identity: 'X',
             });
 
-            let completeAuth;
+            let completeAuth: any;
             let authCompleted = new Promise(r => {completeAuth = r;})
 
             server.auth(async (accept, reject, handshake) => {
@@ -859,29 +875,29 @@ describe('RPCServer', function(){
 
             const server = new RPCServer();
             
-            let abortEvent;
+            let abortEvent: AbortEvent;
             server.on('upgradeAborted', event => {
                 abortEvent = event;
             });
             
-            let authed = false;
+            let authed: boolean = false;
             server.auth((accept) => {
                 // shouldn't get this far
                 authed = true;
-                accept()
+                accept();
             });
 
-            let onUpgrade;
-            let upgradeProm = new Promise(r => {onUpgrade = r;});
+            let onUpgrade: any;
+            let upgradeProm = new Promise<[http.IncomingMessage, Socket | TLSSocket, Buffer]>(r => {onUpgrade = r;});
 
             const httpServer = http.createServer({}, (req, res) => res.end());
             httpServer.on('upgrade', (...args) => onUpgrade(args));
 
-            await new Promise((resolve, reject) => {
-                httpServer.listen({port: 0}, err => err ? reject(err) : resolve());
+            await new Promise<void>((resolve) => {
+                httpServer.listen({port: 0}, resolve);
             });
 
-            const endpoint = 'ws://localhost:'+httpServer.address().port;
+            const endpoint = 'ws://localhost:'+(httpServer.address() as AddressInfo).port;
 
             const cli = new RPCClient({
                 endpoint,
@@ -893,7 +909,8 @@ describe('RPCServer', function(){
             await server.close();
             assert.doesNotReject(server.handleUpgrade(...upgrade));
             assert.equal(authed, false);
-            assert.equal(abortEvent.error.code, 500);
+            assert.ok(abortEvent!);
+            assert.equal((abortEvent.error as any).code, 500);
             httpServer.close();
             
         });
@@ -903,7 +920,7 @@ describe('RPCServer', function(){
 
             const {endpoint, close, server} = await createServer();
 
-            let abortEvent;
+            let abortEvent: AbortEvent;
             server.on('upgradeAborted', event => {
                 abortEvent = event;
             });
@@ -930,6 +947,7 @@ describe('RPCServer', function(){
 
                 assert.equal(res.statusCode, 400);
                 assert.equal(authed, false);
+                assert.ok(abortEvent!);
                 assert.ok(abortEvent.error instanceof WebsocketUpgradeError);
                 assert.equal(abortEvent.request.headers['user-agent'], 'test/0');
                 
@@ -944,7 +962,7 @@ describe('RPCServer', function(){
 
             const {endpoint, close, server} = await createServer();
 
-            let abortEvent;
+            let abortEvent: AbortEvent;
             server.on('upgradeAborted', event => {
                 abortEvent = event;
             });
@@ -961,6 +979,8 @@ describe('RPCServer', function(){
                 });
 
                 await assert.rejects(cli.connect());
+
+                assert.ok(abortEvent!);
                 
                 assert.ok(abortEvent.error instanceof WebsocketUpgradeError);
                 assert.equal(abortEvent.error.code, 499);
@@ -979,8 +999,8 @@ describe('RPCServer', function(){
                 identity: 'X',
             });
 
-            let completeAuth;
-            let authCompleted = new Promise(r => {completeAuth = r;})
+            let completeAuth: () => void;
+            let authCompleted = new Promise<void>(r => {completeAuth = r;})
 
             server.auth(async (accept, reject, handshake, signal) => {
                 const abortProm = once(signal, 'abort');

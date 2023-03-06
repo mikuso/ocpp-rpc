@@ -57,15 +57,17 @@ export interface ServerCloseOptions {
     force?: boolean;
 };
 
+export interface AbortEvent {
+    error: Error;
+    socket: Socket | TLSSocket;
+    request: IncomingMessage;
+    identity: string;
+}
+
 export declare interface RPCServer {
     on(event: 'client', listener: (client: RPCServerClient) => void): this;
     on(event: 'error', listener: (error: Error) => void): this;
-    on(event: 'upgradeAborted', listener: (event: {
-        error: Error,
-        socket: Socket | TLSSocket,
-        request: IncomingMessage,
-        identity: string,
-    }) => void): this;
+    on(event: 'upgradeAborted', listener: (event: AbortEvent) => void): this;
     on(event: 'closing', listener: () => void): this;
     on(event: 'close', listener: () => void): this;
 }
@@ -86,7 +88,7 @@ export class RPCServer extends EventEmitter {
     private _strictValidators!: Map<string, Validator>;
     private _authCallback?: AuthCallback;
 
-    constructor(options: RPCServerOptions) {
+    constructor(options?: RPCServerOptions) {
         super();
         
         this._httpServerAbortControllers = new Set();
@@ -364,7 +366,7 @@ export class RPCServer extends EventEmitter {
         this._authCallback = cb;
     }
 
-    async listen(port: number, host?: string, options: ListenOptions = {}) {
+    async listen(port?: number, host?: string, options: ListenOptions = {}) {
         const ac = new AbortController();
         this._httpServerAbortControllers.add(ac);
         const signal = options.signal;

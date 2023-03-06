@@ -39,22 +39,23 @@ export interface ListenOptions {
 export interface RPCServerOptions extends RPCServerOptionsReconfigurable {
     wssOptions?: object;
 }
-export type AuthCallback = (accept: (session?: any, protocol?: string) => void, reject: (code?: number, message?: string) => void, handshake: RPCServerClientHandshake, signal: AbortSignal) => {};
+export type AuthCallback = (accept: (session?: any, protocol?: string) => void, reject: (code?: number, message?: string) => void, handshake: RPCServerClientHandshake, signal: AbortSignal) => void;
 export interface ServerCloseOptions {
     code?: number;
     reason?: string;
     awaitPending?: boolean;
     force?: boolean;
 }
+export interface AbortEvent {
+    error: Error;
+    socket: Socket | TLSSocket;
+    request: IncomingMessage;
+    identity: string;
+}
 export declare interface RPCServer {
     on(event: 'client', listener: (client: RPCServerClient) => void): this;
     on(event: 'error', listener: (error: Error) => void): this;
-    on(event: 'upgradeAborted', listener: (event: {
-        error: Error;
-        socket: Socket | TLSSocket;
-        request: IncomingMessage;
-        identity: string;
-    }) => void): this;
+    on(event: 'upgradeAborted', listener: (event: AbortEvent) => void): this;
     on(event: 'closing', listener: () => void): this;
     on(event: 'close', listener: () => void): this;
 }
@@ -67,11 +68,11 @@ export declare class RPCServer extends EventEmitter {
     private _wss;
     private _strictValidators;
     private _authCallback?;
-    constructor(options: RPCServerOptions);
+    constructor(options?: RPCServerOptions);
     reconfigure(options: RPCServerOptionsReconfigurable): void;
     get handleUpgrade(): (request: IncomingMessage, socket: Socket | TLSSocket, head: Buffer) => Promise<void>;
     _onConnection(websocket: WebSocket, request: IncomingMessage): Promise<void>;
     auth(cb?: AuthCallback): void;
-    listen(port: number, host?: string, options?: ListenOptions): Promise<import("http").Server<typeof IncomingMessage, typeof import("http").ServerResponse>>;
+    listen(port?: number, host?: string, options?: ListenOptions): Promise<import("http").Server<typeof IncomingMessage, typeof import("http").ServerResponse>>;
     close({ code, reason, awaitPending, force }?: ServerCloseOptions): Promise<void>;
 }

@@ -2,6 +2,7 @@ import { WebSocket } from "ws";
 import { RPCBaseClient, RPCBaseClientOptions } from "./baseclient";
 import { RPCServerClientHandshake } from "./server";
 export interface RPCServerClientDependencies {
+    query?: string | string[][] | URLSearchParams;
     ws: WebSocket;
     handshake: RPCServerClientHandshake;
     session: any;
