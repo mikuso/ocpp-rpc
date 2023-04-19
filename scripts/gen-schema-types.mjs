@@ -1,6 +1,6 @@
 import { compile } from 'json-schema-to-typescript';
 import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
-import { extname, resolve } from 'node:path';
+import { basename, extname, resolve } from 'node:path';
 
 async function main(schemaDir, outDir) {
     const files = await readdir(schemaDir);
@@ -11,11 +11,13 @@ async function main(schemaDir, outDir) {
         }
 
         const filePath = resolve(schemaDir, file);
+        const protoName = basename(file, '.json').toUpperCase().replace(/\./g, '_');
 
         const schemaJson = await readFile(filePath);
         const schema = JSON.parse(schemaJson);
 
-        const types = [];
+        const payloadTypes = []; // typescript interface definitions of request/response payloads
+        const methodMapping = new Map(); // a map of method names to payload interfaces
 
         for (const schemaDef of schema) {
             const [method, type] = schemaDef.$id.substring(4).split('.');
@@ -24,6 +26,7 @@ async function main(schemaDir, outDir) {
             switch (type) {
                 case 'req':
                     name = method + 'Request';
+                    methodMapping.set(method, name);
                     break;
                 case 'conf':
                     name = method + 'Response';
@@ -38,10 +41,19 @@ async function main(schemaDir, outDir) {
                 ignoreMinAndMaxItems: true
             });
 
-            types.push(ts);
+            payloadTypes.push(ts);
         }
 
-        const typeDefFile = types.join("\n");
+        let methodsInterface = Array.from(methodMapping.entries()).map(([method, interf]) => {
+            return `  ${method}: ${interf};`
+        }).join('\n');
+        methodsInterface = `export interface ${protoName}Methods {\n${methodsInterface}\n}`;
+
+        const typeDefFile = [
+            payloadTypes.join("\n"),
+            methodsInterface,
+        ].join("\n");
+        
         const destDir = outDir || schemaDir;
         await mkdir(destDir, {recursive: true});
         const destPath = resolve(destDir, file + '.d.ts');
