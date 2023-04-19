@@ -411,7 +411,7 @@ export class RPCBaseClient extends EventEmitter {
         return await this._callQueue.push(this._call.bind(this, method, params, options));
     }
 
-    async _call(method: string, params: object, options: CallOptions = {}): Promise<any | undefined> {
+    protected async _call(method: string, params: object, options: CallOptions = {}): Promise<any | undefined> {
         const timeoutMs = options.callTimeoutMs ?? this._options.callTimeoutMs;
 
         if ([StateEnum.CLOSED, StateEnum.CLOSING].includes(this._state)) {
@@ -556,13 +556,13 @@ export class RPCBaseClient extends EventEmitter {
         });
     }
 
-    _rejectPendingCalls(abortReason: string) {
+    protected _rejectPendingCalls(abortReason: string) {
         const pendingCalls = Array.from(this._pendingCalls.values());
         const pendingResponses = Array.from(this._pendingResponses.values());
         [...pendingCalls, ...pendingResponses].forEach(c => c.abort(abortReason));
     }
 
-    async _awaitUntilPendingSettled() {
+    private async _awaitUntilPendingSettled() {
         const pendingCalls = Array.from(this._pendingCalls.values());
         const pendingResponses = Array.from(this._pendingResponses.values());
         return await Promise.allSettled([
@@ -591,7 +591,7 @@ export class RPCBaseClient extends EventEmitter {
         this.emit('close', {code, reason});
     }
 
-    _deferNextPing() {
+    private _deferNextPing() {
         if (!this._nextPingTimeout) {
             return;
         }
@@ -599,7 +599,7 @@ export class RPCBaseClient extends EventEmitter {
         this._nextPingTimeout.refresh();
     }
 
-    async _keepAlive() {
+    private async _keepAlive() {
         // abort any previously running keepAlive
         this._keepAliveAbortController?.abort();
         
@@ -654,7 +654,7 @@ export class RPCBaseClient extends EventEmitter {
         }
     }
 
-    _onMessage(buffer: RawData) {
+    private _onMessage(buffer: RawData) {
         if (this._options.deferPingsOnActivity) {
             this._deferNextPing();
         }
@@ -767,7 +767,7 @@ export class RPCBaseClient extends EventEmitter {
         }
     }
 
-    async _onCall(msgId: string, method: string, params: object) {
+    private async _onCall(msgId: string, method: string, params: object) {
         // NOTE: This method must not throw or else it risks sending 2 replies
 
         try {
@@ -919,7 +919,7 @@ export class RPCBaseClient extends EventEmitter {
         }
     }
 
-    _onCallResult(msgId: string, result: object) {
+    private _onCallResult(msgId: string, result: object) {
         const pendingCall = this._pendingCalls.get(msgId);
         if (pendingCall) {
 
@@ -952,7 +952,7 @@ export class RPCBaseClient extends EventEmitter {
         }
     }
 
-    _onCallError(msgId: string, errorCode: OCPPErrorType, errorDescription: string, errorDetails: object) {
+    private _onCallError(msgId: string, errorCode: OCPPErrorType, errorDescription: string, errorDetails: object) {
         const pendingCall = this._pendingCalls.get(msgId);
         if (pendingCall) {
             const err = createRPCError(errorCode, errorDescription, errorDetails);

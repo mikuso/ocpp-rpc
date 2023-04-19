@@ -13,6 +13,7 @@ import {
     RPCTypeConstraintViolationError,
     RPCMessageTypeNotSupportedError,
     RPCFrameworkError,
+    RPCError,
 } from './errors';
 import { name, version } from '../../package.json';
 
