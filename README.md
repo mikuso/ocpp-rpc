@@ -795,7 +795,7 @@ This module natively supports the following validation schemas:
 
 If you want to use `strictMode` with a subprotocol which is not included in the list above, you will need to add the appropriate schemas yourself. To do this, you must create a `Validator` for each subprotocol and pass them to the RPC constructor using the `strictModeValidators` option.  (It is also possible to override the built-in validators this way.)
 
-To create a Validator, you should pass the name of the subprotocol and a well-formed json schema to [`createValidator()`](#createvalidatorsubprotocol-schema). An example of a well-formed schema can be found at [`./lib/schemas/ocpp1.6json`](./lib/schemas/ocpp1.6json) or in the example below.
+To create a Validator, you should pass the name of the subprotocol and a well-formed json schema to [`createValidator()`](#createvalidatorsubprotocol-schema). An example of a well-formed schema can be found at [`./lib/schemas/ocpp1_6.json`](./lib/schemas/ocpp1_6.json) or [`./lib/schemas/ocpp2_0_1.json`](./lib/schemas/ocpp2_0_1.json) or in the example below.
 
 Example:
 
