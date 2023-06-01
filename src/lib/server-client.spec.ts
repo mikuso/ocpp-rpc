@@ -5,6 +5,7 @@ import { setTimeout } from 'timers/promises';
 import { createValidator } from './validator';
 import { AddressInfo } from 'net';
 import { RPCServerClient } from './server-client';
+import { ProtocolNames } from './protocols';
 
 function getEchoValidator() {
     return createValidator('echo1.0', [
@@ -68,10 +69,10 @@ describe('RPCServerClient', function(){
 
         it('should throw', async () => {
 
-            let servCli: RPCClient;
+            let servCli: RPCClient<ProtocolNames>;
             const {endpoint, close} = await createServer({}, {
-                withClient: (cli: RPCServerClient) => {
-                    servCli = cli as unknown as RPCClient;
+                withClient: (cli: RPCServerClient<ProtocolNames>) => {
+                    servCli = cli as unknown as RPCClient<ProtocolNames>;
                 }
             });
             const cli = new RPCClient({

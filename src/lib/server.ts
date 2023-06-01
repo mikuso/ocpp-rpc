@@ -11,6 +11,7 @@ import { Socket } from 'net';
 import { TLSSocket } from 'tls';
 import { StateEnum } from './baseclient';
 import { URLSearchParams } from 'url';
+import { ProtocolNames } from './protocols';
 
 export interface RPCServerClientHandshake {
     protocols: Set<string>;
@@ -65,7 +66,7 @@ export interface AbortEvent {
 }
 
 export declare interface RPCServer {
-    on(event: 'client', listener: (client: RPCServerClient) => void): this;
+    on(event: 'client', listener: (client: RPCServerClient<ProtocolNames>) => void): this;
     on(event: 'error', listener: (error: Error) => void): this;
     on(event: 'upgradeAborted', listener: (event: AbortEvent) => void): this;
     on(event: 'closing', listener: () => void): this;
@@ -81,7 +82,7 @@ interface PendingUpgrade {
 export class RPCServer extends EventEmitter {
     private _httpServerAbortControllers: Set<AbortController>;
     private _state: StateEnum;
-    private _clients: Set<RPCServerClient>;
+    private _clients: Set<RPCServerClient<ProtocolNames>>;
     private _pendingUpgrades: WeakMap<IncomingMessage, PendingUpgrade>;
     private _options: RPCServerOptions;
     private _wss: WebSocketServer;

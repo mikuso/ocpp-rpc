@@ -12,13 +12,14 @@ import { NOREPLY } from './symbols';
 import { AddressInfo } from 'net';
 import { CloseEvent, HandlerCallbackArgs } from './baseclient';
 import { RPCServerClient } from './server-client';
+import { ProtocolNames } from './protocols';
 const {CLOSING, CLOSED, CONNECTING} = StateEnum;
 
 describe('RPCClient', function(){
     this.timeout(500);
 
     interface ExtraOptions {
-        withClient?: (cli: RPCServerClient) => void;
+        withClient?: (cli: RPCServerClient<string>) => void;
     }
 
     async function createServer(options: RPCServerOptions = {}, extra: ExtraOptions = {}) {
@@ -27,7 +28,7 @@ describe('RPCClient', function(){
         const port = (httpServer.address() as AddressInfo).port;
         const endpoint = `ws://localhost:${port}`;
         const close = (options?: ServerCloseOptions) => server.close(options);
-        server.on('client', (client: RPCServerClient) => {
+        server.on('client', (client: RPCServerClient<ProtocolNames>) => {
             client.handle('Echo', async ({params}) => {
                 return params;
             });
@@ -160,8 +161,8 @@ describe('RPCClient', function(){
         it('should emit call and response events', async () => {
 
             const {endpoint, close} = await createServer({}, {
-                withClient: cli => {
-                    cli.call('Test').catch(()=>{});
+                withClient: (cli) => {
+                    cli.call('Test', {}).catch(()=>{});
                 }
             });
             const cli = new RPCClient({
@@ -327,7 +328,9 @@ describe('RPCClient', function(){
             let done = new Promise(r=>{complete = r;});
             const {endpoint, close} = await createServer({}, {
                 withClient: async (cli) => {
-                    await cli.call('Echo', {val: 123});
+                    if (cli.isProtocol('')) {
+                        await cli.call('Echo', {val: 123});
+                    }
                     cli.close();
                     complete();
                 }
@@ -342,10 +345,12 @@ describe('RPCClient', function(){
 
             const messages: any[] = [];
             await cli.connect();
-            cli.on('message', m => messages.push({
-                payload: JSON.parse(m.message.toString('utf8')),
-                outbound: m.outbound,
-            }));
+            cli.on('message', m => {
+                messages.push({
+                    payload: JSON.parse(m.message.toString('utf8')),
+                    outbound: m.outbound,
+                });
+            });
 
             await done;
             await close();
@@ -1268,6 +1273,11 @@ describe('RPCClient', function(){
 
             try {
                 await cli.connect();
+
+                if (cli.protocol === 'ocpp1.6') {
+                    cli.call('X', {});
+                }
+
 
                 const [c1, c2, c3] = await Promise.allSettled([
                     cli.call('UpdateFirmware', {}),

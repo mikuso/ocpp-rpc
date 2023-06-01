@@ -11,6 +11,7 @@ import EventBuffer from './event-buffer';
 import standardValidators from './standard-validators';
 import { Validator } from './validator';
 import { isValidStatusCode } from './ws-util';
+import { ProtocolMethodsMap, ProtocolNames, RequestMethod } from './protocols';
 
 export enum MsgType {
     UNKNOWN = -1,
@@ -140,7 +141,8 @@ export interface RPCBaseClientEvents {
     }) => void;
 }
 
-export declare interface RPCBaseClient {
+
+export declare interface RPCBaseClient<T extends ProtocolNames> {
     on<U extends keyof RPCBaseClientEvents>(
       event: U, listener: RPCBaseClientEvents[U]
     ): this;
@@ -150,7 +152,7 @@ export declare interface RPCBaseClient {
     ): boolean;
 }
 
-export class RPCBaseClient extends EventEmitter {
+export class RPCBaseClient<T extends ProtocolNames> extends EventEmitter {
     protected _identity: string;
     private _wildcardHandler?: HandlerCallback;
     private _handlers: Map<string, Function>;
@@ -163,7 +165,7 @@ export class RPCBaseClient extends EventEmitter {
     private _lastPingTime: number;
     private _closePromise?: Promise<CloseEvent>;
     protected _protocolOptions: string[];
-    protected _protocol?: string;
+    protected _protocol: T;
     private _strictProtocols: string[];
     private _strictValidators: Map<string, Validator>;
     private _pendingCalls: Map<string, PendingCall>;
@@ -191,7 +193,7 @@ export class RPCBaseClient extends EventEmitter {
         this._lastPingTime = 0;
         this._closePromise = undefined;
         this._protocolOptions = [];
-        this._protocol = undefined;
+        this._protocol = '' as T;
         this._strictProtocols = [];
         this._strictValidators = new Map();
 
@@ -234,6 +236,12 @@ export class RPCBaseClient extends EventEmitter {
 
     get state(): StateEnum {
         return this._state;
+    }
+
+    isProtocol<P extends ProtocolNames>(
+        protocol: P
+    ): this is RPCBaseClient<P> {
+        return (this._protocol as unknown as P) === protocol;
     }
 
     reconfigure(options: Partial<RPCBaseClientOptions>) {
@@ -405,32 +413,51 @@ export class RPCBaseClient extends EventEmitter {
      * @param {boolean} options.noReply - If set to true, the call will return immediately.
      * @returns Promise<*> - Response value from the remote handler.
      */
-    async call(method: string, params: object, options: CallOptionsWithNoReply): Promise<undefined>;
-    async call(method: string, params?: object, options?: CallOptions): Promise<any>;
-    async call(method: string, params: object = {}, options: CallOptions = {}) {
+    async call<M extends keyof ProtocolMethodsMap[T]>(
+        method: M,
+        params: RequestMethod<T, M>,
+        options: CallOptionsWithNoReply
+    ): Promise<undefined>;
+    async call<M extends keyof ProtocolMethodsMap[T]>(
+        method: M,
+        params?: RequestMethod<T, M>,
+        options?: CallOptions
+    ): Promise<any>;
+    async call<M extends keyof ProtocolMethodsMap[T]>(
+        method: M,
+        params?: RequestMethod<T, M>,
+        options: CallOptions = {}
+    ) {
         return await this._callQueue.push(this._call.bind(this, method, params, options));
     }
 
-    protected async _call(method: string, params: object, options: CallOptions = {}): Promise<any | undefined> {
+    protected async _call<M extends keyof ProtocolMethodsMap[T]>(
+        method: M,
+        params?: RequestMethod<T, M>,
+        options: CallOptions = {}
+    ): Promise<any | undefined> {
         const timeoutMs = options.callTimeoutMs ?? this._options.callTimeoutMs;
 
         if ([StateEnum.CLOSED, StateEnum.CLOSING].includes(this._state)) {
             throw Error(`Cannot make call while socket not open`);
         }
 
+        const methodName = method as string;
+        const paramsObj = params as object;
+
         const msgId = randomUUID();
-        const payload: OCPPCallPayload = [MsgType.CALL, msgId, method, params];
+        const payload: OCPPCallPayload = [MsgType.CALL, msgId, methodName, paramsObj];
 
         if (typeof this._protocol === 'string' && this._strictProtocols.includes(this._protocol)) {
             // perform some strict-mode checks
             const validator = this._strictValidators.get(this._protocol)!;
             try {
-                validator.validate(`urn:${method}.req`, params);
+                validator.validate(`urn:${methodName}.req`, paramsObj);
             } catch (error: any) {
                 this.emit('strictValidationFailure', {
                     messageId: msgId,
-                    method,
-                    params,
+                    method: methodName,
+                    params: paramsObj,
                     result: null,
                     error,
                     outbound: true,
@@ -442,8 +469,8 @@ export class RPCBaseClient extends EventEmitter {
 
         const pendingCall: any = {
             msgId,
-            method,
-            params
+            method: methodName,
+            params: paramsObj
         };
 
         if (!options.noReply) {
@@ -502,8 +529,8 @@ export class RPCBaseClient extends EventEmitter {
             this.emit('callResult', {
                 outbound: true,
                 messageId: msgId,
-                method,
-                params,
+                method: methodName,
+                params: paramsObj,
                 result,
             });
 
@@ -514,8 +541,8 @@ export class RPCBaseClient extends EventEmitter {
             this.emit('callError', {
                 outbound: true,
                 messageId: msgId,
-                method,
-                params,
+                method: methodName,
+                params: paramsObj,
                 error: err,
             });
 

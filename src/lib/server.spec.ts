@@ -10,12 +10,13 @@ import { abortHandshake } from './ws-util';
 import { RPCServerClient } from './server-client';
 import { AddressInfo, Socket } from 'net';
 import { TLSSocket } from 'tls';
+import { ProtocolNames } from './protocols';
 
 describe('RPCServer', function(){
     this.timeout(500);
 
     interface ExtraOptions {
-        withClient?: (cli: RPCServerClient) => void;
+        withClient?: (cli: RPCServerClient<ProtocolNames>) => void;
     }
 
     async function createServer(options: RPCServerOptions = {}, extra: ExtraOptions = {}) {
@@ -24,7 +25,7 @@ describe('RPCServer', function(){
         const port = (httpServer.address() as AddressInfo).port;
         const endpoint = `ws://localhost:${port}`;
         const close = (options?: ServerCloseOptions) => server.close(options);
-        server.on('client', (client: RPCServerClient) => {
+        server.on('client', (client: RPCServerClient<ProtocolNames>) => {
             client.handle('Echo', async ({params}) => {
                 return params;
             });
@@ -356,7 +357,7 @@ describe('RPCServer', function(){
 
         it('should attach session properties to client', async () => {
 
-            let serverClient: RPCServerClient;
+            let serverClient: RPCServerClient<ProtocolNames>;
             const extraPath = '/extra/path';
             const identity = 'X';
             const proto = 'a';

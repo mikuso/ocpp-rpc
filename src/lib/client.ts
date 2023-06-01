@@ -6,6 +6,7 @@ import { getPackageIdent } from './util';
 import EventBuffer from './event-buffer';
 import { IncomingMessage } from 'node:http';
 import { CloseEvent, RPCBaseClient, RPCBaseClientEvents, RPCBaseClientOptions } from './baseclient';
+import { ProtocolNames } from './protocols';
 
 export interface OpenEvent {
     response: IncomingMessage;
@@ -31,7 +32,7 @@ interface RPCClientEvents extends RPCBaseClientEvents {
     'connecting': (event: {protocols: string[]}) => void;
 }
 
-export declare interface RPCClient {
+export declare interface RPCClient<T extends ProtocolNames> {
     on<U extends keyof RPCClientEvents>(
       event: U, listener: RPCClientEvents[U]
     ): this;
@@ -41,11 +42,11 @@ export declare interface RPCClient {
     ): boolean;
 }
 
-export class RPCClient extends RPCBaseClient {
+export class RPCClient<T extends ProtocolNames> extends RPCBaseClient<T> {
     protected _identity: string;
     protected _state: StateEnum;
     protected _ws?: WebSocket;
-    protected _protocol?: string;
+    protected _protocol: T;
     protected _options: RPCClientOptions;
     private _backoffStrategy!: ExponentialStrategy;
     protected _connectPromise?: Promise<OpenEvent>;
@@ -58,7 +59,7 @@ export class RPCClient extends RPCBaseClient {
         this._state = StateEnum.CLOSED;
         
         this._ws = undefined;
-        this._protocol = undefined;
+        this._protocol = '' as T;
 
         this._options = {
             // defaults
@@ -100,7 +101,7 @@ export class RPCClient extends RPCBaseClient {
      */
     async connect(): Promise<OpenEvent> {
         this._protocolOptions = this._options.protocols ?? [];
-        this._protocol = undefined;
+        this._protocol = '' as T;
         this._identity = this._options.identity;
         
         let connUrl = this._options.endpoint + '/' + encodeURIComponent(this._options.identity);
@@ -215,7 +216,7 @@ export class RPCClient extends RPCBaseClient {
 
                 // record which protocol was selected
                 if (this._protocol === undefined) {
-                    this._protocol = this._ws.protocol;
+                    this._protocol = this._ws.protocol as T;
                     this.emit('protocol', this._protocol);
                 }
 

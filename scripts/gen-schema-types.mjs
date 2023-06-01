@@ -22,14 +22,19 @@ async function main(schemaDir, outDir) {
         for (const schemaDef of schema) {
             const [method, type] = schemaDef.$id.substring(4).split('.');
 
+            if (!methodMapping.has(method)) {
+                methodMapping.set(method, {});
+            }
+
             let name;
             switch (type) {
                 case 'req':
                     name = method + 'Request';
-                    methodMapping.set(method, name);
+                    methodMapping.get(method).req = name;
                     break;
                 case 'conf':
                     name = method + 'Response';
+                    methodMapping.get(method).conf = name;
                     break;
                 default:
                     throw Error('Badly formed $id:' + schemaDef.$id);
@@ -45,7 +50,7 @@ async function main(schemaDir, outDir) {
         }
 
         let methodsInterface = Array.from(methodMapping.entries()).map(([method, interf]) => {
-            return `  ${method}: ${interf};`
+            return `  ${method}: {req: ${interf.req}, conf: ${interf.conf}};`
         }).join('\n');
         methodsInterface = `export interface ${protoName}Methods {\n${methodsInterface}\n}`;
 

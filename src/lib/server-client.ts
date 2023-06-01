@@ -2,6 +2,7 @@ import { WebSocket } from "ws";
 import { RPCBaseClient, RPCBaseClientOptions } from "./baseclient";
 import { StateEnum } from "./client";
 import { RPCServerClientHandshake } from "./server";
+import { ProtocolNames } from "./protocols";
 
 export interface RPCServerClientDependencies {
     query?: string | string[][] | URLSearchParams;
@@ -10,7 +11,7 @@ export interface RPCServerClientDependencies {
     session: any;
 }
 
-export class RPCServerClient extends RPCBaseClient {
+export class RPCServerClient<T extends ProtocolNames> extends RPCBaseClient<T> {
     private _session: any;
     private _handshake: RPCServerClientHandshake;
 
@@ -23,7 +24,7 @@ export class RPCServerClient extends RPCBaseClient {
         this._state = StateEnum.OPEN;
         this._identity = this._options.identity;
         this._ws = ws;
-        this._protocol = ws.protocol;
+        this._protocol = ws.protocol as T;
         this._attachWebsocket(this._ws);
     }
 
