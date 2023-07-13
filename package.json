@@ -1,6 +1,6 @@
 {
   "name": "ocpp-rpc",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "A client & server implementation of the WAMP-like RPC-over-websocket system defined in the OCPP protocols (e.g. OCPP1.6-J and OCPP2.0.1).",
   "main": "index.js",
   "scripts": {
