@@ -35,6 +35,9 @@ describe('RPCClient', function(){
             client.handle('Heartbeat', () => {
                 return {currentTime: new Date().toISOString()};
             });
+            client.handle('TestTenth', ({params}) => {
+                return {val: params.val / 10};
+            });
             if (extra.withClient) {
                 extra.withClient(client);
             }
@@ -63,6 +66,37 @@ describe('RPCClient', function(){
                 "properties": {
                     "val": {
                         "type": "string"
+                    }
+                },
+                "additionalProperties": false,
+                "required": ["val"]
+            }
+        ]);
+    }
+
+    function getNumberTestValidator() {
+        return createValidator('numbers1.0', [
+            {
+                "$schema": "http://json-schema.org/draft-07/schema",
+                "$id": "urn:TestTenth.req",
+                "type": "object",
+                "properties": {
+                    "val": {
+                        "type": "number",
+                        "multipleOf": 0.1
+                    }
+                },
+                "additionalProperties": false,
+                "required": ["val"]
+            },
+            {
+                "$schema": "http://json-schema.org/draft-07/schema",
+                "$id": "urn:TestTenth.conf",
+                "type": "object",
+                "properties": {
+                    "val": {
+                        "type": "number",
+                        "multipleOf": 0.01
                     }
                 },
                 "additionalProperties": false,
@@ -1428,8 +1462,52 @@ describe('RPCClient', function(){
             }
         });
 
+        it("should not reject messages due to floating point imprecision in strictMode", async () => {
+
+            const { endpoint, close, server } = await createServer({
+                protocols: ['numbers1.0'],
+            });
+
+            const cli = new RPCClient({
+                endpoint,
+                identity: 'X',
+                protocols: ['numbers1.0'],
+                strictModeValidators: [getNumberTestValidator()],
+                strictMode: true,
+            });
+
+            try {
+                await cli.connect();
+
+                const [c1, c2, c3, c4, c5] = await Promise.allSettled([
+                    cli.call('TestTenth', { val: 1 }),
+                    cli.call('TestTenth', { val: 0.1 }),
+                    cli.call('TestTenth', { val: 9.1 }),
+                    cli.call('TestTenth', { val: 9.11 }),
+                    cli.call('TestTenth', { val: 57.3 / 3 }),
+                ]);
+
+                assert.equal(c1.status, 'fulfilled');
+                assert.equal(c1.value.val, 1/10);
+                assert.equal(c2.status, 'fulfilled');
+                assert.equal(c2.value.val, 0.1/10);
+                assert.equal(c3.status, 'fulfilled');
+                assert.equal(c3.value.val, 9.1/10);
+                assert.equal(c4.status, 'rejected');
+                assert.ok(c4.reason instanceof RPCOccurenceConstraintViolationError);
+                assert.equal(c4.reason.details.errors[0].keyword, 'multipleOf');
+                assert.equal(c5.status, 'fulfilled');
+                assert.equal(c5.value.val, 57.3/3/10);
+
+            } finally {
+                await cli.close();
+                close();
+            }
+
+        });
+
         it("should validate calls using in-built validators", async () => {
-            
+
             const {endpoint, close, server} = await createServer({
                 protocols: ['ocpp1.6'],
                 strictMode: true,
