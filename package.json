@@ -3,6 +3,7 @@
   "version": "2.0.2",
   "description": "A client & server implementation of the WAMP-like RPC-over-websocket system defined in the OCPP protocols (e.g. OCPP1.6-J and OCPP2.0.1).",
   "main": "index.js",
+  "types": "index.d.ts",
   "scripts": {
     "test": "mocha",
     "coverage": "nyc --reporter=lcov --reporter=text mocha"
@@ -43,6 +44,7 @@
     "ws": "^8.5.0"
   },
   "devDependencies": {
+    "json-schema-to-typescript": "^10.1.5",
     "mocha": "^10.0.0",
     "nyc": "^15.1.0"
   }
