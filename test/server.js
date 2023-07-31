@@ -341,6 +341,54 @@ describe('RPCServer', function(){
 
         });
 
+        it('should correctly parse endpoints with double slashes and dots', async () => {
+
+            const identity = 'XX';
+            const {endpoint, close, server} = await createServer({});
+
+            try {
+                const endpointPaths = [
+                    {append: '/ocpp', expect: '/ocpp'},
+                    {append: '//', expect: '//'},
+                    {append: '//ocpp', expect: '//ocpp'},
+                    {append: '/ocpp/', expect: '/ocpp/'},
+                    {append: '/', expect: '/'},
+                    {append: '///', expect: '///'},
+                    {append: '/../', expect: '/'},
+                    {append: '//../', expect: '/'},
+                    {append: '/ocpp/..', expect: '/'},
+                    {append: '/ocpp/../', expect: '/'},
+                    {append: '//ocpp/../', expect: '//'},
+                    {append: '', expect: '/'},
+                ];
+                
+                for (const endpointPath of endpointPaths) {
+                    const fullEndpoint = endpoint + endpointPath.append;
+
+                    let hs;
+                    server.auth((accept, reject, handshake) => {
+                        hs = handshake;
+                        accept();
+                    });
+
+                    const cli = new RPCClient({
+                        endpoint: fullEndpoint,
+                        identity,
+                    });
+
+                    await cli.connect();
+                    await cli.close({force: true});
+
+                    assert.equal(hs.endpoint, endpointPath.expect);
+                    assert.equal(hs.identity, identity);
+                }
+
+            } finally {
+                close();
+            }
+
+        });
+
         it('should attach session properties to client', async () => {
 
             let serverClient;
