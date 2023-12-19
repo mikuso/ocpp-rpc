@@ -4,7 +4,7 @@
   "description": "A client & server implementation of the WAMP-like RPC-over-websocket system defined in the OCPP protocols (e.g. OCPP1.6-J and OCPP2.0.1).",
   "main": "index.js",
   "scripts": {
-    "test": "mocha",
+    "test": "mocha -r ts-node/register 'test/**/*.{js,ts}'",
     "coverage": "nyc --reporter=lcov --reporter=text mocha"
   },
   "engines": {
@@ -44,6 +44,8 @@
   },
   "devDependencies": {
     "mocha": "^10.0.0",
-    "nyc": "^15.1.0"
+    "nyc": "^15.1.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
   }
 }
