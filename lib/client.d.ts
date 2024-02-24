@@ -32,10 +32,18 @@ export interface RPC_ClientOptions {
         randomisationFactor: number;
     };
 }
+export interface IHandlersOption {
+    messageId?: string;
+    method?: string;
+    params?: Record<string, any>;
+    signal?: AbortSignal;
+    reply?: unknown;
+}
+type IHandlers = ({ params, reply, method, signal, messageId, }: IHandlersOption) => Promise<Record<string, any>>;
 declare class RPC_Client extends EventEmitter {
     _identity?: string;
-    _wildcardHandler: Function | null;
-    _handlers: Map<string, Function>;
+    _wildcardHandler: IHandlers | null;
+    _handlers: Map<string, IHandlers>;
     _state: number;
     _callQueue: Queue;
     _ws?: WebSocket;
@@ -122,7 +130,7 @@ declare class RPC_Client extends EventEmitter {
      * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/CloseEvent/code CloseEvent codes}
      * @returns Promise<Object> - The CloseEvent (code & reason) for closure. May be different from requested code & reason.
      */
-    close({ code, reason, awaitPending, force, }: {
+    close({ code, reason, awaitPending, force, }?: {
         code?: number;
         reason?: string;
         awaitPending?: any;
@@ -153,9 +161,6 @@ declare class RPC_Client extends EventEmitter {
      * @param {string} [method] - The name of the RPC method to handle.
      * @param {Function} handler - A function that can handle incoming calls for this method.
      */
-    handle(method: string | Function, handler?: ({ params, signal }: {
-        params: any;
-        signal: any;
-    }) => void): void;
+    handle(method: string | IHandlers, handler?: IHandlers): void;
 }
 export default RPC_Client;
