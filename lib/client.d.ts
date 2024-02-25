@@ -1,11 +1,7 @@
 /// <reference types="node" />
-/// <reference types="node" />
-/// <reference types="node" />
 import EventEmitter from "events";
 import { Validator } from "./validator";
-import Queue from "./queue";
 import WebSocket from "ws";
-import { ExponentialStrategy } from "backoff";
 import EventBuffer from "./event-buffer";
 export interface RPC_ClientOptions {
     identity: string;
@@ -41,43 +37,32 @@ export interface IHandlersOption {
 }
 type IHandlers = ({ params, reply, method, signal, messageId, }: IHandlersOption) => Promise<Record<string, any>>;
 declare class RPC_Client extends EventEmitter {
-    _identity?: string;
-    _wildcardHandler: IHandlers | null;
-    _handlers: Map<string, IHandlers>;
-    _state: number;
-    _callQueue: Queue;
-    _ws?: WebSocket;
-    _wsAbortController?: AbortController;
-    _keepAliveAbortController?: AbortController;
-    _pendingPingResponse: boolean;
-    _lastPingTime: number;
-    _closePromise?: Promise<{
-        code: number;
-        reason: string;
-    }>;
-    _protocolOptions: string[];
-    _protocol?: string;
-    _strictProtocols: string[];
-    _strictValidators?: Map<string, Validator>;
-    _pendingCalls: Map<string, Record<string, any>>;
-    _pendingResponses: Map<string, {
-        abort: {
-            (reason?: any): void;
-            (reason?: any): void;
-        };
-        promise: Promise<any>;
-    }>;
-    _outboundMsgBuffer: string[];
-    _connectedOnce: boolean;
-    _backoffStrategy?: ExponentialStrategy;
-    _badMessagesCount: number;
-    _reconnectAttempt: number;
-    _options: RPC_ClientOptions;
-    _connectionUrl: string;
-    _connectPromise: Promise<{
-        response: any;
-    }>;
-    _nextPingTimeout: NodeJS.Timeout;
+    protected _identity?: string;
+    private _wildcardHandler;
+    private _handlers;
+    protected _state: number;
+    private _callQueue;
+    protected _ws?: WebSocket;
+    private _wsAbortController?;
+    private _keepAliveAbortController?;
+    private _pendingPingResponse;
+    private _lastPingTime;
+    private _closePromise?;
+    private _protocolOptions;
+    protected _protocol?: string;
+    private _strictProtocols;
+    private _strictValidators?;
+    private _pendingCalls;
+    private _pendingResponses;
+    private _outboundMsgBuffer;
+    private _connectedOnce;
+    private _backoffStrategy?;
+    private _badMessagesCount;
+    private _reconnectAttempt;
+    protected _options: RPC_ClientOptions;
+    private _connectionUrl;
+    private _connectPromise;
+    private _nextPingTimeout;
     static OPEN: number;
     static CONNECTING: number;
     static CLOSING: number;
@@ -92,22 +77,17 @@ declare class RPC_Client extends EventEmitter {
      * @returns {Promise<undefined>} Resolves when connected, rejects on failure
      */
     connect(): Promise<any>;
-    _keepAlive(): Promise<void>;
-    _tryReconnect(): Promise<void>;
-    _beginConnect(): Promise<{
-        response: any;
-    }>;
+    private _keepAlive;
+    private _tryReconnect;
+    private _beginConnect;
     /**
      * Start consuming from a WebSocket
      * @param {WebSocket} ws - A WebSocket instance
      * @param {EventBuffer} leadMsgBuffer - A buffer which traps all 'message' events
      */
-    _attachWebsocket(ws: WebSocket, leadMsgBuffer?: EventBuffer): void;
-    _handleDisconnect({ code, reason }: {
-        code: number;
-        reason: Buffer;
-    }): void;
-    _rejectPendingCalls(abortReason: string): void;
+    protected _attachWebsocket(ws: WebSocket, leadMsgBuffer?: EventBuffer): void;
+    private _handleDisconnect;
+    private _rejectPendingCalls;
     /**
      * Call a method on a remote RPCClient or RPCServerClient.
      * @param {string} method - The RPC method to call.
@@ -119,7 +99,7 @@ declare class RPC_Client extends EventEmitter {
      * @returns Promise<*> - Response value from the remote handler.
      */
     call(method: any, params?: any, options?: Record<string, any>): Promise<unknown>;
-    _call(method: any, params: any, options?: Record<string, any>): Promise<any>;
+    private _call;
     /**
      * Closes the RPCClient.
      * @param {Object} options - Close options
@@ -139,12 +119,12 @@ declare class RPC_Client extends EventEmitter {
         code: number | undefined;
         reason: string | undefined;
     } | undefined>;
-    _awaitUntilPendingSettled(): Promise<PromiseSettledResult<any>[]>;
-    _deferNextPing(): void;
-    _onMessage(buffer: Buffer): void;
-    _onCall(msgId: string, method: string, params: any): Promise<void>;
-    _onCallResult(msgId: string, result: any): any;
-    _onCallError(msgId: string, errorCode: string, errorDescription: string, errorDetails: Record<string, any>): void;
+    private _awaitUntilPendingSettled;
+    private _deferNextPing;
+    private _onMessage;
+    private _onCall;
+    private _onCallResult;
+    private _onCallError;
     /**
      * Send a message to the RPCServer. While socket is connecting, the message is queued and send when open.
      * @param {Buffer|String} message - String to send via websocket

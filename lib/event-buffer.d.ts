@@ -2,10 +2,10 @@
 /// <reference types="node" />
 import { EventEmitter } from "stream";
 declare class EventBuffer {
-    _emitter: EventEmitter;
-    _event: string | symbol;
-    _collector: (...args: any) => void;
-    _buffer: any;
+    private _emitter;
+    private _event;
+    private _collector;
+    private _buffer;
     constructor(emitter: EventEmitter, event: string | symbol);
     condense(): any;
 }

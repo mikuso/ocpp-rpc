@@ -1,10 +1,10 @@
 declare class Queue {
-    _pending: number;
-    _concurrency: number;
-    _queue: any[];
+    private _pending;
+    private _concurrency;
+    private _queue;
     constructor();
     setConcurrency(concurrency: number): void;
     push(fn: any): Promise<unknown>;
-    _next(): Promise<false | undefined>;
+    private _next;
 }
 export default Queue;

@@ -14,8 +14,8 @@ export interface IHandshakeInterface {
     password: Buffer | undefined;
 }
 declare class RpcServerClient extends RPC_Client {
-    _session: Record<string, any>;
-    _handshake: IHandshakeInterface;
+    private _session;
+    private _handshake;
     constructor({ ...options }: RPC_ClientOptions, { ws, handshake, session, }: {
         ws: WebSocket;
         session: Record<string, any>;
