@@ -3,9 +3,9 @@
 import { EventEmitter } from 'node:events';
 import { WebSocket, RawData } from 'ws';
 import { NOREPLY } from './symbols';
-import { OCPPErrorType } from './util';
 import EventBuffer from './event-buffer';
 import { Validator } from './validator';
+import { ProtocolMethodsMap, ProtocolNames, RequestMethod } from './protocols';
 export declare enum MsgType {
     UNKNOWN = -1,
     CALL = 2,
@@ -17,7 +17,6 @@ export interface CloseEvent {
     reason?: string | Buffer;
 }
 type BufferLike = string | RawData;
-type CallReplyValue = object | typeof NOREPLY;
 export interface RPCBaseClientOptions {
     identity: string;
     endpoint: URL | string;
@@ -116,11 +115,11 @@ export interface RPCBaseClientEvents {
         isCall: boolean;
     }) => void;
 }
-export declare interface RPCBaseClient {
+export declare interface RPCBaseClient<T extends ProtocolNames> {
     on<U extends keyof RPCBaseClientEvents>(event: U, listener: RPCBaseClientEvents[U]): this;
     emit<U extends keyof RPCBaseClientEvents>(event: U, ...args: Parameters<RPCBaseClientEvents[U]>): boolean;
 }
-export declare class RPCBaseClient extends EventEmitter {
+export declare class RPCBaseClient<T extends ProtocolNames> extends EventEmitter {
     protected _identity: string;
     private _wildcardHandler?;
     private _handlers;
@@ -133,7 +132,7 @@ export declare class RPCBaseClient extends EventEmitter {
     private _lastPingTime;
     private _closePromise?;
     protected _protocolOptions: string[];
-    protected _protocol?: string;
+    protected _protocol: T;
     private _strictProtocols;
     private _strictValidators;
     private _pendingCalls;
@@ -148,6 +147,7 @@ export declare class RPCBaseClient extends EventEmitter {
     get identity(): string;
     get protocol(): string | undefined;
     get state(): StateEnum;
+    isProtocol<P extends ProtocolNames>(protocol: P): this is RPCBaseClient<P>;
     reconfigure(options: Partial<RPCBaseClientOptions>): void;
     /**
      * Send a message to the RPCServer. While socket is connecting, the message is queued and send when open.
@@ -183,23 +183,23 @@ export declare class RPCBaseClient extends EventEmitter {
      * @param {boolean} options.noReply - If set to true, the call will return immediately.
      * @returns Promise<*> - Response value from the remote handler.
      */
-    call(method: string, params: object, options: CallOptionsWithNoReply): Promise<undefined>;
-    call(method: string, params?: object, options?: CallOptions): Promise<any>;
-    _call(method: string, params: object, options?: CallOptions): Promise<any | undefined>;
+    call<M extends keyof ProtocolMethodsMap[T]>(method: M, params: RequestMethod<T, M>, options: CallOptionsWithNoReply): Promise<undefined>;
+    call<M extends keyof ProtocolMethodsMap[T]>(method: M, params?: RequestMethod<T, M>, options?: CallOptions): Promise<any>;
+    protected _call<M extends keyof ProtocolMethodsMap[T]>(method: M, params?: RequestMethod<T, M>, options?: CallOptions): Promise<any | undefined>;
     /**
      * Start consuming from a WebSocket
      * @param {WebSocket} ws - A WebSocket instance
      * @param {EventBuffer} leadMsgBuffer - A buffer which traps all 'message' events
      */
     protected _attachWebsocket(ws: WebSocket, leadMsgBuffer?: EventBuffer): void;
-    _rejectPendingCalls(abortReason: string): void;
-    _awaitUntilPendingSettled(): Promise<PromiseSettledResult<CallReplyValue | OCPPErrorPayload | OCPPResultPayload>[]>;
+    protected _rejectPendingCalls(abortReason: string): void;
+    private _awaitUntilPendingSettled;
     protected _handleDisconnect({ code, reason }: CloseEvent): void;
-    _deferNextPing(): void;
-    _keepAlive(): Promise<void>;
-    _onMessage(buffer: RawData): void;
-    _onCall(msgId: string, method: string, params: object): Promise<void>;
-    _onCallResult(msgId: string, result: object): void;
-    _onCallError(msgId: string, errorCode: OCPPErrorType, errorDescription: string, errorDetails: object): void;
+    private _deferNextPing;
+    private _keepAlive;
+    private _onMessage;
+    private _onCall;
+    private _onCallResult;
+    private _onCallError;
 }
 export {};

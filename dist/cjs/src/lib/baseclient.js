@@ -41,7 +41,7 @@ class RPCBaseClient extends node_events_1.EventEmitter {
         this._lastPingTime = 0;
         this._closePromise = undefined;
         this._protocolOptions = [];
-        this._protocol = undefined;
+        this._protocol = '';
         this._strictProtocols = [];
         this._strictValidators = new Map();
         this._pendingCalls = new Map();
@@ -76,6 +76,9 @@ class RPCBaseClient extends node_events_1.EventEmitter {
     }
     get state() {
         return this._state;
+    }
+    isProtocol(protocol) {
+        return this._protocol === protocol;
     }
     reconfigure(options) {
         var _a;
@@ -192,7 +195,7 @@ class RPCBaseClient extends node_events_1.EventEmitter {
         this._wildcardHandler = undefined;
         this._handlers.clear();
     }
-    async call(method, params = {}, options = {}) {
+    async call(method, params, options = {}) {
         return await this._callQueue.push(this._call.bind(this, method, params, options));
     }
     async _call(method, params, options = {}) {
@@ -201,18 +204,20 @@ class RPCBaseClient extends node_events_1.EventEmitter {
         if ([StateEnum.CLOSED, StateEnum.CLOSING].includes(this._state)) {
             throw Error(`Cannot make call while socket not open`);
         }
+        const methodName = method;
+        const paramsObj = params;
         const msgId = (0, node_crypto_1.randomUUID)();
-        const payload = [MsgType.CALL, msgId, method, params];
+        const payload = [MsgType.CALL, msgId, methodName, paramsObj];
         if (typeof this._protocol === 'string' && this._strictProtocols.includes(this._protocol)) {
             const validator = this._strictValidators.get(this._protocol);
             try {
-                validator.validate(`urn:${method}.req`, params);
+                validator.validate(`urn:${methodName}.req`, paramsObj);
             }
             catch (error) {
                 this.emit('strictValidationFailure', {
                     messageId: msgId,
-                    method,
-                    params,
+                    method: methodName,
+                    params: paramsObj,
                     result: null,
                     error,
                     outbound: true,
@@ -223,8 +228,8 @@ class RPCBaseClient extends node_events_1.EventEmitter {
         }
         const pendingCall = {
             msgId,
-            method,
-            params
+            method: methodName,
+            params: paramsObj
         };
         if (!options.noReply) {
             const timeoutAc = new AbortController();
@@ -275,8 +280,8 @@ class RPCBaseClient extends node_events_1.EventEmitter {
             this.emit('callResult', {
                 outbound: true,
                 messageId: msgId,
-                method,
-                params,
+                method: methodName,
+                params: paramsObj,
                 result,
             });
             return result;
@@ -285,8 +290,8 @@ class RPCBaseClient extends node_events_1.EventEmitter {
             this.emit('callError', {
                 outbound: true,
                 messageId: msgId,
-                method,
-                params,
+                method: methodName,
+                params: paramsObj,
                 error: err,
             });
             throw err;

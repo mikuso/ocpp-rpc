@@ -3,6 +3,7 @@ import { WebSocket, ClientOptions } from 'ws';
 import { ExponentialOptions } from 'backoff';
 import { IncomingMessage } from 'node:http';
 import { CloseEvent, RPCBaseClient, RPCBaseClientEvents, RPCBaseClientOptions } from './baseclient';
+import { ProtocolNames } from './protocols';
 export interface OpenEvent {
     response: IncomingMessage;
 }
@@ -25,15 +26,15 @@ interface RPCClientEvents extends RPCBaseClientEvents {
         protocols: string[];
     }) => void;
 }
-export declare interface RPCClient {
+export declare interface RPCClient<T extends ProtocolNames> {
     on<U extends keyof RPCClientEvents>(event: U, listener: RPCClientEvents[U]): this;
     emit<U extends keyof RPCClientEvents>(event: U, ...args: Parameters<RPCClientEvents[U]>): boolean;
 }
-export declare class RPCClient extends RPCBaseClient {
+export declare class RPCClient<T extends ProtocolNames> extends RPCBaseClient<T> {
     protected _identity: string;
     protected _state: StateEnum;
     protected _ws?: WebSocket;
-    protected _protocol?: string;
+    protected _protocol: T;
     protected _options: RPCClientOptions;
     private _backoffStrategy;
     protected _connectPromise?: Promise<OpenEvent>;

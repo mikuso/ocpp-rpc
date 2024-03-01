@@ -21,7 +21,7 @@ class RPCClient extends baseclient_1.RPCBaseClient {
         this._identity = options.identity;
         this._state = StateEnum.CLOSED;
         this._ws = undefined;
-        this._protocol = undefined;
+        this._protocol = '';
         this._options = {
             identity: '',
             endpoint: 'ws://localhost',
@@ -55,7 +55,7 @@ class RPCClient extends baseclient_1.RPCBaseClient {
     async connect() {
         var _a;
         this._protocolOptions = (_a = this._options.protocols) !== null && _a !== void 0 ? _a : [];
-        this._protocol = undefined;
+        this._protocol = '';
         this._identity = this._options.identity;
         let connUrl = this._options.endpoint + '/' + encodeURIComponent(this._options.identity);
         if (this._options.query) {

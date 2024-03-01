@@ -194,44 +194,6 @@ export class RPCServer extends EventEmitter {
             }
         };
     }
-    async _onConnection(websocket, request) {
-        var _a;
-        try {
-            if (this._state !== StateEnum.OPEN) {
-                throw Error("Server is no longer open");
-            }
-            const pendingUpgrade = this._pendingUpgrades.get(request);
-            if (!pendingUpgrade) {
-                throw Error("Upgrade is not pending");
-            }
-            const { handshake, session } = pendingUpgrade;
-            const client = new RPCServerClient({
-                identity: handshake.identity,
-                callTimeoutMs: this._options.callTimeoutMs,
-                pingIntervalMs: this._options.pingIntervalMs,
-                deferPingsOnActivity: this._options.deferPingsOnActivity,
-                respondWithDetailedErrors: this._options.respondWithDetailedErrors,
-                callConcurrency: this._options.callConcurrency,
-                strictMode: this._options.strictMode,
-                strictModeValidators: this._options.strictModeValidators,
-                maxBadMessages: this._options.maxBadMessages,
-                protocols: this._options.protocols,
-                headers: request.headers,
-                reconnect: false,
-                endpoint: request.url,
-            }, {
-                ws: websocket,
-                session,
-                handshake,
-            });
-            this._clients.add(client);
-            client.once('close', () => this._clients.delete(client));
-            this.emit('client', client);
-        }
-        catch (err) {
-            websocket.close((_a = err.statusCode) !== null && _a !== void 0 ? _a : 1000, err.message);
-        }
-    }
     auth(cb) {
         this._authCallback = cb;
     }
@@ -280,6 +242,44 @@ export class RPCServer extends EventEmitter {
             });
             this._state = StateEnum.CLOSED;
             this.emit('close');
+        }
+    }
+    async _onConnection(websocket, request) {
+        var _a;
+        try {
+            if (this._state !== StateEnum.OPEN) {
+                throw Error("Server is no longer open");
+            }
+            const pendingUpgrade = this._pendingUpgrades.get(request);
+            if (!pendingUpgrade) {
+                throw Error("Upgrade is not pending");
+            }
+            const { handshake, session } = pendingUpgrade;
+            const client = new RPCServerClient({
+                identity: handshake.identity,
+                callTimeoutMs: this._options.callTimeoutMs,
+                pingIntervalMs: this._options.pingIntervalMs,
+                deferPingsOnActivity: this._options.deferPingsOnActivity,
+                respondWithDetailedErrors: this._options.respondWithDetailedErrors,
+                callConcurrency: this._options.callConcurrency,
+                strictMode: this._options.strictMode,
+                strictModeValidators: this._options.strictModeValidators,
+                maxBadMessages: this._options.maxBadMessages,
+                protocols: this._options.protocols,
+                headers: request.headers,
+                reconnect: false,
+                endpoint: request.url,
+            }, {
+                ws: websocket,
+                session,
+                handshake,
+            });
+            this._clients.add(client);
+            client.once('close', () => this._clients.delete(client));
+            this.emit('client', client);
+        }
+        catch (err) {
+            websocket.close((_a = err.statusCode) !== null && _a !== void 0 ? _a : 1000, err.message);
         }
     }
 }
