@@ -1,13 +1,17 @@
-const path = require('node:path');
-const assert = require('assert/strict');
-const http = require('http');
-const { once } = require('events');
-const RPCClient = require("../lib/client");
-const { TimeoutError, UnexpectedHttpResponse, WebsocketUpgradeError } = require('../lib/errors');
-const RPCServer = require("../lib/server");
-const { setTimeout } = require('timers/promises');
-const { createValidator } = require('../lib/validator');
-const { abortHandshake } = require('../lib/ws-util');
+import { throws, doesNotThrow, equal, rejects, deepEqual, ok, doesNotReject } from 'assert/strict';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { createServer as _createServer, request } from 'http';
+import { once } from 'events';
+import { RPCClient } from "../lib/client.js";
+import { TimeoutError, UnexpectedHttpResponse, WebsocketUpgradeError } from '../lib/errors.js';
+import { RPCServer } from "../lib/server.js";
+import { setTimeout } from 'timers/promises';
+import { createValidator } from '../lib/validator.js';
+import { abortHandshake } from '../lib/ws-util.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 describe('RPCServer', function(){
     this.timeout(500);
@@ -38,7 +42,6 @@ describe('RPCServer', function(){
         return {server, httpServer, port, endpoint, close};
     }
 
-
     function getEchoValidator() {
         return createValidator('echo1.0', path.join(__dirname, '../schemas/test/echo/'), {
             urnNid: 'ocpp-rpc',
@@ -52,21 +55,21 @@ describe('RPCServer', function(){
 
         it('should throw if strictMode = true and not all protocol schemas found', async () => {
 
-            assert.throws(() => {
+            throws(() => {
                 new RPCServer({
                     protocols: ['ocpp1.6', 'echo1.0', 'other0.1'],
                     strictMode: true,
                 });
             });
 
-            assert.throws(() => {
+            throws(() => {
                 new RPCServer({
                     protocols: ['ocpp1.6', 'echo1.0', 'other0.1'],
                     strictMode: ['ocpp1.6', 'other0.1'],
                 });
             });
 
-            assert.throws(() => {
+            throws(() => {
                 // trying to use strict mode with no protocols specified
                 new RPCServer({
                     protocols: [],
@@ -74,14 +77,14 @@ describe('RPCServer', function(){
                 });
             });
 
-            assert.throws(() => {
+            throws(() => {
                 // trying to use strict mode with no protocols specified
                 new RPCServer({
                     strictMode: true,
                 });
             });
 
-            assert.doesNotThrow(() => {
+            doesNotThrow(() => {
                 new RPCServer({
                     protocols: ['ocpp1.6', 'echo1.0', 'other0.1'],
                     strictModeValidators: [getEchoValidator()],
@@ -89,7 +92,7 @@ describe('RPCServer', function(){
                 });
             });
 
-            assert.doesNotThrow(() => {
+            doesNotThrow(() => {
                 new RPCServer({
                     protocols: ['ocpp1.6', 'echo1.0'],
                     strictModeValidators: [getEchoValidator()],
@@ -113,7 +116,7 @@ describe('RPCServer', function(){
                 const clientProm = once(server, 'client');
                 await cli.connect();
                 const [client] = await clientProm;
-                assert.equal(client.identity, 'X');
+                equal(client.identity, 'X');
 
             } finally {
                 await cli.close();
@@ -133,7 +136,7 @@ describe('RPCServer', function(){
                 const clientProm = once(server, 'client');
                 await cli.connect();
                 const [client] = await clientProm;
-                assert.equal(client.identity, identity);
+                equal(client.identity, identity);
 
             } finally {
                 await cli.close();
@@ -164,7 +167,7 @@ describe('RPCServer', function(){
             try {
 
                 const err = await cli.connect().catch(e=>e);
-                assert.equal(err.code, 400);
+                equal(err.code, 400);
 
             } finally {
                 close();
@@ -219,7 +222,7 @@ describe('RPCServer', function(){
             });
 
             try {
-                await assert.rejects(cli.connect(), {code: 404});
+                await rejects(cli.connect(), {code: 404});
                 await waitOk;
             } finally {
                 await cli.close();
@@ -275,7 +278,7 @@ describe('RPCServer', function(){
             });
 
             try {
-                await assert.rejects(cli.connect(), {code: 404});
+                await rejects(cli.connect(), {code: 404});
                 await waitOk;
             } finally {
                 await cli.close();
@@ -307,13 +310,13 @@ describe('RPCServer', function(){
                 await cli.connect();
                 const [serverClient] = await serverClientProm;
 
-                assert.equal(serverClient.identity, identity);
-                assert.equal(hs.identity, identity);
-                assert.equal(hs.endpoint, extraPath);
-                assert.equal(serverClient.protocol, 'a');
+                equal(serverClient.identity, identity);
+                equal(hs.identity, identity);
+                equal(hs.endpoint, extraPath);
+                equal(serverClient.protocol, 'a');
 
-                assert.equal(cli.protocol, serverClient.protocol);
-                assert.equal(cli.identity, serverClient.identity);
+                equal(cli.protocol, serverClient.protocol);
+                equal(cli.identity, serverClient.identity);
 
             } finally {
                 await cli.close();
@@ -360,8 +363,8 @@ describe('RPCServer', function(){
                     await cli.connect();
                     await cli.close({force: true});
 
-                    assert.equal(hs.endpoint, endpointPath.expect);
-                    assert.equal(hs.identity, identity);
+                    equal(hs.endpoint, endpointPath.expect);
+                    equal(hs.identity, identity);
                 }
 
             } finally {
@@ -397,9 +400,9 @@ describe('RPCServer', function(){
             try {
                 
                 await cli.connect();
-                assert.deepEqual(serverClient.session, sessionData);
-                assert.equal(serverClient.protocol, proto);
-                assert.equal(cli.protocol, proto);
+                deepEqual(serverClient.session, sessionData);
+                equal(serverClient.protocol, proto);
+                equal(cli.protocol, proto);
 
             } finally {
                 await cli.close();
@@ -417,8 +420,8 @@ describe('RPCServer', function(){
             const cli = new RPCClient({endpoint, identity: 'X'});
     
             const err = await cli.connect().catch(e=>e);
-            assert.ok(err instanceof UnexpectedHttpResponse);
-            assert.equal(err.code, 500);
+            ok(err instanceof UnexpectedHttpResponse);
+            equal(err.code, 500);
 
             close();
 
@@ -438,8 +441,8 @@ describe('RPCServer', function(){
 
             const [closed] = await closeProm;
 
-            assert.equal(closed.code, 1000);
-            assert.equal(closed.reason, 'Server is no longer open');
+            equal(closed.code, 1000);
+            equal(closed.reason, 'Server is no longer open');
 
         });
 
@@ -468,7 +471,7 @@ describe('RPCServer', function(){
             try {
                 await cli.connect();
                 const pass = await cli.call('GetPassword');
-                assert.equal(password, pass);
+                equal(password, pass);
 
             } finally {
                 cli.close();
@@ -499,8 +502,8 @@ describe('RPCServer', function(){
 
             try {
                 await cli.connect();
-                assert.equal(password, recPass.toString('utf8'));
-                assert.equal(identity, recIdent);
+                equal(password, recPass.toString('utf8'));
+                equal(identity, recIdent);
 
             } finally {
                 cli.close();
@@ -527,7 +530,7 @@ describe('RPCServer', function(){
 
             try {
                 await cli.connect();
-                assert.equal(password, recPass.toString('utf8'));
+                equal(password, recPass.toString('utf8'));
 
             } finally {
                 cli.close();
@@ -552,7 +555,7 @@ describe('RPCServer', function(){
 
             try {
                 await cli.connect();
-                assert.equal(undefined, recPass);
+                equal(undefined, recPass);
 
             } finally {
                 cli.close();
@@ -580,7 +583,7 @@ describe('RPCServer', function(){
 
             try {
                 await cli.connect();
-                assert.equal(undefined, recPass);
+                equal(undefined, recPass);
 
             } finally {
                 cli.close();
@@ -608,7 +611,7 @@ describe('RPCServer', function(){
 
             try {
                 await cli.connect();
-                assert.equal(undefined, recPass);
+                equal(undefined, recPass);
 
             } finally {
                 cli.close();
@@ -643,7 +646,7 @@ describe('RPCServer', function(){
             try {
                 await cli.connect();
                 const pass = await cli.call('GetPassword');
-                assert.equal(password.toString('hex'), pass);
+                equal(password.toString('hex'), pass);
 
             } finally {
                 cli.close();
@@ -692,10 +695,10 @@ describe('RPCServer', function(){
                     cli2.connect()
                 ]);
 
-                assert.equal(callResult.status, 'fulfilled');
-                assert.equal(callResult.value, 123);
-                assert.equal(connResult.status, 'rejected');
-                assert.equal(connResult.reason.code, 'ECONNREFUSED');
+                equal(callResult.status, 'fulfilled');
+                equal(callResult.value, 123);
+                equal(connResult.status, 'rejected');
+                equal(connResult.reason.code, 'ECONNREFUSED');
 
             } finally {
                 close();
@@ -716,7 +719,7 @@ describe('RPCServer', function(){
                 });
             });
 
-            const httpServer = http.createServer({}, (req, res) => res.end());
+            const httpServer = _createServer({}, (req, res) => res.end());
             httpServer.on('upgrade', server.handleUpgrade);
             await new Promise((resolve, reject) => {
                 httpServer.listen({port: 0}, err => err ? reject(err) : resolve());
@@ -741,10 +744,10 @@ describe('RPCServer', function(){
             ]);
             await cli1.close(); // httpServer.close() won't kick clients
             
-            assert.equal(callResult.status, 'fulfilled');
-            assert.equal(callResult.value, 123);
-            assert.equal(connResult.status, 'rejected');
-            assert.equal(connResult.reason.code, 'ECONNREFUSED');
+            equal(callResult.status, 'fulfilled');
+            equal(callResult.value, 123);
+            equal(connResult.status, 'rejected');
+            equal(connResult.reason.code, 'ECONNREFUSED');
 
         });
 
@@ -784,13 +787,13 @@ describe('RPCServer', function(){
             
             await cli.connect();
             const {code} = await cli.close({code: 4080});
-            assert.equal(code, 4080);
+            equal(code, 4080);
 
             ac.abort();
 
             const err = await cli.connect().catch(e=>e);
 
-            assert.equal(err.code, 'ECONNREFUSED');
+            equal(err.code, 'ECONNREFUSED');
 
             await server.close();
         });
@@ -821,9 +824,9 @@ describe('RPCServer', function(){
                 const ping = await pingPromise;
                 const fin = Date.now() - start;
                 
-                assert.ok(fin >= pingIntervalMs);
-                assert.ok(fin <= pingIntervalMs * 2);
-                assert.ok(ping.rtt <= pingIntervalMs * 2);
+                ok(fin >= pingIntervalMs);
+                ok(fin <= pingIntervalMs * 2);
+                ok(ping.rtt <= pingIntervalMs * 2);
                 
             } finally {
                 await cli.close();
@@ -837,11 +840,11 @@ describe('RPCServer', function(){
 
             try {
                 
-                const req = http.request('http://localhost:'+port);
+                const req = request('http://localhost:'+port);
                 req.end();
 
                 const [res] = await once(req, 'response');
-                assert.equal(res.statusCode, 404);
+                equal(res.statusCode, 404);
                 
             } catch (err) {
                 console.log({err});
@@ -873,7 +876,7 @@ describe('RPCServer', function(){
 
             try {
                 const conn = cli.connect();
-                await assert.rejects(conn, {message: "Bad Request"});
+                await rejects(conn, {message: "Bad Request"});
                 await authCompleted;
                 
             } finally {
@@ -903,7 +906,7 @@ describe('RPCServer', function(){
             let onUpgrade;
             let upgradeProm = new Promise(r => {onUpgrade = r;});
 
-            const httpServer = http.createServer({}, (req, res) => res.end());
+            const httpServer = _createServer({}, (req, res) => res.end());
             httpServer.on('upgrade', (...args) => onUpgrade(args));
 
             await new Promise((resolve, reject) => {
@@ -920,9 +923,9 @@ describe('RPCServer', function(){
             cli.connect();
             const upgrade = await upgradeProm;
             await server.close();
-            assert.doesNotReject(server.handleUpgrade(...upgrade));
-            assert.equal(authed, false);
-            assert.equal(abortEvent.error.code, 500);
+            doesNotReject(server.handleUpgrade(...upgrade));
+            equal(authed, false);
+            equal(abortEvent.error.code, 500);
             httpServer.close();
             
         });
@@ -946,7 +949,7 @@ describe('RPCServer', function(){
 
             try {
 
-                const req = http.request(endpoint.replace(/^ws/,'http') + '/X', {
+                const req = request(endpoint.replace(/^ws/,'http') + '/X', {
                     headers: {
                         connection: 'Upgrade',
                         upgrade: '_UNKNOWN_',
@@ -957,10 +960,10 @@ describe('RPCServer', function(){
 
                 const [res] = await once(req, 'response');
 
-                assert.equal(res.statusCode, 400);
-                assert.equal(authed, false);
-                assert.ok(abortEvent.error instanceof WebsocketUpgradeError);
-                assert.equal(abortEvent.request.headers['user-agent'], 'test/0');
+                equal(res.statusCode, 400);
+                equal(authed, false);
+                ok(abortEvent.error instanceof WebsocketUpgradeError);
+                equal(abortEvent.request.headers['user-agent'], 'test/0');
                 
             } finally {
                 close();
@@ -989,10 +992,10 @@ describe('RPCServer', function(){
                     identity: 'X'
                 });
 
-                await assert.rejects(cli.connect());
+                await rejects(cli.connect());
                 
-                assert.ok(abortEvent.error instanceof WebsocketUpgradeError);
-                assert.equal(abortEvent.error.code, 499);
+                ok(abortEvent.error instanceof WebsocketUpgradeError);
+                equal(abortEvent.error.code, 499);
                 
             } finally {
                 close();
@@ -1021,7 +1024,7 @@ describe('RPCServer', function(){
             try {
                 const connErr = await cli.connect().catch(e=>e);
                 await authCompleted;
-                assert.ok(connErr instanceof Error);
+                ok(connErr instanceof Error);
 
             } finally {
                 await cli.close();

@@ -1,15 +1,6 @@
-const RPCClient = require('./lib/client');
-const RPCServer = require('./lib/server');
-const errors = require('./lib/errors');
-const symbols = require('./lib/symbols');
-const { createRPCError } = require('./lib/util');
-const { createValidator } = require('./lib/validator');
-
-module.exports = {
-    RPCServer,
-    RPCClient,
-    createRPCError,
-    createValidator,
-    ...errors,
-    ...symbols,
-};
+export { RPCClient } from './lib/client.js';
+export { RPCServer } from './lib/server.js';
+export * from './lib/errors.js';
+export * from './lib/symbols.js';
+export { createRPCError } from './lib/util.js';
+export { createValidator } from './lib/validator.js';

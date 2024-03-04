@@ -1,19 +1,14 @@
-const path = require('node:path');
-const assert = require('assert/strict');
-const { once } = require('events');
-const RPCClient = require("../lib/client");
-const RPCServer = require("../lib/server");
-const { setTimeout } = require('timers/promises');
-const { createValidator } = require('../lib/validator');
+import { rejects } from 'assert/strict';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { once } from 'events';
+import { RPCClient } from "../lib/client.js";
+import { RPCServer } from "../lib/server.js";
+import { setTimeout } from 'timers/promises';
+import { createValidator } from '../lib/validator.js';
 
-function getEchoValidator() {
-    return createValidator('echo1.0', path.join(__dirname, '../schemas/test/echo/'), {
-        urnNid: 'ocpp-rpc',
-        version: 'draft-06',
-        reqSuffix: '.req',
-        confSuffix: '.conf'
-    });
-}
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 describe('RPCServerClient', function(){
     this.timeout(500);
@@ -44,6 +39,15 @@ describe('RPCServerClient', function(){
         return {server, httpServer, port, endpoint, close};
     }
 
+    function getEchoValidator() {
+        return createValidator('echo1.0', path.join(__dirname, '../schemas/test/echo/'), {
+            urnNid: 'ocpp-rpc',
+            version: 'draft-06',
+            reqSuffix: '.req',
+            confSuffix: '.conf'
+        });
+    }
+
     describe('#connect', function(){
 
         it('should throw', async () => {
@@ -60,7 +64,7 @@ describe('RPCServerClient', function(){
             });
 
             await cli.connect();
-            await assert.rejects(servCli.connect());
+            await rejects(servCli.connect());
 
             await cli.close();
             await close();
