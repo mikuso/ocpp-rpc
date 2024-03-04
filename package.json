@@ -45,5 +45,6 @@
   "devDependencies": {
     "mocha": "^10.0.0",
     "nyc": "^15.1.0"
-  }
+  },
+  "type": "module"
 }

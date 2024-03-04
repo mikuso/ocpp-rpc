@@ -1,6 +1,6 @@
-const assert = require('assert');
-const errors = require('../lib/errors');
-const { createValidator } = require('../lib/validator');
+import { throws } from 'assert';
+import { RPCFormatViolationError } from '../lib/errors.js';
+import { createValidator } from '../lib/validator.js';
 
 describe('Validator', function(){
 
@@ -24,9 +24,9 @@ describe('Validator', function(){
                 return noop;
             };
 
-            assert.throws(() => {
+            throws(() => {
                 validator.validate('urn:Test.req', {});
-            }, errors.RPCFormatViolationError);
+            }, RPCFormatViolationError);
 
         });
 

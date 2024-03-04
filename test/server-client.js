@@ -1,9 +1,9 @@
-const assert = require('assert/strict');
-const { once } = require('events');
-const RPCClient = require("../lib/client");
-const RPCServer = require("../lib/server");
-const { setTimeout } = require('timers/promises');
-const { createValidator } = require('../lib/validator');
+import { rejects } from 'assert/strict';
+import { once } from 'events';
+import RPCClient from "../lib/client.js";
+import RPCServer from "../lib/server.js";
+import { setTimeout } from 'timers/promises';
+import { createValidator } from '../lib/validator.js';
 
 function getEchoValidator() {
     return createValidator('echo1.0', [
@@ -79,7 +79,7 @@ describe('RPCServerClient', function(){
             });
 
             await cli.connect();
-            await assert.rejects(servCli.connect());
+            await rejects(servCli.connect());
 
             await cli.close();
             await close();

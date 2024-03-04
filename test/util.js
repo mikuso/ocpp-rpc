@@ -1,6 +1,6 @@
-const assert = require('assert');
-const { createRPCError, getErrorPlainObject } = require("../lib/util");
-const errors = require('../lib/errors');
+import { ok, equal } from 'assert';
+import { createRPCError, getErrorPlainObject } from "../lib/util.js";
+import { RPCGenericError, RPCNotImplementedError, RPCNotSupportedError, RPCInternalError, RPCProtocolError, RPCSecurityError, RPCFormationViolationError, RPCFormatViolationError, RPCPropertyConstraintViolationError, RPCOccurenceConstraintViolationError, RPCOccurrenceConstraintViolationError, RPCTypeConstraintViolationError, RPCMessageTypeNotSupportedError, RPCFrameworkError } from '../lib/errors.js';
 
 describe('util', function(){
 
@@ -8,26 +8,26 @@ describe('util', function(){
 
         it('should create errors according to their type', () => {
 
-            assert.ok(createRPCError('GenericError') instanceof errors.RPCGenericError);
-            assert.ok(createRPCError('NotImplemented') instanceof errors.RPCNotImplementedError);
-            assert.ok(createRPCError('NotSupported') instanceof errors.RPCNotSupportedError);
-            assert.ok(createRPCError('InternalError') instanceof errors.RPCInternalError);
-            assert.ok(createRPCError('ProtocolError') instanceof errors.RPCProtocolError);
-            assert.ok(createRPCError('SecurityError') instanceof errors.RPCSecurityError);
-            assert.ok(createRPCError('FormationViolation') instanceof errors.RPCFormationViolationError);
-            assert.ok(createRPCError('FormatViolation') instanceof errors.RPCFormatViolationError);
-            assert.ok(createRPCError('PropertyConstraintViolation') instanceof errors.RPCPropertyConstraintViolationError);
-            assert.ok(createRPCError('OccurenceConstraintViolation') instanceof errors.RPCOccurenceConstraintViolationError);
-            assert.ok(createRPCError('OccurrenceConstraintViolation') instanceof errors.RPCOccurrenceConstraintViolationError);
-            assert.ok(createRPCError('TypeConstraintViolation') instanceof errors.RPCTypeConstraintViolationError);
-            assert.ok(createRPCError('MessageTypeNotSupported') instanceof errors.RPCMessageTypeNotSupportedError);
-            assert.ok(createRPCError('RpcFrameworkError') instanceof errors.RPCFrameworkError);
+            ok(createRPCError('GenericError') instanceof RPCGenericError);
+            ok(createRPCError('NotImplemented') instanceof RPCNotImplementedError);
+            ok(createRPCError('NotSupported') instanceof RPCNotSupportedError);
+            ok(createRPCError('InternalError') instanceof RPCInternalError);
+            ok(createRPCError('ProtocolError') instanceof RPCProtocolError);
+            ok(createRPCError('SecurityError') instanceof RPCSecurityError);
+            ok(createRPCError('FormationViolation') instanceof RPCFormationViolationError);
+            ok(createRPCError('FormatViolation') instanceof RPCFormatViolationError);
+            ok(createRPCError('PropertyConstraintViolation') instanceof RPCPropertyConstraintViolationError);
+            ok(createRPCError('OccurenceConstraintViolation') instanceof RPCOccurenceConstraintViolationError);
+            ok(createRPCError('OccurrenceConstraintViolation') instanceof RPCOccurrenceConstraintViolationError);
+            ok(createRPCError('TypeConstraintViolation') instanceof RPCTypeConstraintViolationError);
+            ok(createRPCError('MessageTypeNotSupported') instanceof RPCMessageTypeNotSupportedError);
+            ok(createRPCError('RpcFrameworkError') instanceof RPCFrameworkError);
 
         });
 
         it('should create generic error if code not found', () => {
 
-            assert.ok(createRPCError('_NOTFOUND_') instanceof errors.RPCGenericError);
+            ok(createRPCError('_NOTFOUND_') instanceof RPCGenericError);
 
         });
 
@@ -42,10 +42,10 @@ describe('util', function(){
             err.nested = err;
             const plain = getErrorPlainObject(err);
             
-            assert.ok(plain);
-            assert.ok(plain instanceof Object);
-            assert.ok(!(plain instanceof Error));
-            assert.equal(plain.message, msg);
+            ok(plain);
+            ok(plain instanceof Object);
+            ok(!(plain instanceof Error));
+            equal(plain.message, msg);
 
         });
 
