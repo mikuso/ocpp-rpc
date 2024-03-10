@@ -1,11 +1,11 @@
 {
     "compilerOptions": {
-        "target": "ES2022",
-        "module": "NodeNext",
-        "moduleResolution": "nodenext",
+        "target": "es2022",
+        "module": "node16",
+        "moduleResolution": "node16",
         "resolveJsonModule": true,
         "checkJs": true,
-        "strict": false
+        "strict": true
     },
     "exclude": [
         "node_modules/**"
