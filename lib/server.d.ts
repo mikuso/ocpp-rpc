@@ -7,7 +7,7 @@ import { IncomingMessage, Server } from "http";
 import { ServerOptions } from "ws";
 import { EventEmitter } from "stream";
 import { Validator } from "./validator";
-import { IHandshakeInterface } from "./serverClient";
+import { IHandshakeInterface } from "./server-client";
 import { Socket } from "net";
 interface IOccpServiceOptions {
     wssOptions?: ServerOptions;
