@@ -1,15 +1,36 @@
-const RPCClient = require('./lib/client');
-const RPCServer = require('./lib/server');
-const errors = require('./lib/errors');
-const symbols = require('./lib/symbols');
-const { createRPCError } = require('./lib/util');
-const { createValidator } = require('./lib/validator');
-
-module.exports = {
-    RPCServer,
-    RPCClient,
-    createRPCError,
-    createValidator,
-    ...errors,
-    ...symbols,
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
 };
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.RPCClient = exports.RPCServer = exports.WebsocketUpgradeError = exports.UnexpectedHttpResponse = exports.TimeoutError = exports.RPCTypeConstraintViolationError = exports.RPCSecurityError = exports.RPCProtocolError = exports.RPCPropertyConstraintViolationError = exports.RPCOccurrenceConstraintViolationError = exports.RPCOccurenceConstraintViolationError = exports.RPCNotSupportedError = exports.RPCNotImplementedError = exports.RPCMessageTypeNotSupportedError = exports.RPCInternalError = exports.RPCGenericError = exports.RPCFrameworkError = exports.RPCFormationViolationError = exports.RPCFormatViolationError = exports.RPCError = exports.NOREPLY = exports.createValidator = exports.createRPCError = void 0;
+// Created exports default at index.ts
+const client_1 = __importDefault(require("./lib/client"));
+exports.RPCClient = client_1.default;
+const server_1 = __importDefault(require("./lib/server"));
+exports.RPCServer = server_1.default;
+var util_1 = require("./lib/util");
+Object.defineProperty(exports, "createRPCError", { enumerable: true, get: function () { return util_1.createRPCError; } });
+var validator_1 = require("./lib/validator");
+Object.defineProperty(exports, "createValidator", { enumerable: true, get: function () { return validator_1.createValidator; } });
+var symbols_1 = require("./lib/symbols");
+Object.defineProperty(exports, "NOREPLY", { enumerable: true, get: function () { return symbols_1.NOREPLY; } });
+var errors_1 = require("./lib/errors");
+Object.defineProperty(exports, "RPCError", { enumerable: true, get: function () { return errors_1.RPCError; } });
+Object.defineProperty(exports, "RPCFormatViolationError", { enumerable: true, get: function () { return errors_1.RPCFormatViolationError; } });
+Object.defineProperty(exports, "RPCFormationViolationError", { enumerable: true, get: function () { return errors_1.RPCFormationViolationError; } });
+Object.defineProperty(exports, "RPCFrameworkError", { enumerable: true, get: function () { return errors_1.RPCFrameworkError; } });
+Object.defineProperty(exports, "RPCGenericError", { enumerable: true, get: function () { return errors_1.RPCGenericError; } });
+Object.defineProperty(exports, "RPCInternalError", { enumerable: true, get: function () { return errors_1.RPCInternalError; } });
+Object.defineProperty(exports, "RPCMessageTypeNotSupportedError", { enumerable: true, get: function () { return errors_1.RPCMessageTypeNotSupportedError; } });
+Object.defineProperty(exports, "RPCNotImplementedError", { enumerable: true, get: function () { return errors_1.RPCNotImplementedError; } });
+Object.defineProperty(exports, "RPCNotSupportedError", { enumerable: true, get: function () { return errors_1.RPCNotSupportedError; } });
+Object.defineProperty(exports, "RPCOccurenceConstraintViolationError", { enumerable: true, get: function () { return errors_1.RPCOccurenceConstraintViolationError; } });
+Object.defineProperty(exports, "RPCOccurrenceConstraintViolationError", { enumerable: true, get: function () { return errors_1.RPCOccurrenceConstraintViolationError; } });
+Object.defineProperty(exports, "RPCPropertyConstraintViolationError", { enumerable: true, get: function () { return errors_1.RPCPropertyConstraintViolationError; } });
+Object.defineProperty(exports, "RPCProtocolError", { enumerable: true, get: function () { return errors_1.RPCProtocolError; } });
+Object.defineProperty(exports, "RPCSecurityError", { enumerable: true, get: function () { return errors_1.RPCSecurityError; } });
+Object.defineProperty(exports, "RPCTypeConstraintViolationError", { enumerable: true, get: function () { return errors_1.RPCTypeConstraintViolationError; } });
+Object.defineProperty(exports, "TimeoutError", { enumerable: true, get: function () { return errors_1.TimeoutError; } });
+Object.defineProperty(exports, "UnexpectedHttpResponse", { enumerable: true, get: function () { return errors_1.UnexpectedHttpResponse; } });
+Object.defineProperty(exports, "WebsocketUpgradeError", { enumerable: true, get: function () { return errors_1.WebsocketUpgradeError; } });
