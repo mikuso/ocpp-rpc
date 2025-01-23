@@ -9,7 +9,7 @@
 
 ![OCPP-RPC](/docs/logo.png)
 
-A client & server implementation of the WAMP-like RPC-over-websocket system defined in the [OCPP-J protocols](https://www.openchargealliance.org/protocols/) (e.g. [OCPP1.6J](https://www.openchargealliance.org/protocols/ocpp-16/) and [OCPP2.0.1J](https://www.openchargealliance.org/protocols/ocpp-201/)).
+A client & server implementation of the WAMP-like RPC-over-websocket system defined in the [OCPP-J protocols](https://openchargealliance.org/protocols/) (e.g. [OCPP1.6J](https://openchargealliance.org/protocols/open-charge-point-protocol/#OCPP1.6), [OCPP2.0.1J](https://openchargealliance.org/protocols/open-charge-point-protocol/#OCPP2.0.1) and [OCPP2.1](https://openchargealliance.org/protocols/open-charge-point-protocol/#OCPP2.1)).
 
 Requires Node.js >= 17.3.0
 
@@ -755,7 +755,7 @@ Examples:
 ```js
 // enable strict mode for all subprotocols
 const server = new RPCServer({
-    protocols: ['ocpp1.6', 'ocpp2.0.1'],
+    protocols: ['ocpp1.6', 'ocpp2.0.1', 'ocpp2.1'],
     strictMode: true,
 });
 ```
@@ -790,6 +790,7 @@ This module natively supports the following validation schemas:
 | ----------- |
 | ocpp1.6     |
 | ocpp2.0.1   |
+| ocpp2.1     |
 
 ### Adding additional validation schemas
 

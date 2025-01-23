@@ -21,6 +21,7 @@
     "ocpp2.0.1",
     "ocpp1.6j",
     "ocpp2.0.1j",
+    "ocpp2.1",
     "rpc server",
     "rpc client",
     "ocpp rpc",
