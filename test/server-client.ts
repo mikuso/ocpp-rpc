@@ -1,7 +1,8 @@
+// @ts-nocheck
 const assert = require('assert/strict');
 const { once } = require('events');
 const RPCClient = require("../lib/client");
-const RPCServer = require("../lib/server");
+import RPCServer from "../lib/server";
 const { setTimeout } = require('timers/promises');
 const { createValidator } = require('../lib/validator');
 
@@ -34,7 +35,7 @@ function getEchoValidator() {
     ]);
 }
 
-describe('RPCServerClient', function(){
+describe('RPCServerClient', function () {
     this.timeout(500);
 
     async function createServer(options = {}, extra = {}) {
@@ -44,14 +45,14 @@ describe('RPCServerClient', function(){
         const endpoint = `ws://localhost:${port}`;
         const close = (...args) => server.close(...args);
         server.on('client', client => {
-            client.handle('Echo', async ({params}) => {
+            client.handle('Echo', async ({ params }) => {
                 return params;
             });
-            client.handle('Sleep', async ({params, signal}) => {
-                await setTimeout(params.ms, null, {signal});
+            client.handle('Sleep', async ({ params, signal }) => {
+                await setTimeout(params.ms, null, { signal });
                 return `Waited ${params.ms}ms`;
             });
-            client.handle('Reject', async ({params}) => {
+            client.handle('Reject', async ({ params }) => {
                 const err = Error("Rejecting");
                 Object.assign(err, params);
                 throw err;
@@ -60,15 +61,15 @@ describe('RPCServerClient', function(){
                 extra.withClient(client);
             }
         });
-        return {server, httpServer, port, endpoint, close};
+        return { server, httpServer, port, endpoint, close };
     }
 
-    describe('#connect', function(){
+    describe('#connect', function () {
 
         it('should throw', async () => {
 
             let servCli;
-            const {endpoint, close} = await createServer({}, {
+            const { endpoint, close } = await createServer({}, {
                 withClient: cli => {
                     servCli = cli;
                 }
@@ -91,16 +92,16 @@ describe('RPCServerClient', function(){
     it('should inherit server options', async () => {
 
         const inheritableOptions = {
-            callTimeoutMs: Math.floor(Math.random()*99999),
-            pingIntervalMs: Math.floor(Math.random()*99999),
+            callTimeoutMs: Math.floor(Math.random() * 99999),
+            pingIntervalMs: Math.floor(Math.random() * 99999),
             deferPingsOnActivity: true,
             respondWithDetailedErrors: true,
-            callConcurrency: Math.floor(Math.random()*99999),
+            callConcurrency: Math.floor(Math.random() * 99999),
             strictMode: true,
             strictModeValidators: [
                 getEchoValidator(),
             ],
-            maxBadMessages: Math.floor(Math.random()*99999),
+            maxBadMessages: Math.floor(Math.random() * 99999),
         };
 
         const server = new RPCServer({
@@ -123,7 +124,7 @@ describe('RPCServerClient', function(){
                 resolve();
             });
         });
-        
+
         const cli = new RPCClient({
             endpoint,
             identity: 'X',
