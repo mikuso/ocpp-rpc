@@ -1,11 +1,14 @@
-const RPCClient = require('./lib/client');
-const RPCServer = require('./lib/server');
+//@ts-ignore
+import RPCClient from './lib/client';
+import RPCServer from './lib/server';
 const errors = require('./lib/errors');
 const symbols = require('./lib/symbols');
 const { createRPCError } = require('./lib/util');
 const { createValidator } = require('./lib/validator');
 
-module.exports = {
+export { RPCClient, RPCServer };
+
+export default {
     RPCServer,
     RPCClient,
     createRPCError,
