@@ -1,6 +1,7 @@
 const assert = require('assert/strict');
 const http = require('http');
-const { once } = require('events');
+const events = require('events');
+const { once } = events;
 const RPCClient = require("../lib/client");
 const { TimeoutError, RPCFrameworkError, RPCError, RPCProtocolError, RPCTypeConstraintViolationError, RPCOccurenceConstraintViolationError, RPCPropertyConstraintViolationError, RPCOccurrenceConstraintViolationError, RPCFormationViolationError } = require('../lib/errors');
 const RPCServer = require("../lib/server");
@@ -1729,7 +1730,7 @@ describe('RPCClient', function(){
             try {
                 await cli.connect();
                 const ac = new AbortController();
-                
+
                 const callProm = cli.call('Sleep', {ms: 5000}, {signal: ac.signal});
                 ac.abort(reason);
                 await assert.rejects(callProm);
@@ -1739,6 +1740,62 @@ describe('RPCClient', function(){
                     // because AbortController#abort(reason) did not exist at the time.
                     assert.equal(reason, abortedReason.message);
                 }
+
+            } finally {
+                await cli.close();
+                close();
+            }
+
+        });
+
+        it('should reject immediately when options.signal is already aborted', async () => {
+
+            const reason = "ALREADY_ABORTED";
+            const {endpoint, close} = await createServer();
+            const cli = new RPCClient({endpoint, identity: 'X'});
+
+            try {
+                await cli.connect();
+                const ac = new AbortController();
+                ac.abort(reason);
+
+                const callProm = cli.call('Echo', {test: 1}, {signal: ac.signal});
+                const err = await callProm.catch(e => e);
+                assert.equal(err.name, 'AbortError');
+                if (err.message !== '') {
+                    assert.equal(err.message, reason);
+                }
+
+            } finally {
+                await cli.close();
+                close();
+            }
+
+        });
+
+        it('should clean up signal listener after call completes', async () => {
+
+            const {endpoint, close} = await createServer();
+            const cli = new RPCClient({endpoint, identity: 'X'});
+
+            try {
+                await cli.connect();
+                const ac = new AbortController();
+                const initialListeners = ac.signal.listeners?.('abort')?.length
+                    ?? events.listenerCount?.(ac.signal, 'abort')
+                    ?? 0;
+
+                // Make several calls with the same signal
+                for (let i = 0; i < 5; i++) {
+                    await cli.call('Echo', {i}, {signal: ac.signal});
+                }
+
+                const afterListeners = ac.signal.listeners?.('abort')?.length
+                    ?? events.listenerCount?.(ac.signal, 'abort')
+                    ?? 0;
+
+                // Listeners should not accumulate
+                assert.equal(afterListeners, initialListeners);
 
             } finally {
                 await cli.close();

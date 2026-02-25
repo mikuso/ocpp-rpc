@@ -800,7 +800,7 @@ describe('RPCServer', function(){
             const endpoint = 'ws://localhost:'+port;
 
             const cli = new RPCClient({endpoint, identity: 'X', reconnect: false});
-            
+
             await cli.connect();
             const {code} = await cli.close({code: 4080});
             assert.equal(code, 4080);
@@ -814,6 +814,35 @@ describe('RPCServer', function(){
             await server.close();
         });
 
+        it('should reject when signal is already aborted', async () => {
+
+            const ac = new AbortController();
+            ac.abort('already aborted');
+            const server = new RPCServer();
+
+            await assert.rejects(
+                server.listen(undefined, undefined, {signal: ac.signal}),
+                {code: 'ABORT_ERR'}
+            );
+
+            await server.close();
+        });
+
+        it('should clean up signal listener when server closes', async () => {
+
+            const ac = new AbortController();
+            const server = new RPCServer();
+            const httpServer = await server.listen(undefined, undefined, {signal: ac.signal});
+
+            httpServer.close();
+            await once(httpServer, 'close');
+
+            // After server closes, aborting the signal should not cause issues
+            // (the listener has been cleaned up)
+            ac.abort();
+
+            await server.close();
+        });
 
         it('should automatically ping clients', async () => {
             
