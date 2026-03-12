@@ -828,6 +828,24 @@ describe('RPCServer', function(){
             await server.close();
         });
 
+        it('should reject with default message when signal is aborted with a falsy reason', async () => {
+
+            const ac = new AbortController();
+            ac.abort('');
+            const server = new RPCServer();
+
+            await assert.rejects(
+                server.listen(undefined, undefined, {signal: ac.signal}),
+                (err) => {
+                    assert.equal(err.code, 'ABORT_ERR');
+                    assert.equal(err.message, 'The operation was aborted');
+                    return true;
+                }
+            );
+
+            await server.close();
+        });
+
         it('should clean up signal listener when server closes', async () => {
 
             const ac = new AbortController();
