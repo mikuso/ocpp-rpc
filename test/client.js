@@ -49,7 +49,7 @@ describe('RPCClient', function(){
         return createValidator('echo1.0', [
             {
                 "$schema": "http://json-schema.org/draft-07/schema",
-                "$id": "urn:Echo.req",
+                "$id": "urn:echo1.0:Echo.req",
                 "type": "object",
                 "properties": {
                     "val": {
@@ -61,7 +61,7 @@ describe('RPCClient', function(){
             },
             {
                 "$schema": "http://json-schema.org/draft-07/schema",
-                "$id": "urn:Echo.conf",
+                "$id": "urn:echo1.0:Echo.conf",
                 "type": "object",
                 "properties": {
                     "val": {
@@ -78,7 +78,7 @@ describe('RPCClient', function(){
         return createValidator('numbers1.0', [
             {
                 "$schema": "http://json-schema.org/draft-07/schema",
-                "$id": "urn:TestTenth.req",
+                "$id": "urn:numbers1.0:TestTenth.req",
                 "type": "object",
                 "properties": {
                     "val": {
@@ -91,7 +91,7 @@ describe('RPCClient', function(){
             },
             {
                 "$schema": "http://json-schema.org/draft-07/schema",
-                "$id": "urn:TestTenth.conf",
+                "$id": "urn:numbers1.0:TestTenth.conf",
                 "type": "object",
                 "properties": {
                     "val": {

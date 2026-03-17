@@ -1,6 +1,6 @@
 [
     {
-        "$id": "urn:Authorize.req",
+        "$id": "urn:ocpp1.6:Authorize.req",
         "$schema": "http://json-schema.org/draft-07/schema",
         "additionalProperties": false,
         "properties": {
@@ -15,7 +15,7 @@
         "type": "object"
     },
     {
-        "$id": "urn:Authorize.conf",
+        "$id": "urn:ocpp1.6:Authorize.conf",
         "$schema": "http://json-schema.org/draft-07/schema",
         "additionalProperties": false,
         "properties": {
@@ -53,7 +53,7 @@
         "type": "object"
     },
     {
-        "$id": "urn:BootNotification.req",
+        "$id": "urn:ocpp1.6:BootNotification.req",
         "$schema": "http://json-schema.org/draft-07/schema",
         "additionalProperties": false,
         "properties": {
@@ -101,7 +101,7 @@
         "type": "object"
     },
     {
-        "$id": "urn:BootNotification.conf",
+        "$id": "urn:ocpp1.6:BootNotification.conf",
         "$schema": "http://json-schema.org/draft-07/schema",
         "additionalProperties": false,
         "properties": {
@@ -129,7 +129,7 @@
         "type": "object"
     },
     {
-        "$id": "urn:CancelReservation.req",
+        "$id": "urn:ocpp1.6:CancelReservation.req",
         "$schema": "http://json-schema.org/draft-07/schema",
         "additionalProperties": false,
         "properties": {
@@ -143,7 +143,7 @@
         "type": "object"
     },
     {
-        "$id": "urn:CancelReservation.conf",
+        "$id": "urn:ocpp1.6:CancelReservation.conf",
         "$schema": "http://json-schema.org/draft-07/schema",
         "additionalProperties": false,
         "properties": {
@@ -161,7 +161,7 @@
         "type": "object"
     },
     {
-        "$id": "urn:CertificateSigned.req",
+        "$id": "urn:ocpp1.6:CertificateSigned.req",
         "$schema": "http://json-schema.org/draft-07/schema",
         "additionalProperties": false,
         "properties": {
@@ -176,7 +176,7 @@
         "type": "object"
     },
     {
-        "$id": "urn:CertificateSigned.conf",
+        "$id": "urn:ocpp1.6:CertificateSigned.conf",
         "$schema": "http://json-schema.org/draft-07/schema",
         "additionalProperties": false,
         "definitions": {
@@ -199,7 +199,7 @@
         "type": "object"
     },
     {
-        "$id": "urn:ChangeAvailability.req",
+        "$id": "urn:ocpp1.6:ChangeAvailability.req",
         "$schema": "http://json-schema.org/draft-07/schema",
         "additionalProperties": false,
         "properties": {
@@ -221,7 +221,7 @@
         "type": "object"
     },
     {
-        "$id": "urn:ChangeAvailability.conf",
+        "$id": "urn:ocpp1.6:ChangeAvailability.conf",
         "$schema": "http://json-schema.org/draft-07/schema",
         "additionalProperties": false,
         "properties": {
@@ -240,7 +240,7 @@
         "type": "object"
     },
     {
-        "$id": "urn:ChangeConfiguration.req",
+        "$id": "urn:ocpp1.6:ChangeConfiguration.req",
         "$schema": "http://json-schema.org/draft-07/schema",
         "additionalProperties": false,
         "properties": {
@@ -260,7 +260,7 @@
         "type": "object"
     },
     {
-        "$id": "urn:ChangeConfiguration.conf",
+        "$id": "urn:ocpp1.6:ChangeConfiguration.conf",
         "$schema": "http://json-schema.org/draft-07/schema",
         "additionalProperties": false,
         "properties": {
@@ -280,14 +280,14 @@
         "type": "object"
     },
     {
-        "$id": "urn:ClearCache.req",
+        "$id": "urn:ocpp1.6:ClearCache.req",
         "$schema": "http://json-schema.org/draft-07/schema",
         "additionalProperties": false,
         "properties": {},
         "type": "object"
     },
     {
-        "$id": "urn:ClearCache.conf",
+        "$id": "urn:ocpp1.6:ClearCache.conf",
         "$schema": "http://json-schema.org/draft-07/schema",
         "additionalProperties": false,
         "properties": {
@@ -305,7 +305,7 @@
         "type": "object"
     },
     {
-        "$id": "urn:ClearChargingProfile.req",
+        "$id": "urn:ocpp1.6:ClearChargingProfile.req",
         "$schema": "http://json-schema.org/draft-07/schema",
         "additionalProperties": false,
         "properties": {
@@ -330,7 +330,7 @@
         "type": "object"
     },
     {
-        "$id": "urn:ClearChargingProfile.conf",
+        "$id": "urn:ocpp1.6:ClearChargingProfile.conf",
         "$schema": "http://json-schema.org/draft-07/schema",
         "additionalProperties": false,
         "properties": {
@@ -348,7 +348,7 @@
         "type": "object"
     },
     {
-        "$id": "urn:DataTransfer.req",
+        "$id": "urn:ocpp1.6:DataTransfer.req",
         "$schema": "http://json-schema.org/draft-07/schema",
         "additionalProperties": false,
         "properties": {
@@ -370,7 +370,7 @@
         "type": "object"
     },
     {
-        "$id": "urn:DataTransfer.conf",
+        "$id": "urn:ocpp1.6:DataTransfer.conf",
         "$schema": "http://json-schema.org/draft-07/schema",
         "additionalProperties": false,
         "properties": {
@@ -393,7 +393,7 @@
         "type": "object"
     },
     {
-        "$id": "urn:DeleteCertificate.req",
+        "$id": "urn:ocpp1.6:DeleteCertificate.req",
         "$schema": "http://json-schema.org/draft-07/schema",
         "additionalProperties": false,
         "definitions": {
@@ -444,7 +444,7 @@
         "type": "object"
     },
     {
-        "$id": "urn:DeleteCertificate.conf",
+        "$id": "urn:ocpp1.6:DeleteCertificate.conf",
         "$schema": "http://json-schema.org/draft-07/schema",
         "additionalProperties": false,
         "definitions": {
@@ -468,7 +468,7 @@
         "type": "object"
     },
     {
-        "$id": "urn:DiagnosticsStatusNotification.req",
+        "$id": "urn:ocpp1.6:DiagnosticsStatusNotification.req",
         "$schema": "http://json-schema.org/draft-07/schema",
         "additionalProperties": false,
         "properties": {
@@ -488,14 +488,14 @@
         "type": "object"
     },
     {
-        "$id": "urn:DiagnosticsStatusNotification.conf",
+        "$id": "urn:ocpp1.6:DiagnosticsStatusNotification.conf",
         "$schema": "http://json-schema.org/draft-07/schema",
         "additionalProperties": false,
         "properties": {},
         "type": "object"
     },
     {
-        "$id": "urn:ExtendedTriggerMessage.req",
+        "$id": "urn:ocpp1.6:ExtendedTriggerMessage.req",
         "$schema": "http://json-schema.org/draft-07/schema",
         "additionalProperties": false,
         "definitions": {
@@ -526,7 +526,7 @@
         "type": "object"
     },
     {
-        "$id": "urn:ExtendedTriggerMessage.conf",
+        "$id": "urn:ocpp1.6:ExtendedTriggerMessage.conf",
         "$schema": "http://json-schema.org/draft-07/schema",
         "additionalProperties": false,
         "definitions": {
@@ -550,7 +550,7 @@
         "type": "object"
     },
     {
-        "$id": "urn:FirmwareStatusNotification.req",
+        "$id": "urn:ocpp1.6:FirmwareStatusNotification.req",
         "$schema": "http://json-schema.org/draft-07/schema",
         "additionalProperties": false,
         "properties": {
@@ -573,14 +573,14 @@
         "type": "object"
     },
     {
-        "$id": "urn:FirmwareStatusNotification.conf",
+        "$id": "urn:ocpp1.6:FirmwareStatusNotification.conf",
         "$schema": "http://json-schema.org/draft-07/schema",
         "additionalProperties": false,
         "properties": {},
         "type": "object"
     },
     {
-        "$id": "urn:GetCompositeSchedule.req",
+        "$id": "urn:ocpp1.6:GetCompositeSchedule.req",
         "$schema": "http://json-schema.org/draft-07/schema",
         "additionalProperties": false,
         "properties": {
@@ -605,7 +605,7 @@
         "type": "object"
     },
     {
-        "$id": "urn:GetCompositeSchedule.conf",
+        "$id": "urn:ocpp1.6:GetCompositeSchedule.conf",
         "$schema": "http://json-schema.org/draft-07/schema",
         "additionalProperties": false,
         "properties": {
@@ -681,7 +681,7 @@
         "type": "object"
     },
     {
-        "$id": "urn:GetConfiguration.req",
+        "$id": "urn:ocpp1.6:GetConfiguration.req",
         "$schema": "http://json-schema.org/draft-07/schema",
         "additionalProperties": false,
         "properties": {
@@ -696,7 +696,7 @@
         "type": "object"
     },
     {
-        "$id": "urn:GetConfiguration.conf",
+        "$id": "urn:ocpp1.6:GetConfiguration.conf",
         "$schema": "http://json-schema.org/draft-07/schema",
         "additionalProperties": false,
         "properties": {
@@ -735,7 +735,7 @@
         "type": "object"
     },
     {
-        "$id": "urn:GetDiagnostics.req",
+        "$id": "urn:ocpp1.6:GetDiagnostics.req",
         "$schema": "http://json-schema.org/draft-07/schema",
         "additionalProperties": false,
         "properties": {
@@ -764,7 +764,7 @@
         "type": "object"
     },
     {
-        "$id": "urn:GetDiagnostics.conf",
+        "$id": "urn:ocpp1.6:GetDiagnostics.conf",
         "$schema": "http://json-schema.org/draft-07/schema",
         "additionalProperties": false,
         "properties": {
@@ -776,7 +776,7 @@
         "type": "object"
     },
     {
-        "$id": "urn:GetInstalledCertificateIds.req",
+        "$id": "urn:ocpp1.6:GetInstalledCertificateIds.req",
         "$schema": "http://json-schema.org/draft-07/schema",
         "additionalProperties": false,
         "definitions": {
@@ -799,7 +799,7 @@
         "type": "object"
     },
     {
-        "$id": "urn:GetInstalledCertificateIds.conf",
+        "$id": "urn:ocpp1.6:GetInstalledCertificateIds.conf",
         "$schema": "http://json-schema.org/draft-07/schema",
         "additionalProperties": false,
         "definitions": {
@@ -864,14 +864,14 @@
         "type": "object"
     },
     {
-        "$id": "urn:GetLocalListVersion.req",
+        "$id": "urn:ocpp1.6:GetLocalListVersion.req",
         "$schema": "http://json-schema.org/draft-07/schema",
         "additionalProperties": false,
         "properties": {},
         "type": "object"
     },
     {
-        "$id": "urn:GetLocalListVersion.conf",
+        "$id": "urn:ocpp1.6:GetLocalListVersion.conf",
         "$schema": "http://json-schema.org/draft-07/schema",
         "additionalProperties": false,
         "properties": {
@@ -885,7 +885,7 @@
         "type": "object"
     },
     {
-        "$id": "urn:GetLog.req",
+        "$id": "urn:ocpp1.6:GetLog.req",
         "$schema": "http://json-schema.org/draft-07/schema",
         "additionalProperties": false,
         "definitions": {
@@ -943,7 +943,7 @@
         "type": "object"
     },
     {
-        "$id": "urn:GetLog.conf",
+        "$id": "urn:ocpp1.6:GetLog.conf",
         "$schema": "http://json-schema.org/draft-07/schema",
         "additionalProperties": false,
         "definitions": {
@@ -971,14 +971,14 @@
         "type": "object"
     },
     {
-        "$id": "urn:Heartbeat.req",
+        "$id": "urn:ocpp1.6:Heartbeat.req",
         "$schema": "http://json-schema.org/draft-07/schema",
         "additionalProperties": false,
         "properties": {},
         "type": "object"
     },
     {
-        "$id": "urn:Heartbeat.conf",
+        "$id": "urn:ocpp1.6:Heartbeat.conf",
         "$schema": "http://json-schema.org/draft-07/schema",
         "additionalProperties": false,
         "properties": {
@@ -993,7 +993,7 @@
         "type": "object"
     },
     {
-        "$id": "urn:InstallCertificate.req",
+        "$id": "urn:ocpp1.6:InstallCertificate.req",
         "$schema": "http://json-schema.org/draft-07/schema",
         "additionalProperties": false,
         "definitions": {
@@ -1021,7 +1021,7 @@
         "type": "object"
     },
     {
-        "$id": "urn:InstallCertificate.conf",
+        "$id": "urn:ocpp1.6:InstallCertificate.conf",
         "$schema": "http://json-schema.org/draft-07/schema",
         "additionalProperties": false,
         "definitions": {
@@ -1045,7 +1045,7 @@
         "type": "object"
     },
     {
-        "$id": "urn:LogStatusNotification.req",
+        "$id": "urn:ocpp1.6:LogStatusNotification.req",
         "$schema": "http://json-schema.org/draft-07/schema",
         "additionalProperties": false,
         "definitions": {
@@ -1076,13 +1076,13 @@
         "type": "object"
     },
     {
-        "$id": "urn:LogStatusNotification.conf",
+        "$id": "urn:ocpp1.6:LogStatusNotification.conf",
         "$schema": "http://json-schema.org/draft-07/schema",
         "additionalProperties": false,
         "type": "object"
     },
     {
-        "$id": "urn:MeterValues.req",
+        "$id": "urn:ocpp1.6:MeterValues.req",
         "$schema": "http://json-schema.org/draft-07/schema",
         "additionalProperties": false,
         "properties": {
@@ -1226,14 +1226,14 @@
         "type": "object"
     },
     {
-        "$id": "urn:MeterValues.conf",
+        "$id": "urn:ocpp1.6:MeterValues.conf",
         "$schema": "http://json-schema.org/draft-07/schema",
         "additionalProperties": false,
         "properties": {},
         "type": "object"
     },
     {
-        "$id": "urn:RemoteStartTransaction.req",
+        "$id": "urn:ocpp1.6:RemoteStartTransaction.req",
         "$schema": "http://json-schema.org/draft-07/schema",
         "additionalProperties": false,
         "properties": {
@@ -1355,7 +1355,7 @@
         "type": "object"
     },
     {
-        "$id": "urn:RemoteStartTransaction.conf",
+        "$id": "urn:ocpp1.6:RemoteStartTransaction.conf",
         "$schema": "http://json-schema.org/draft-07/schema",
         "additionalProperties": false,
         "properties": {
@@ -1373,7 +1373,7 @@
         "type": "object"
     },
     {
-        "$id": "urn:RemoteStopTransaction.req",
+        "$id": "urn:ocpp1.6:RemoteStopTransaction.req",
         "$schema": "http://json-schema.org/draft-07/schema",
         "additionalProperties": false,
         "properties": {
@@ -1387,7 +1387,7 @@
         "type": "object"
     },
     {
-        "$id": "urn:RemoteStopTransaction.conf",
+        "$id": "urn:ocpp1.6:RemoteStopTransaction.conf",
         "$schema": "http://json-schema.org/draft-07/schema",
         "additionalProperties": false,
         "properties": {
@@ -1405,7 +1405,7 @@
         "type": "object"
     },
     {
-        "$id": "urn:ReserveNow.req",
+        "$id": "urn:ocpp1.6:ReserveNow.req",
         "$schema": "http://json-schema.org/draft-07/schema",
         "additionalProperties": false,
         "properties": {
@@ -1437,7 +1437,7 @@
         "type": "object"
     },
     {
-        "$id": "urn:ReserveNow.conf",
+        "$id": "urn:ocpp1.6:ReserveNow.conf",
         "$schema": "http://json-schema.org/draft-07/schema",
         "additionalProperties": false,
         "properties": {
@@ -1458,7 +1458,7 @@
         "type": "object"
     },
     {
-        "$id": "urn:Reset.req",
+        "$id": "urn:ocpp1.6:Reset.req",
         "$schema": "http://json-schema.org/draft-07/schema",
         "additionalProperties": false,
         "properties": {
@@ -1476,7 +1476,7 @@
         "type": "object"
     },
     {
-        "$id": "urn:Reset.conf",
+        "$id": "urn:ocpp1.6:Reset.conf",
         "$schema": "http://json-schema.org/draft-07/schema",
         "additionalProperties": false,
         "properties": {
@@ -1494,7 +1494,7 @@
         "type": "object"
     },
     {
-        "$id": "urn:SecurityEventNotification.req",
+        "$id": "urn:ocpp1.6:SecurityEventNotification.req",
         "$schema": "http://json-schema.org/draft-07/schema",
         "additionalProperties": false,
         "properties": {
@@ -1518,13 +1518,13 @@
         "type": "object"
     },
     {
-        "$id": "urn:SecurityEventNotification.conf",
+        "$id": "urn:ocpp1.6:SecurityEventNotification.conf",
         "$schema": "http://json-schema.org/draft-07/schema",
         "additionalProperties": false,
         "type": "object"
     },
     {
-        "$id": "urn:SendLocalList.req",
+        "$id": "urn:ocpp1.6:SendLocalList.req",
         "$schema": "http://json-schema.org/draft-07/schema",
         "additionalProperties": false,
         "properties": {
@@ -1589,7 +1589,7 @@
         "type": "object"
     },
     {
-        "$id": "urn:SendLocalList.conf",
+        "$id": "urn:ocpp1.6:SendLocalList.conf",
         "$schema": "http://json-schema.org/draft-07/schema",
         "additionalProperties": false,
         "properties": {
@@ -1609,7 +1609,7 @@
         "type": "object"
     },
     {
-        "$id": "urn:SetChargingProfile.req",
+        "$id": "urn:ocpp1.6:SetChargingProfile.req",
         "$schema": "http://json-schema.org/draft-07/schema",
         "additionalProperties": false,
         "properties": {
@@ -1728,7 +1728,7 @@
         "type": "object"
     },
     {
-        "$id": "urn:SetChargingProfile.conf",
+        "$id": "urn:ocpp1.6:SetChargingProfile.conf",
         "$schema": "http://json-schema.org/draft-07/schema",
         "additionalProperties": false,
         "properties": {
@@ -1747,7 +1747,7 @@
         "type": "object"
     },
     {
-        "$id": "urn:SignCertificate.req",
+        "$id": "urn:ocpp1.6:SignCertificate.req",
         "$schema": "http://json-schema.org/draft-07/schema",
         "additionalProperties": false,
         "properties": {
@@ -1762,7 +1762,7 @@
         "type": "object"
     },
     {
-        "$id": "urn:SignCertificate.conf",
+        "$id": "urn:ocpp1.6:SignCertificate.conf",
         "$schema": "http://json-schema.org/draft-07/schema",
         "additionalProperties": false,
         "definitions": {
@@ -1785,7 +1785,7 @@
         "type": "object"
     },
     {
-        "$id": "urn:SignedFirmwareStatusNotification.req",
+        "$id": "urn:ocpp1.6:SignedFirmwareStatusNotification.req",
         "$schema": "http://json-schema.org/draft-07/schema",
         "additionalProperties": false,
         "definitions": {
@@ -1823,13 +1823,13 @@
         "type": "object"
     },
     {
-        "$id": "urn:SignedFirmwareStatusNotification.conf",
+        "$id": "urn:ocpp1.6:SignedFirmwareStatusNotification.conf",
         "$schema": "http://json-schema.org/draft-07/schema",
         "additionalProperties": false,
         "type": "object"
     },
     {
-        "$id": "urn:SignedUpdateFirmware.req",
+        "$id": "urn:ocpp1.6:SignedUpdateFirmware.req",
         "$schema": "http://json-schema.org/draft-07/schema",
         "additionalProperties": false,
         "definitions": {
@@ -1887,7 +1887,7 @@
         "type": "object"
     },
     {
-        "$id": "urn:SignedUpdateFirmware.conf",
+        "$id": "urn:ocpp1.6:SignedUpdateFirmware.conf",
         "$schema": "http://json-schema.org/draft-07/schema",
         "additionalProperties": false,
         "definitions": {
@@ -1913,7 +1913,7 @@
         "type": "object"
     },
     {
-        "$id": "urn:StartTransaction.req",
+        "$id": "urn:ocpp1.6:StartTransaction.req",
         "$schema": "http://json-schema.org/draft-07/schema",
         "additionalProperties": false,
         "properties": {
@@ -1944,7 +1944,7 @@
         "type": "object"
     },
     {
-        "$id": "urn:StartTransaction.conf",
+        "$id": "urn:ocpp1.6:StartTransaction.conf",
         "$schema": "http://json-schema.org/draft-07/schema",
         "additionalProperties": false,
         "properties": {
@@ -1986,7 +1986,7 @@
         "type": "object"
     },
     {
-        "$id": "urn:StatusNotification.req",
+        "$id": "urn:ocpp1.6:StatusNotification.req",
         "$schema": "http://json-schema.org/draft-07/schema",
         "additionalProperties": false,
         "properties": {
@@ -2053,14 +2053,14 @@
         "type": "object"
     },
     {
-        "$id": "urn:StatusNotification.conf",
+        "$id": "urn:ocpp1.6:StatusNotification.conf",
         "$schema": "http://json-schema.org/draft-07/schema",
         "additionalProperties": false,
         "properties": {},
         "type": "object"
     },
     {
-        "$id": "urn:StopTransaction.req",
+        "$id": "urn:ocpp1.6:StopTransaction.req",
         "$schema": "http://json-schema.org/draft-07/schema",
         "additionalProperties": false,
         "properties": {
@@ -2229,7 +2229,7 @@
         "type": "object"
     },
     {
-        "$id": "urn:StopTransaction.conf",
+        "$id": "urn:ocpp1.6:StopTransaction.conf",
         "$schema": "http://json-schema.org/draft-07/schema",
         "additionalProperties": false,
         "properties": {
@@ -2264,7 +2264,7 @@
         "type": "object"
     },
     {
-        "$id": "urn:TriggerMessage.req",
+        "$id": "urn:ocpp1.6:TriggerMessage.req",
         "$schema": "http://json-schema.org/draft-07/schema",
         "additionalProperties": false,
         "properties": {
@@ -2289,7 +2289,7 @@
         "type": "object"
     },
     {
-        "$id": "urn:TriggerMessage.conf",
+        "$id": "urn:ocpp1.6:TriggerMessage.conf",
         "$schema": "http://json-schema.org/draft-07/schema",
         "additionalProperties": false,
         "properties": {
@@ -2308,7 +2308,7 @@
         "type": "object"
     },
     {
-        "$id": "urn:UnlockConnector.req",
+        "$id": "urn:ocpp1.6:UnlockConnector.req",
         "$schema": "http://json-schema.org/draft-07/schema",
         "additionalProperties": false,
         "properties": {
@@ -2322,7 +2322,7 @@
         "type": "object"
     },
     {
-        "$id": "urn:UnlockConnector.conf",
+        "$id": "urn:ocpp1.6:UnlockConnector.conf",
         "$schema": "http://json-schema.org/draft-07/schema",
         "additionalProperties": false,
         "properties": {
@@ -2341,7 +2341,7 @@
         "type": "object"
     },
     {
-        "$id": "urn:UpdateFirmware.req",
+        "$id": "urn:ocpp1.6:UpdateFirmware.req",
         "$schema": "http://json-schema.org/draft-07/schema",
         "additionalProperties": false,
         "properties": {
@@ -2367,7 +2367,7 @@
         "type": "object"
     },
     {
-        "$id": "urn:UpdateFirmware.conf",
+        "$id": "urn:ocpp1.6:UpdateFirmware.conf",
         "$schema": "http://json-schema.org/draft-07/schema",
         "additionalProperties": false,
         "properties": {},

@@ -1,7 +1,7 @@
 [
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:AdjustPeriodicEventStreamRequest",
+        "$id": "urn:ocpp2.1:AdjustPeriodicEventStreamRequest",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "PeriodicEventStreamParamsType": {
@@ -60,7 +60,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:AdjustPeriodicEventStreamResponse",
+        "$id": "urn:ocpp2.1:AdjustPeriodicEventStreamResponse",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "GenericStatusEnumType": {
@@ -131,7 +131,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:AFRRSignalRequest",
+        "$id": "urn:ocpp2.1:AFRRSignalRequest",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "CustomDataType": {
@@ -172,7 +172,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:AFRRSignalResponse",
+        "$id": "urn:ocpp2.1:AFRRSignalResponse",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "GenericStatusEnumType": {
@@ -242,7 +242,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:AuthorizeRequest",
+        "$id": "urn:ocpp2.1:AuthorizeRequest",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "HashAlgorithmEnumType": {
@@ -400,7 +400,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:AuthorizeResponse",
+        "$id": "urn:ocpp2.1:AuthorizeResponse",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "AuthorizationStatusEnumType": {
@@ -1088,7 +1088,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:BatterySwapRequest",
+        "$id": "urn:ocpp2.1:BatterySwapRequest",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "BatterySwapEventEnumType": {
@@ -1257,7 +1257,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:BatterySwapResponse",
+        "$id": "urn:ocpp2.1:BatterySwapResponse",
         "description": "This is an empty response that just acknowledges receipt of the request. (The request cannot be rejected).\r\n",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
@@ -1286,7 +1286,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:BootNotificationRequest",
+        "$id": "urn:ocpp2.1:BootNotificationRequest",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "BootReasonEnumType": {
@@ -1400,7 +1400,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:BootNotificationResponse",
+        "$id": "urn:ocpp2.1:BootNotificationResponse",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "RegistrationStatusEnumType": {
@@ -1483,7 +1483,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:CancelReservationRequest",
+        "$id": "urn:ocpp2.1:CancelReservationRequest",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "CustomDataType": {
@@ -1519,7 +1519,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:CancelReservationResponse",
+        "$id": "urn:ocpp2.1:CancelReservationResponse",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "CancelReservationStatusEnumType": {
@@ -1590,7 +1590,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:CertificateSignedRequest",
+        "$id": "urn:ocpp2.1:CertificateSignedRequest",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "CertificateSigningUseEnumType": {
@@ -1644,7 +1644,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:CertificateSignedResponse",
+        "$id": "urn:ocpp2.1:CertificateSignedResponse",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "CertificateSignedStatusEnumType": {
@@ -1715,7 +1715,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:ChangeAvailabilityRequest",
+        "$id": "urn:ocpp2.1:ChangeAvailabilityRequest",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "OperationalStatusEnumType": {
@@ -1786,7 +1786,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:ChangeAvailabilityResponse",
+        "$id": "urn:ocpp2.1:ChangeAvailabilityResponse",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "ChangeAvailabilityStatusEnumType": {
@@ -1858,7 +1858,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:ChangeTransactionTariffRequest",
+        "$id": "urn:ocpp2.1:ChangeTransactionTariffRequest",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "DayOfWeekEnumType": {
@@ -2376,7 +2376,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:ChangeTransactionTariffResponse",
+        "$id": "urn:ocpp2.1:ChangeTransactionTariffResponse",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "TariffChangeStatusEnumType": {
@@ -2451,7 +2451,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:ClearCacheRequest",
+        "$id": "urn:ocpp2.1:ClearCacheRequest",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "CustomDataType": {
@@ -2479,7 +2479,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:ClearCacheResponse",
+        "$id": "urn:ocpp2.1:ClearCacheResponse",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "ClearCacheStatusEnumType": {
@@ -2550,7 +2550,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:ClearChargingProfileRequest",
+        "$id": "urn:ocpp2.1:ClearChargingProfileRequest",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "ChargingProfilePurposeEnumType": {
@@ -2623,7 +2623,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:ClearChargingProfileResponse",
+        "$id": "urn:ocpp2.1:ClearChargingProfileResponse",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "ClearChargingProfileStatusEnumType": {
@@ -2694,7 +2694,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:ClearDERControlRequest",
+        "$id": "urn:ocpp2.1:ClearDERControlRequest",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "DERControlEnumType": {
@@ -2767,7 +2767,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:ClearDERControlResponse",
+        "$id": "urn:ocpp2.1:ClearDERControlResponse",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "DERControlStatusEnumType": {
@@ -2840,7 +2840,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:ClearDisplayMessageRequest",
+        "$id": "urn:ocpp2.1:ClearDisplayMessageRequest",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "CustomDataType": {
@@ -2876,7 +2876,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:ClearDisplayMessageResponse",
+        "$id": "urn:ocpp2.1:ClearDisplayMessageResponse",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "ClearMessageStatusEnumType": {
@@ -2948,7 +2948,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:ClearedChargingLimitRequest",
+        "$id": "urn:ocpp2.1:ClearedChargingLimitRequest",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "CustomDataType": {
@@ -2989,7 +2989,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:ClearedChargingLimitResponse",
+        "$id": "urn:ocpp2.1:ClearedChargingLimitResponse",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "CustomDataType": {
@@ -3017,7 +3017,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:ClearTariffsRequest",
+        "$id": "urn:ocpp2.1:ClearTariffsRequest",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "CustomDataType": {
@@ -3060,7 +3060,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:ClearTariffsResponse",
+        "$id": "urn:ocpp2.1:ClearTariffsResponse",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "TariffClearStatusEnumType": {
@@ -3157,7 +3157,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:ClearVariableMonitoringRequest",
+        "$id": "urn:ocpp2.1:ClearVariableMonitoringRequest",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "CustomDataType": {
@@ -3198,7 +3198,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:ClearVariableMonitoringResponse",
+        "$id": "urn:ocpp2.1:ClearVariableMonitoringResponse",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "ClearMonitoringStatusEnumType": {
@@ -3297,7 +3297,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:ClosePeriodicEventStreamRequest",
+        "$id": "urn:ocpp2.1:ClosePeriodicEventStreamRequest",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "CustomDataType": {
@@ -3333,7 +3333,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:ClosePeriodicEventStreamResponse",
+        "$id": "urn:ocpp2.1:ClosePeriodicEventStreamResponse",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "CustomDataType": {
@@ -3361,7 +3361,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:CostUpdatedRequest",
+        "$id": "urn:ocpp2.1:CostUpdatedRequest",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "CustomDataType": {
@@ -3402,7 +3402,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:CostUpdatedResponse",
+        "$id": "urn:ocpp2.1:CostUpdatedResponse",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "CustomDataType": {
@@ -3430,7 +3430,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:CustomerInformationRequest",
+        "$id": "urn:ocpp2.1:CustomerInformationRequest",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "HashAlgorithmEnumType": {
@@ -3590,7 +3590,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:CustomerInformationResponse",
+        "$id": "urn:ocpp2.1:CustomerInformationResponse",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "CustomerInformationStatusEnumType": {
@@ -3662,7 +3662,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:DataTransferRequest",
+        "$id": "urn:ocpp2.1:DataTransferRequest",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "CustomDataType": {
@@ -3706,7 +3706,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:DataTransferResponse",
+        "$id": "urn:ocpp2.1:DataTransferResponse",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "DataTransferStatusEnumType": {
@@ -3782,7 +3782,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:DeleteCertificateRequest",
+        "$id": "urn:ocpp2.1:DeleteCertificateRequest",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "HashAlgorithmEnumType": {
@@ -3861,7 +3861,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:DeleteCertificateResponse",
+        "$id": "urn:ocpp2.1:DeleteCertificateResponse",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "DeleteCertificateStatusEnumType": {
@@ -3933,7 +3933,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:FirmwareStatusNotificationRequest",
+        "$id": "urn:ocpp2.1:FirmwareStatusNotificationRequest",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "FirmwareStatusEnumType": {
@@ -4020,7 +4020,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:FirmwareStatusNotificationResponse",
+        "$id": "urn:ocpp2.1:FirmwareStatusNotificationResponse",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "CustomDataType": {
@@ -4048,7 +4048,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:Get15118EVCertificateRequest",
+        "$id": "urn:ocpp2.1:Get15118EVCertificateRequest",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "CertificateActionEnumType": {
@@ -4120,7 +4120,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:Get15118EVCertificateResponse",
+        "$id": "urn:ocpp2.1:Get15118EVCertificateResponse",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "Iso15118EVCertificateStatusEnumType": {
@@ -4202,7 +4202,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:GetBaseReportRequest",
+        "$id": "urn:ocpp2.1:GetBaseReportRequest",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "ReportBaseEnumType": {
@@ -4252,7 +4252,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:GetBaseReportResponse",
+        "$id": "urn:ocpp2.1:GetBaseReportResponse",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "GenericDeviceModelStatusEnumType": {
@@ -4325,7 +4325,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:GetCertificateChainStatusRequest",
+        "$id": "urn:ocpp2.1:GetCertificateChainStatusRequest",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "CertificateStatusSourceEnumType": {
@@ -4453,7 +4453,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:GetCertificateChainStatusResponse",
+        "$id": "urn:ocpp2.1:GetCertificateChainStatusResponse",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "CertificateStatusEnumType": {
@@ -4590,7 +4590,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:GetCertificateStatusRequest",
+        "$id": "urn:ocpp2.1:GetCertificateStatusRequest",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "HashAlgorithmEnumType": {
@@ -4676,7 +4676,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:GetCertificateStatusResponse",
+        "$id": "urn:ocpp2.1:GetCertificateStatusResponse",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "GetCertificateStatusEnumType": {
@@ -4752,7 +4752,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:GetChargingProfilesRequest",
+        "$id": "urn:ocpp2.1:GetChargingProfilesRequest",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "ChargingProfilePurposeEnumType": {
@@ -4849,7 +4849,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:GetChargingProfilesResponse",
+        "$id": "urn:ocpp2.1:GetChargingProfilesResponse",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "GetChargingProfileStatusEnumType": {
@@ -4920,7 +4920,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:GetCompositeScheduleRequest",
+        "$id": "urn:ocpp2.1:GetCompositeScheduleRequest",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "ChargingRateUnitEnumType": {
@@ -4974,7 +4974,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:GetCompositeScheduleResponse",
+        "$id": "urn:ocpp2.1:GetCompositeScheduleResponse",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "ChargingRateUnitEnumType": {
@@ -5272,7 +5272,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:GetDERControlRequest",
+        "$id": "urn:ocpp2.1:GetDERControlRequest",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "DERControlEnumType": {
@@ -5349,7 +5349,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:GetDERControlResponse",
+        "$id": "urn:ocpp2.1:GetDERControlResponse",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "DERControlStatusEnumType": {
@@ -5422,7 +5422,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:GetDisplayMessagesRequest",
+        "$id": "urn:ocpp2.1:GetDisplayMessagesRequest",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "MessagePriorityEnumType": {
@@ -5498,7 +5498,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:GetDisplayMessagesResponse",
+        "$id": "urn:ocpp2.1:GetDisplayMessagesResponse",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "GetDisplayMessagesStatusEnumType": {
@@ -5569,7 +5569,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:GetInstalledCertificateIdsRequest",
+        "$id": "urn:ocpp2.1:GetInstalledCertificateIdsRequest",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "GetCertificateIdUseEnumType": {
@@ -5619,7 +5619,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:GetInstalledCertificateIdsResponse",
+        "$id": "urn:ocpp2.1:GetInstalledCertificateIdsResponse",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "GetCertificateIdUseEnumType": {
@@ -5786,7 +5786,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:GetLocalListVersionRequest",
+        "$id": "urn:ocpp2.1:GetLocalListVersionRequest",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "CustomDataType": {
@@ -5814,7 +5814,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:GetLocalListVersionResponse",
+        "$id": "urn:ocpp2.1:GetLocalListVersionResponse",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "CustomDataType": {
@@ -5849,7 +5849,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:GetLogRequest",
+        "$id": "urn:ocpp2.1:GetLogRequest",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "LogEnumType": {
@@ -5941,7 +5941,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:GetLogResponse",
+        "$id": "urn:ocpp2.1:GetLogResponse",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "LogStatusEnumType": {
@@ -6018,7 +6018,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:GetMonitoringReportRequest",
+        "$id": "urn:ocpp2.1:GetMonitoringReportRequest",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "MonitoringCriterionEnumType": {
@@ -6176,7 +6176,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:GetMonitoringReportResponse",
+        "$id": "urn:ocpp2.1:GetMonitoringReportResponse",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "GenericDeviceModelStatusEnumType": {
@@ -6249,7 +6249,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:GetPeriodicEventStreamRequest",
+        "$id": "urn:ocpp2.1:GetPeriodicEventStreamRequest",
         "description": "This message is empty. It has no fields.\r\n",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
@@ -6278,7 +6278,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:GetPeriodicEventStreamResponse",
+        "$id": "urn:ocpp2.1:GetPeriodicEventStreamResponse",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "ConstantStreamDataType": {
@@ -6362,7 +6362,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:GetReportRequest",
+        "$id": "urn:ocpp2.1:GetReportRequest",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "ComponentCriterionEnumType": {
@@ -6521,7 +6521,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:GetReportResponse",
+        "$id": "urn:ocpp2.1:GetReportResponse",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "GenericDeviceModelStatusEnumType": {
@@ -6594,7 +6594,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:GetTariffsRequest",
+        "$id": "urn:ocpp2.1:GetTariffsRequest",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "CustomDataType": {
@@ -6630,7 +6630,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:GetTariffsResponse",
+        "$id": "urn:ocpp2.1:GetTariffsResponse",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "TariffGetStatusEnumType": {
@@ -6767,7 +6767,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:GetTransactionStatusRequest",
+        "$id": "urn:ocpp2.1:GetTransactionStatusRequest",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "CustomDataType": {
@@ -6800,7 +6800,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:GetTransactionStatusResponse",
+        "$id": "urn:ocpp2.1:GetTransactionStatusResponse",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "CustomDataType": {
@@ -6839,7 +6839,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:GetVariablesRequest",
+        "$id": "urn:ocpp2.1:GetVariablesRequest",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "AttributeEnumType": {
@@ -6990,7 +6990,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:GetVariablesResponse",
+        "$id": "urn:ocpp2.1:GetVariablesResponse",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "AttributeEnumType": {
@@ -7188,7 +7188,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:HeartbeatRequest",
+        "$id": "urn:ocpp2.1:HeartbeatRequest",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "CustomDataType": {
@@ -7216,7 +7216,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:HeartbeatResponse",
+        "$id": "urn:ocpp2.1:HeartbeatResponse",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "CustomDataType": {
@@ -7252,7 +7252,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:InstallCertificateRequest",
+        "$id": "urn:ocpp2.1:InstallCertificateRequest",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "InstallCertificateUseEnumType": {
@@ -7305,7 +7305,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:InstallCertificateResponse",
+        "$id": "urn:ocpp2.1:InstallCertificateResponse",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "InstallCertificateStatusEnumType": {
@@ -7377,7 +7377,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:LogStatusNotificationRequest",
+        "$id": "urn:ocpp2.1:LogStatusNotificationRequest",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "UploadLogStatusEnumType": {
@@ -7458,7 +7458,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:LogStatusNotificationResponse",
+        "$id": "urn:ocpp2.1:LogStatusNotificationResponse",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "CustomDataType": {
@@ -7486,7 +7486,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:MeterValuesRequest",
+        "$id": "urn:ocpp2.1:MeterValuesRequest",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "LocationEnumType": {
@@ -7767,7 +7767,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:MeterValuesResponse",
+        "$id": "urn:ocpp2.1:MeterValuesResponse",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "CustomDataType": {
@@ -7795,7 +7795,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:NotifyAllowedEnergyTransferRequest",
+        "$id": "urn:ocpp2.1:NotifyAllowedEnergyTransferRequest",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "EnergyTransferModeEnumType": {
@@ -7859,7 +7859,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:NotifyAllowedEnergyTransferResponse",
+        "$id": "urn:ocpp2.1:NotifyAllowedEnergyTransferResponse",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "NotifyAllowedEnergyTransferStatusEnumType": {
@@ -7929,7 +7929,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:NotifyChargingLimitRequest",
+        "$id": "urn:ocpp2.1:NotifyChargingLimitRequest",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "ChargingRateUnitEnumType": {
@@ -8826,7 +8826,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:NotifyChargingLimitResponse",
+        "$id": "urn:ocpp2.1:NotifyChargingLimitResponse",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "CustomDataType": {
@@ -8854,7 +8854,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:NotifyCustomerInformationRequest",
+        "$id": "urn:ocpp2.1:NotifyCustomerInformationRequest",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "CustomDataType": {
@@ -8913,7 +8913,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:NotifyCustomerInformationResponse",
+        "$id": "urn:ocpp2.1:NotifyCustomerInformationResponse",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "CustomDataType": {
@@ -8941,7 +8941,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:NotifyDERAlarmRequest",
+        "$id": "urn:ocpp2.1:NotifyDERAlarmRequest",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "DERControlEnumType": {
@@ -9042,7 +9042,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:NotifyDERAlarmResponse",
+        "$id": "urn:ocpp2.1:NotifyDERAlarmResponse",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "CustomDataType": {
@@ -9070,7 +9070,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:NotifyDERStartStopRequest",
+        "$id": "urn:ocpp2.1:NotifyDERStartStopRequest",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "CustomDataType": {
@@ -9128,7 +9128,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:NotifyDERStartStopResponse",
+        "$id": "urn:ocpp2.1:NotifyDERStartStopResponse",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "CustomDataType": {
@@ -9156,7 +9156,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:NotifyDisplayMessagesRequest",
+        "$id": "urn:ocpp2.1:NotifyDisplayMessagesRequest",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "MessageFormatEnumType": {
@@ -9378,7 +9378,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:NotifyDisplayMessagesResponse",
+        "$id": "urn:ocpp2.1:NotifyDisplayMessagesResponse",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "CustomDataType": {
@@ -9406,7 +9406,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:NotifyEVChargingNeedsRequest",
+        "$id": "urn:ocpp2.1:NotifyEVChargingNeedsRequest",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "ControlModeEnumType": {
@@ -10146,7 +10146,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:NotifyEVChargingNeedsResponse",
+        "$id": "urn:ocpp2.1:NotifyEVChargingNeedsResponse",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "NotifyEVChargingNeedsStatusEnumType": {
@@ -10219,7 +10219,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:NotifyEVChargingScheduleRequest",
+        "$id": "urn:ocpp2.1:NotifyEVChargingScheduleRequest",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "ChargingRateUnitEnumType": {
@@ -11098,7 +11098,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:NotifyEVChargingScheduleResponse",
+        "$id": "urn:ocpp2.1:NotifyEVChargingScheduleResponse",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "GenericStatusEnumType": {
@@ -11169,7 +11169,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:NotifyEventRequest",
+        "$id": "urn:ocpp2.1:NotifyEventRequest",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "EventNotificationEnumType": {
@@ -11404,7 +11404,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:NotifyEventResponse",
+        "$id": "urn:ocpp2.1:NotifyEventResponse",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "CustomDataType": {
@@ -11432,7 +11432,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:NotifyMonitoringReportRequest",
+        "$id": "urn:ocpp2.1:NotifyMonitoringReportRequest",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "EventNotificationEnumType": {
@@ -11667,7 +11667,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:NotifyMonitoringReportResponse",
+        "$id": "urn:ocpp2.1:NotifyMonitoringReportResponse",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "CustomDataType": {
@@ -11695,7 +11695,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:NotifyPeriodicEventStream",
+        "$id": "urn:ocpp2.1:NotifyPeriodicEventStream",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "StreamDataElementType": {
@@ -11774,7 +11774,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:NotifyPriorityChargingRequest",
+        "$id": "urn:ocpp2.1:NotifyPriorityChargingRequest",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "CustomDataType": {
@@ -11815,7 +11815,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:NotifyPriorityChargingResponse",
+        "$id": "urn:ocpp2.1:NotifyPriorityChargingResponse",
         "description": "This response message has an empty body.\r\n",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
@@ -11844,7 +11844,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:NotifyReportRequest",
+        "$id": "urn:ocpp2.1:NotifyReportRequest",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "AttributeEnumType": {
@@ -12131,7 +12131,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:NotifyReportResponse",
+        "$id": "urn:ocpp2.1:NotifyReportResponse",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "CustomDataType": {
@@ -12159,7 +12159,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:NotifySettlementRequest",
+        "$id": "urn:ocpp2.1:NotifySettlementRequest",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "PaymentStatusEnumType": {
@@ -12296,7 +12296,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:NotifySettlementResponse",
+        "$id": "urn:ocpp2.1:NotifySettlementResponse",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "CustomDataType": {
@@ -12334,7 +12334,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:NotifyWebPaymentStartedRequest",
+        "$id": "urn:ocpp2.1:NotifyWebPaymentStartedRequest",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "CustomDataType": {
@@ -12375,7 +12375,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:NotifyWebPaymentStartedResponse",
+        "$id": "urn:ocpp2.1:NotifyWebPaymentStartedResponse",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "CustomDataType": {
@@ -12403,7 +12403,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:OpenPeriodicEventStreamRequest",
+        "$id": "urn:ocpp2.1:OpenPeriodicEventStreamRequest",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "ConstantStreamDataType": {
@@ -12485,7 +12485,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:OpenPeriodicEventStreamResponse",
+        "$id": "urn:ocpp2.1:OpenPeriodicEventStreamResponse",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "GenericStatusEnumType": {
@@ -12556,7 +12556,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:PublishFirmwareRequest",
+        "$id": "urn:ocpp2.1:PublishFirmwareRequest",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "CustomDataType": {
@@ -12614,7 +12614,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:PublishFirmwareResponse",
+        "$id": "urn:ocpp2.1:PublishFirmwareResponse",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "GenericStatusEnumType": {
@@ -12685,7 +12685,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:PublishFirmwareStatusNotificationRequest",
+        "$id": "urn:ocpp2.1:PublishFirmwareStatusNotificationRequest",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "PublishFirmwareStatusEnumType": {
@@ -12779,7 +12779,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:PublishFirmwareStatusNotificationResponse",
+        "$id": "urn:ocpp2.1:PublishFirmwareStatusNotificationResponse",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "CustomDataType": {
@@ -12807,7 +12807,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:PullDynamicScheduleUpdateRequest",
+        "$id": "urn:ocpp2.1:PullDynamicScheduleUpdateRequest",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "CustomDataType": {
@@ -12842,7 +12842,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:PullDynamicScheduleUpdateResponse",
+        "$id": "urn:ocpp2.1:PullDynamicScheduleUpdateResponse",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "ChargingProfileStatusEnumType": {
@@ -12978,7 +12978,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:ReportChargingProfilesRequest",
+        "$id": "urn:ocpp2.1:ReportChargingProfilesRequest",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "ChargingProfileKindEnumType": {
@@ -13981,7 +13981,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:ReportChargingProfilesResponse",
+        "$id": "urn:ocpp2.1:ReportChargingProfilesResponse",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "CustomDataType": {
@@ -14009,7 +14009,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:ReportDERControlRequest",
+        "$id": "urn:ocpp2.1:ReportDERControlRequest",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "DERControlEnumType": {
@@ -14764,7 +14764,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:ReportDERControlResponse",
+        "$id": "urn:ocpp2.1:ReportDERControlResponse",
         "description": "This message has no parameters.\r\n\r\n",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
@@ -14793,7 +14793,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:RequestBatterySwapRequest",
+        "$id": "urn:ocpp2.1:RequestBatterySwapRequest",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "AdditionalInfoType": {
@@ -14890,7 +14890,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:RequestBatterySwapResponse",
+        "$id": "urn:ocpp2.1:RequestBatterySwapResponse",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "GenericStatusEnumType": {
@@ -14961,7 +14961,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:RequestStartTransactionRequest",
+        "$id": "urn:ocpp2.1:RequestStartTransactionRequest",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "ChargingProfileKindEnumType": {
@@ -16011,7 +16011,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:RequestStartTransactionResponse",
+        "$id": "urn:ocpp2.1:RequestStartTransactionResponse",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "RequestStartStopStatusEnumType": {
@@ -16087,7 +16087,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:RequestStopTransactionRequest",
+        "$id": "urn:ocpp2.1:RequestStopTransactionRequest",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "CustomDataType": {
@@ -16123,7 +16123,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:RequestStopTransactionResponse",
+        "$id": "urn:ocpp2.1:RequestStopTransactionResponse",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "RequestStartStopStatusEnumType": {
@@ -16194,7 +16194,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:ReservationStatusUpdateRequest",
+        "$id": "urn:ocpp2.1:ReservationStatusUpdateRequest",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "ReservationUpdateStatusEnumType": {
@@ -16245,7 +16245,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:ReservationStatusUpdateResponse",
+        "$id": "urn:ocpp2.1:ReservationStatusUpdateResponse",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "CustomDataType": {
@@ -16273,7 +16273,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:ReserveNowRequest",
+        "$id": "urn:ocpp2.1:ReserveNowRequest",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "AdditionalInfoType": {
@@ -16390,7 +16390,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:ReserveNowResponse",
+        "$id": "urn:ocpp2.1:ReserveNowResponse",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "ReserveNowStatusEnumType": {
@@ -16464,7 +16464,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:ResetRequest",
+        "$id": "urn:ocpp2.1:ResetRequest",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "ResetEnumType": {
@@ -16514,7 +16514,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:ResetResponse",
+        "$id": "urn:ocpp2.1:ResetResponse",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "ResetStatusEnumType": {
@@ -16586,7 +16586,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:SecurityEventNotificationRequest",
+        "$id": "urn:ocpp2.1:SecurityEventNotificationRequest",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "CustomDataType": {
@@ -16633,7 +16633,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:SecurityEventNotificationResponse",
+        "$id": "urn:ocpp2.1:SecurityEventNotificationResponse",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "CustomDataType": {
@@ -16661,7 +16661,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:SendLocalListRequest",
+        "$id": "urn:ocpp2.1:SendLocalListRequest",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "AuthorizationStatusEnumType": {
@@ -16907,7 +16907,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:SendLocalListResponse",
+        "$id": "urn:ocpp2.1:SendLocalListResponse",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "SendLocalListStatusEnumType": {
@@ -16979,7 +16979,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:SetChargingProfileRequest",
+        "$id": "urn:ocpp2.1:SetChargingProfileRequest",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "ChargingProfileKindEnumType": {
@@ -17961,7 +17961,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:SetChargingProfileResponse",
+        "$id": "urn:ocpp2.1:SetChargingProfileResponse",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "ChargingProfileStatusEnumType": {
@@ -18032,7 +18032,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:SetDefaultTariffRequest",
+        "$id": "urn:ocpp2.1:SetDefaultTariffRequest",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "DayOfWeekEnumType": {
@@ -18550,7 +18550,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:SetDefaultTariffResponse",
+        "$id": "urn:ocpp2.1:SetDefaultTariffResponse",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "TariffSetStatusEnumType": {
@@ -18623,7 +18623,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:SetDERControlRequest",
+        "$id": "urn:ocpp2.1:SetDERControlRequest",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "DERControlEnumType": {
@@ -19128,7 +19128,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:SetDERControlResponse",
+        "$id": "urn:ocpp2.1:SetDERControlResponse",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "DERControlStatusEnumType": {
@@ -19212,7 +19212,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:SetDisplayMessageRequest",
+        "$id": "urn:ocpp2.1:SetDisplayMessageRequest",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "MessageFormatEnumType": {
@@ -19420,7 +19420,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:SetDisplayMessageResponse",
+        "$id": "urn:ocpp2.1:SetDisplayMessageResponse",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "DisplayMessageStatusEnumType": {
@@ -19496,7 +19496,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:SetMonitoringBaseRequest",
+        "$id": "urn:ocpp2.1:SetMonitoringBaseRequest",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "MonitoringBaseEnumType": {
@@ -19541,7 +19541,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:SetMonitoringBaseResponse",
+        "$id": "urn:ocpp2.1:SetMonitoringBaseResponse",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "GenericDeviceModelStatusEnumType": {
@@ -19614,7 +19614,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:SetMonitoringLevelRequest",
+        "$id": "urn:ocpp2.1:SetMonitoringLevelRequest",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "CustomDataType": {
@@ -19650,7 +19650,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:SetMonitoringLevelResponse",
+        "$id": "urn:ocpp2.1:SetMonitoringLevelResponse",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "GenericStatusEnumType": {
@@ -19721,7 +19721,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:SetNetworkProfileRequest",
+        "$id": "urn:ocpp2.1:SetNetworkProfileRequest",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "APNAuthenticationEnumType": {
@@ -19975,7 +19975,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:SetNetworkProfileResponse",
+        "$id": "urn:ocpp2.1:SetNetworkProfileResponse",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "SetNetworkProfileStatusEnumType": {
@@ -20047,7 +20047,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:SetVariableMonitoringRequest",
+        "$id": "urn:ocpp2.1:SetVariableMonitoringRequest",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "MonitorEnumType": {
@@ -20245,7 +20245,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:SetVariableMonitoringResponse",
+        "$id": "urn:ocpp2.1:SetVariableMonitoringResponse",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "MonitorEnumType": {
@@ -20455,7 +20455,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:SetVariablesRequest",
+        "$id": "urn:ocpp2.1:SetVariablesRequest",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "AttributeEnumType": {
@@ -20611,7 +20611,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:SetVariablesResponse",
+        "$id": "urn:ocpp2.1:SetVariablesResponse",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "AttributeEnumType": {
@@ -20806,7 +20806,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:SignCertificateRequest",
+        "$id": "urn:ocpp2.1:SignCertificateRequest",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "CertificateSigningUseEnumType": {
@@ -20908,7 +20908,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:SignCertificateResponse",
+        "$id": "urn:ocpp2.1:SignCertificateResponse",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "GenericStatusEnumType": {
@@ -20979,7 +20979,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:StatusNotificationRequest",
+        "$id": "urn:ocpp2.1:StatusNotificationRequest",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "ConnectorStatusEnumType": {
@@ -21044,7 +21044,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:StatusNotificationResponse",
+        "$id": "urn:ocpp2.1:StatusNotificationResponse",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "CustomDataType": {
@@ -21072,7 +21072,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:TransactionEventRequest",
+        "$id": "urn:ocpp2.1:TransactionEventRequest",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "ChargingStateEnumType": {
@@ -21947,7 +21947,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:TransactionEventResponse",
+        "$id": "urn:ocpp2.1:TransactionEventResponse",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "AuthorizationStatusEnumType": {
@@ -22199,7 +22199,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:TriggerMessageRequest",
+        "$id": "urn:ocpp2.1:TriggerMessageRequest",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "MessageTriggerEnumType": {
@@ -22286,7 +22286,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:TriggerMessageResponse",
+        "$id": "urn:ocpp2.1:TriggerMessageResponse",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "TriggerMessageStatusEnumType": {
@@ -22358,7 +22358,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:UnlockConnectorRequest",
+        "$id": "urn:ocpp2.1:UnlockConnectorRequest",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "CustomDataType": {
@@ -22400,7 +22400,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:UnlockConnectorResponse",
+        "$id": "urn:ocpp2.1:UnlockConnectorResponse",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "UnlockStatusEnumType": {
@@ -22473,7 +22473,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:UnpublishFirmwareRequest",
+        "$id": "urn:ocpp2.1:UnpublishFirmwareRequest",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "CustomDataType": {
@@ -22509,7 +22509,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:UnpublishFirmwareResponse",
+        "$id": "urn:ocpp2.1:UnpublishFirmwareResponse",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "UnpublishFirmwareStatusEnumType": {
@@ -22554,7 +22554,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:UpdateDynamicScheduleRequest",
+        "$id": "urn:ocpp2.1:UpdateDynamicScheduleRequest",
         "description": "Id of dynamic charging profile to update.\r\n",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
@@ -22656,7 +22656,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:UpdateDynamicScheduleResponse",
+        "$id": "urn:ocpp2.1:UpdateDynamicScheduleResponse",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "ChargingProfileStatusEnumType": {
@@ -22727,7 +22727,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:UpdateFirmwareRequest",
+        "$id": "urn:ocpp2.1:UpdateFirmwareRequest",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "FirmwareType": {
@@ -22815,7 +22815,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:UpdateFirmwareResponse",
+        "$id": "urn:ocpp2.1:UpdateFirmwareResponse",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "UpdateFirmwareStatusEnumType": {
@@ -22889,7 +22889,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:UsePriorityChargingRequest",
+        "$id": "urn:ocpp2.1:UsePriorityChargingRequest",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "CustomDataType": {
@@ -22930,7 +22930,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:UsePriorityChargingResponse",
+        "$id": "urn:ocpp2.1:UsePriorityChargingResponse",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "PriorityChargingStatusEnumType": {
@@ -23002,7 +23002,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:VatNumberValidationRequest",
+        "$id": "urn:ocpp2.1:VatNumberValidationRequest",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "CustomDataType": {
@@ -23043,7 +23043,7 @@
     },
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "urn:VatNumberValidationResponse",
+        "$id": "urn:ocpp2.1:VatNumberValidationResponse",
         "comment": "OCPP 2.1 Edition 1 (c) OCA, Creative Commons Attribution-NoDerivatives 4.0 International Public License",
         "definitions": {
             "GenericStatusEnumType": {

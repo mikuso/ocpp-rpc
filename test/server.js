@@ -42,7 +42,7 @@ describe('RPCServer', function(){
         return createValidator('echo1.0', [
             {
                 "$schema": "http://json-schema.org/draft-07/schema",
-                "$id": "urn:Echo.req",
+                "$id": "urn:echo1.0:Echo.req",
                 "type": "object",
                 "properties": {
                     "val": {
@@ -54,7 +54,7 @@ describe('RPCServer', function(){
             },
             {
                 "$schema": "http://json-schema.org/draft-07/schema",
-                "$id": "urn:Echo.conf",
+                "$id": "urn:echo1.0:Echo.conf",
                 "type": "object",
                 "properties": {
                     "val": {

@@ -10,7 +10,7 @@ describe('Validator', function(){
 
             const validator = createValidator('test', [{
                 $schema: "http://json-schema.org/draft-07/schema",
-                $id: "urn:Test.req",
+                $id: "urn:test:Test.req",
                 type: "object",
                 properties: {},
             }]);
@@ -25,7 +25,7 @@ describe('Validator', function(){
             };
 
             assert.throws(() => {
-                validator.validate('urn:Test.req', {});
+                validator.validate('urn:test:Test.req', {});
             }, errors.RPCFormatViolationError);
 
         });
