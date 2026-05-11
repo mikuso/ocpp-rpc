@@ -846,7 +846,7 @@ describe('RPCClient', function(){
         });
 
         it('should resolve to the same result when called simultaneously', async () => {
-            
+
             const {endpoint, close, server} = await createServer();
 
             const cli = new RPCClient({
@@ -858,10 +858,9 @@ describe('RPCClient', function(){
                 const c1 = cli.connect();
                 const c2 = cli.connect();
 
-                await c1;
-                await c2;
+                const [r1, r2] = await Promise.all([c1, c2]);
 
-                assert.deepEqual(c1, c2);
+                assert.strictEqual(r1, r2);
 
             } finally {
                 cli.close();
