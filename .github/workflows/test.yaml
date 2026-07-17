@@ -9,9 +9,15 @@ jobs:
     strategy:
       matrix:
         nodeVer:
+          # lowest supported release
           - 17.3.0
+          # current release
+          - current
+          # in-between LTS releases
           - 18
-          - 19
+          - 20
+          - 22
+          - 24
     steps:
 
       - uses: actions/checkout@master
