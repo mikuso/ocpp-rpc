@@ -1,0 +1,30 @@
+[
+    {
+        "$schema": "http://json-schema.org/draft-06/schema",
+        "$id": "urn:ocpp-rpc:Echo.req",
+        "type": "object",
+        "properties": {
+            "val": {
+                "type": "string"
+            }
+        },
+        "additionalProperties": false,
+        "required": [
+            "val"
+        ]
+    },
+    {
+        "$schema": "http://json-schema.org/draft-06/schema",
+        "$id": "urn:ocpp-rpc:Echo.conf",
+        "type": "object",
+        "properties": {
+            "val": {
+                "type": "string"
+            }
+        },
+        "additionalProperties": false,
+        "required": [
+            "val"
+        ]
+    }
+]

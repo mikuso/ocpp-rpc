@@ -1,0 +1,15 @@
+{
+    "$schema": "http://json-schema.org/draft-06/schema",
+    "$id": "urn:ocpp-rpc:TestTenthResponse",
+    "type": "object",
+    "properties": {
+        "val": {
+            "type": "number",
+            "multipleOf": 0.01
+        }
+    },
+    "additionalProperties": false,
+    "required": [
+        "val"
+    ]
+}
