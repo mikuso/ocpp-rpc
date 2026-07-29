@@ -240,7 +240,7 @@ await cli.connect();
   * [err.rpcErrorCode](#errrpcerrorcode)
   * [err.details](#errdetails)
 
-* [createValidator(subprotocol, schema)](#createvalidatorsubprotocol-schema)
+* [createValidator(subprotocol, schema, options)](#createvalidatorsubprotocol-schema-options)
 * [createRPCError(type[, message[, details]])](#createrpcerrortype-message-details)
 
 ### Class: RPCServer
@@ -691,10 +691,15 @@ This property holds information collected during the WebSocket connection handsh
 
 This property can be anything. This is the value passed to `accept()` during the authentication callback.
 
-### createValidator(subprotocol, schema)
+### createValidator(subprotocol, schema, options)
 
 * `subprotocol` {String} - The name of the subprotocol that this schema can validate.
-* `schema` {Array} - An array of json schemas.
+* `schema` {Array | Object | String} - An array or object containing JSON Schemas. Alternatively, a path to a location where a JSON schema (or schemas) can be found.
+* `options` {Object}
+  * `version` {`'draft-04' | 'draft-06' | 'draft-07'`} - The JSON Schema version used. ocpp-rpc only supports these specific JSON Schema versions.
+  * `urnNid` {String} - The common `nid` used by the schema urns.
+  * `reqSuffix` {String} - The common "Request" suffix (defaults to `'.req'` for backwards compatibility).
+  * `confSuffix` {String} - The common "Response" suffix (defaults to `'.conf'` for backwards compatibility).
 
 Returns a `Validator` object which can be used for [strict mode](#strict-validation).
 
@@ -796,7 +801,7 @@ This module natively supports the following validation schemas:
 
 If you want to use `strictMode` with a subprotocol which is not included in the list above, you will need to add the appropriate schemas yourself. To do this, you must create a `Validator` for each subprotocol and pass them to the RPC constructor using the `strictModeValidators` option.  (It is also possible to override the built-in validators this way.)
 
-To create a Validator, you should pass the name of the subprotocol and a well-formed json schema to [`createValidator()`](#createvalidatorsubprotocol-schema). An example of a well-formed schema can be found at [`./lib/schemas/ocpp1_6.json`](./lib/schemas/ocpp1_6.json) or [`./lib/schemas/ocpp2_0_1.json`](./lib/schemas/ocpp2_0_1.json) or in the example below.
+To create a Validator, you should pass the name of the subprotocol and a well-formed json schema to [`createValidator()`](#createvalidatorsubprotocol-schema-options). An example of a well-formed schema can be found at [`./lib/schemas/ocpp1_6.json`](./lib/schemas/ocpp1_6.json) or [`./lib/schemas/ocpp2_0_1.json`](./lib/schemas/ocpp2_0_1.json) or in the example below.
 
 Example:
 
@@ -1086,6 +1091,11 @@ server.auth((accept, reject, handshake) => {
 **CLOSING**  
 * RPC calls while in this state are rejected.
 * RPC responses will be silently dropped.
+
+## Upgrading from 2.X -> 3.0
+
+Breaking changes:
+* Custom schemas made for version 2.X no longer work for 3.0.0. The urn of each JSON Schema `$id` now requires an nid component (as per spec, and enforced by Ajv >= 8.16). This has always been a requirement that was ignored by ocpp-rpc. See examples of working schema urns in `schemas/test/` and refer to the new options for createValidator() in the API to specify the nid you wish to use.
 
 ## Upgrading from 1.X -> 2.0
 
