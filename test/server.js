@@ -40,7 +40,7 @@ describe('RPCServer', function(){
 
 
     function getEchoValidator() {
-        return createValidator('echo1.0', path.join(__dirname, './schemas/echo/'), {
+        return createValidator('echo1.0', path.join(__dirname, '../schemas/test/echo/'), {
             urnNid: 'ocpp-rpc',
             version: 'draft-06',
             reqSuffix: '.req',

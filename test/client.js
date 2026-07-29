@@ -47,7 +47,7 @@ describe('RPCClient', function(){
     }
 
     function getEchoValidator() {
-        return createValidator('echo1.0', path.join(__dirname, './schemas/echo/'), {
+        return createValidator('echo1.0', path.join(__dirname, '../schemas/test/echo/'), {
             urnNid: 'ocpp-rpc',
             version: 'draft-06',
             reqSuffix: '.req',
@@ -56,7 +56,7 @@ describe('RPCClient', function(){
     }
 
     function getNumberTestValidator() {
-        return createValidator('numbers1.0', path.join(__dirname, './schemas/numbers/'), {
+        return createValidator('numbers1.0', path.join(__dirname, '../schemas/test/numbers/'), {
             urnNid: 'ocpp-rpc',
             version: 'draft-06',
             reqSuffix: 'Request',

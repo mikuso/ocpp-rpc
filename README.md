@@ -1095,6 +1095,7 @@ Breaking changes:
 * The `password` option in the `RPCClient` [constructor](#new-rpcclientoptions) can now be supplied as a `Buffer`. If a string is provided, it will be encoded as utf8.
 * The `password` field of `RPCServerClient`'s [`handshake`](#clienthandshake) object is now always provided as a Buffer instead of a string. Use `password.toString('utf8')` to convert back to a string as per previous versions.
 
-## License
+## Licenses
 
-[MIT](LICENSE.md)
+- **ocpp-rpc:** Licensed under the [MIT License](LICENSE)
+- **OCPP schemas:** Licensed from the Open Charge Alliance under [Creative Commons Attribution-NoDerivatives 4.0 International (CC BY-ND 4.0)](schemas/openchargealliance/LICENSE.md).

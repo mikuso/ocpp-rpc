@@ -126,11 +126,11 @@ describe('createValidator()', function(){
 
     it("should allow the JSON schema to be passed in as a path to a single JSON schema file", () => {
 
-        const d4a = createValidator('test', path.join(__dirname, './schemas/test-draft-04-array.json'), { version: 'draft-04' });
-        const d4o = createValidator('test', path.join(__dirname, './schemas/test-draft-04-obj.json'), { version: 'draft-04' });
+        const d4a = createValidator('test', path.join(__dirname, '../schemas/test/test-draft-04-array.json'), { version: 'draft-04' });
+        const d4o = createValidator('test', path.join(__dirname, '../schemas/test/test-draft-04-obj.json'), { version: 'draft-04' });
         
-        const d6a = createValidator('test', path.join(__dirname, './schemas/test-draft-06-array.json'), { version: 'draft-06' });
-        const d6o = createValidator('test', path.join(__dirname, './schemas/test-draft-06-obj.json'), { version: 'draft-06' });
+        const d6a = createValidator('test', path.join(__dirname, '../schemas/test/test-draft-06-array.json'), { version: 'draft-06' });
+        const d6o = createValidator('test', path.join(__dirname, '../schemas/test/test-draft-06-obj.json'), { version: 'draft-06' });
 
         assert.doesNotThrow(() => {
             d4a.validate(d4a.getRequestId('Test'), {test: 'test'});
@@ -147,7 +147,7 @@ describe('createValidator()', function(){
 
     it("should allow the JSON schema to be passed in as a path to a directory of JSON schema files", () => {
 
-        const validator = createValidator('test', path.join(__dirname, './schemas/test/'), { version: 'draft-06' });
+        const validator = createValidator('test', path.join(__dirname, '../schemas/test/test/'), { version: 'draft-06' });
 
         assert.doesNotThrow(() => {
             validator.validate(validator.getRequestId('Test'), {test: 'test'});
