@@ -2514,7 +2514,7 @@ describe('RPCClient', function(){
 
         it('should ping at the chosen interval', async () => {
             
-            const pingIntervalMs = 40;
+            const pingIntervalMs = 50;
 
             const {endpoint, close, server} = await createServer();
             const cli = new RPCClient({
@@ -2524,13 +2524,12 @@ describe('RPCClient', function(){
             });
 
             try {
-                await cli.connect();
                 const start = Date.now();
+                await cli.connect();
                 await once(cli, 'ping');
                 const fin = Date.now() - start;
                 const {code} = await cli.close({code: 4050});
-                assert.ok(fin >= pingIntervalMs);
-                assert.ok(fin <= pingIntervalMs * 2);
+                assert.ok((fin >= pingIntervalMs) && (fin <= pingIntervalMs * 2), `Ping arrived after ${fin}ms instead of ${pingIntervalMs}ms as expected`);
                 assert.equal(code, 4050);
 
             } finally {
