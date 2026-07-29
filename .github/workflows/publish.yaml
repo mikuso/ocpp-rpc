@@ -1,0 +1,48 @@
+name: Publish Package to npm
+
+on:
+  push:
+    tags:
+      - 'v*' # Triggers on any tag starting with 'v' (e.g. v1.0.0, v2.1.0-beta)
+
+permissions:
+  contents: read
+  id-token: write # Required for OIDC / Trusted Publishing authentication
+
+jobs:
+  publish:
+    name: Publish to npm
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install & Build
+        run: |
+          npm ci
+          npm run build --if-present
+
+      - name: Set package.json version & determine npm tag
+        id: prep
+        run: |
+          # Extract clean version from git tag (e.g. 'v2.1.1-beta1' -> '2.1.1-beta1')
+          VERSION=${GITHUB_REF_NAME#v}
+          npm version $VERSION --no-git-tag-version
+
+          # Check if version contains a hyphen indicating a prerelease (e.g. -beta1, -alpha.0)
+          if [[ "$VERSION" == *"-"* ]]; then
+            # Extract tag name before any numbers/dots (e.g. 'beta1' -> 'beta')
+            TAG=$(echo "$VERSION" | sed -E 's/.*-([a-zA-Z]+).*/\1/')
+            echo "NPM_TAG_FLAG=--tag ${TAG:-next}" >> $GITHUB_ENV
+          else
+            echo "NPM_TAG_FLAG=" >> $GITHUB_ENV
+          fi
+
+      - name: Publish Package
+        run: npm publish --provenance --access public $NPM_TAG_FLAG

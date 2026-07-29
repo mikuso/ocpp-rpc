@@ -1,6 +1,5 @@
 {
   "name": "ocpp-rpc",
-  "version": "2.2.1",
   "description": "A client & server implementation of the WAMP-like RPC-over-websocket system defined in the OCPP protocols (e.g. OCPP1.6-J and OCPP2.0.1).",
   "main": "index.js",
   "scripts": {
@@ -34,7 +33,10 @@
   "bugs": {
     "url": "https://github.com/mikuso/ocpp-rpc/issues"
   },
-  "repository": "github:mikuso/ocpp-rpc",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mikuso/ocpp-rpc.git"
+  },
   "homepage": "https://github.com/mikuso/ocpp-rpc#readme",
   "license": "MIT",
   "dependencies": {
