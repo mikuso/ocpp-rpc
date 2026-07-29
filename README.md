@@ -1095,7 +1095,7 @@ server.auth((accept, reject, handshake) => {
 ## Upgrading from 2.X -> 3.0
 
 Breaking changes:
-* Custom schemas made for version 2.X no longer work for 3.0.0. The urn of each JSON Schema `$id` now requires an nid component (as per spec, and enforced by Ajv >= 8.16). This has always been a requirement that was ignored by ocpp-rpc. See examples of working schema urns in `schemas/test/` and refer to the new options for createValidator() in the API to specify the nid you wish to use.
+* Custom schemas made for version 2.X no longer work for 3.0.0. The urn of each JSON Schema `$id` now requires an nid component (as per spec, and enforced by Ajv >= 8.16). This has always been a requirement that was ignored by ocpp-rpc. See examples of working schema urns in `schemas/test/` and refer to the new options for [`createValidator()`](#createvalidatorsubprotocol-schema-options) in the API to specify the nid you wish to use.
 
 ## Upgrading from 1.X -> 2.0
 
