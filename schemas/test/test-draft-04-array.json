@@ -1,0 +1,22 @@
+[
+    {
+        "$schema": "http://json-schema.org/draft-04/schema",
+        "id": "urn:ocpp-rpc:Test.req",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+            "test": {
+                "type": "string"
+            }
+        },
+        "required": [
+            "test"
+        ]
+    },
+    {
+        "$schema": "http://json-schema.org/draft-04/schema",
+        "id": "urn:ocpp-rpc:Test2.req",
+        "type": "object",
+        "properties": {}
+    }
+]

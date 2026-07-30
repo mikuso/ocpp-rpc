@@ -1,3 +1,4 @@
+const path = require('node:path');
 const assert = require('assert/strict');
 const { once } = require('events');
 const RPCClient = require("../lib/client");
@@ -6,32 +7,12 @@ const { setTimeout } = require('timers/promises');
 const { createValidator } = require('../lib/validator');
 
 function getEchoValidator() {
-    return createValidator('echo1.0', [
-        {
-            "$schema": "http://json-schema.org/draft-07/schema",
-            "$id": "urn:Echo.req",
-            "type": "object",
-            "properties": {
-                "val": {
-                    "type": "string"
-                }
-            },
-            "additionalProperties": false,
-            "required": ["val"]
-        },
-        {
-            "$schema": "http://json-schema.org/draft-07/schema",
-            "$id": "urn:Echo.conf",
-            "type": "object",
-            "properties": {
-                "val": {
-                    "type": "string"
-                }
-            },
-            "additionalProperties": false,
-            "required": ["val"]
-        }
-    ]);
+    return createValidator('echo1.0', path.join(__dirname, '../schemas/test/echo/'), {
+        urnNid: 'ocpp-rpc',
+        version: 'draft-06',
+        reqSuffix: '.req',
+        confSuffix: '.conf'
+    });
 }
 
 describe('RPCServerClient', function(){

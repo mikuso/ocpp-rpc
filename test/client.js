@@ -1,3 +1,4 @@
+const path = require('node:path');
 const assert = require('assert/strict');
 const http = require('http');
 const { once } = require('events');
@@ -46,63 +47,21 @@ describe('RPCClient', function(){
     }
 
     function getEchoValidator() {
-        return createValidator('echo1.0', [
-            {
-                "$schema": "http://json-schema.org/draft-07/schema",
-                "$id": "urn:Echo.req",
-                "type": "object",
-                "properties": {
-                    "val": {
-                        "type": "string"
-                    }
-                },
-                "additionalProperties": false,
-                "required": ["val"]
-            },
-            {
-                "$schema": "http://json-schema.org/draft-07/schema",
-                "$id": "urn:Echo.conf",
-                "type": "object",
-                "properties": {
-                    "val": {
-                        "type": "string"
-                    }
-                },
-                "additionalProperties": false,
-                "required": ["val"]
-            }
-        ]);
+        return createValidator('echo1.0', path.join(__dirname, '../schemas/test/echo/'), {
+            urnNid: 'ocpp-rpc',
+            version: 'draft-06',
+            reqSuffix: '.req',
+            confSuffix: '.conf'
+        });
     }
 
     function getNumberTestValidator() {
-        return createValidator('numbers1.0', [
-            {
-                "$schema": "http://json-schema.org/draft-07/schema",
-                "$id": "urn:TestTenth.req",
-                "type": "object",
-                "properties": {
-                    "val": {
-                        "type": "number",
-                        "multipleOf": 0.1
-                    }
-                },
-                "additionalProperties": false,
-                "required": ["val"]
-            },
-            {
-                "$schema": "http://json-schema.org/draft-07/schema",
-                "$id": "urn:TestTenth.conf",
-                "type": "object",
-                "properties": {
-                    "val": {
-                        "type": "number",
-                        "multipleOf": 0.01
-                    }
-                },
-                "additionalProperties": false,
-                "required": ["val"]
-            }
-        ]);
+        return createValidator('numbers1.0', path.join(__dirname, '../schemas/test/numbers/'), {
+            urnNid: 'ocpp-rpc',
+            version: 'draft-06',
+            reqSuffix: 'Request',
+            confSuffix: 'Response'
+        });
     }
 
     describe('#constructor', function(){
@@ -1505,7 +1464,7 @@ describe('RPCClient', function(){
 
         });
 
-        it("should validate calls using in-built validators", async () => {
+        it("should validate calls using in-built OCPP 1.6 validator", async () => {
 
             const {endpoint, close, server} = await createServer({
                 protocols: ['ocpp1.6'],
@@ -1515,6 +1474,78 @@ describe('RPCClient', function(){
                 endpoint,
                 identity: 'X',
                 protocols: ['ocpp1.6'],
+                strictMode: true,
+            });
+
+            try {
+                await cli.connect();
+
+                const [c1, c2, c3] = await Promise.allSettled([
+                    cli.call('Heartbeat', {}),
+                    cli.call('Heartbeat', {a:1}),
+                    cli.call('Heartbeat', 1),
+                ]);
+
+                assert.equal(c1.status, 'fulfilled');
+                assert.ok('currentTime' in c1.value);
+                assert.equal(c2.status, 'rejected');
+                assert.ok(c2.reason instanceof RPCPropertyConstraintViolationError);
+                assert.equal(c3.status, 'rejected');
+                assert.ok(c3.reason instanceof RPCTypeConstraintViolationError);
+
+            } finally {
+                await cli.close();
+                close();
+            }
+
+        });
+
+        it("should validate calls using in-built OCPP 2.0.1 validator", async () => {
+
+            const {endpoint, close, server} = await createServer({
+                protocols: ['ocpp2.0.1'],
+                strictMode: true,
+            });
+            const cli = new RPCClient({
+                endpoint,
+                identity: 'X',
+                protocols: ['ocpp2.0.1'],
+                strictMode: true,
+            });
+
+            try {
+                await cli.connect();
+
+                const [c1, c2, c3] = await Promise.allSettled([
+                    cli.call('Heartbeat', {}),
+                    cli.call('Heartbeat', {a:1}),
+                    cli.call('Heartbeat', 1),
+                ]);
+
+                assert.equal(c1.status, 'fulfilled');
+                assert.ok('currentTime' in c1.value);
+                assert.equal(c2.status, 'rejected');
+                assert.ok(c2.reason instanceof RPCPropertyConstraintViolationError);
+                assert.equal(c3.status, 'rejected');
+                assert.ok(c3.reason instanceof RPCTypeConstraintViolationError);
+
+            } finally {
+                await cli.close();
+                close();
+            }
+
+        });
+
+        it("should validate calls using in-built OCPP 2.1 validator", async () => {
+
+            const {endpoint, close, server} = await createServer({
+                protocols: ['ocpp2.1'],
+                strictMode: true,
+            });
+            const cli = new RPCClient({
+                endpoint,
+                identity: 'X',
+                protocols: ['ocpp2.1'],
                 strictMode: true,
             });
 
