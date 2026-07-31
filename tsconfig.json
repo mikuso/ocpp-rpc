@@ -1,0 +1,23 @@
+{
+    "compilerOptions": {
+        "allowJs": true,
+        "declaration": true,
+        "emitDeclarationOnly": true,
+        "noEmitOnError": false,
+        "skipLibCheck": true,
+        "outDir": "types",
+        "target": "esnext",
+        "module": "nodenext",
+        "moduleResolution": "nodenext",
+        "resolveJsonModule": true
+    },
+    "include": [
+        "index.js",
+        "lib/**/*.js"
+    ],
+    "exclude": [
+        "node_modules",
+        "test",
+        "types"
+    ]
+}
