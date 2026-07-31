@@ -4,10 +4,10 @@
   "main": "index.js",
   "scripts": {
     "test": "mocha",
-    "coverage": "nyc --reporter=lcov --reporter=text mocha"
+    "coverage": "c8 --reporter=lcov --reporter=text mocha"
   },
   "engines": {
-    "node": ">=17.3.0"
+    "node": ">=20"
   },
   "keywords": [
     "ocpp",
@@ -47,8 +47,8 @@
     "ws": "^8.5.0"
   },
   "devDependencies": {
-    "mocha": "^11.7.5",
-    "nyc": "^15.1.0"
+    "c8": "^12.0.0",
+    "mocha": "^11.7.5"
   },
   "type": "module"
 }

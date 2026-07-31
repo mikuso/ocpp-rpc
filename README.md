@@ -11,7 +11,7 @@
 
 A client & server implementation of the WAMP-like RPC-over-websocket system defined in the [OCPP-J protocols](https://openchargealliance.org/protocols/) (e.g. [OCPP1.6J](https://openchargealliance.org/protocols/open-charge-point-protocol/#OCPP1.6), [OCPP2.0.1J](https://openchargealliance.org/protocols/open-charge-point-protocol/#OCPP2.0.1) and [OCPP2.1](https://openchargealliance.org/protocols/open-charge-point-protocol/#OCPP2.1)).
 
-Requires Node.js >= 17.3.0
+Requires Node.js >= 20
 
 This module is built for Node.js and does not currently work in browsers.
 
