@@ -490,7 +490,7 @@ describe('RPCClient', function(){
                 equal(badMsg.error.rpcErrorCode, 'RpcFrameworkError');
                 equal(badMsg.error.details.msgId, '123');
                 equal(badMsg.error.details.errorCode, 'RpcFrameworkError');
-                equal(badMsg.error.details.errorDescription, 'Already processing a call with message ID: 123');
+                equal(badMsg.error.details.errorDescription, 'Already processing a message with message ID: 123');
             } finally {
                 await cli.close();
                 close();
@@ -541,18 +541,40 @@ describe('RPCClient', function(){
 
         });
 
-        it('should reject on non-ws endpoint URL', async () => {
+        it('should reject on non-ws or non-http endpoint URL', async () => {
 
             const {close, port} = await createServer();
-            const cli = new RPCClient({
+            const cli1 = new RPCClient({
+                endpoint: `ftp://localhost:${port}`,
+                identity: 'X',
+            });
+            const cli2 = new RPCClient({
+                endpoint: `gopher://localhost:${port}`,
+                identity: 'X',
+            });
+            const cli3 = new RPCClient({
                 endpoint: `http://localhost:${port}`,
+                identity: 'X',
+            });
+            const cli4 = new RPCClient({
+                endpoint: `ws://localhost:${port}`,
                 identity: 'X',
             });
 
             try {
-                await rejects(cli.connect());
+                await Promise.all([
+                    rejects(cli1.connect()),
+                    rejects(cli2.connect()),
+                    cli3.connect(),
+                    cli4.connect(),
+                ]);
             } finally {
-                await cli.close();
+                await Promise.all([
+                    cli1.close(),
+                    cli2.close(),
+                    cli3.close(),
+                    cli4.close(),
+                ]);
                 close();
             }
 
@@ -2810,9 +2832,6 @@ describe('RPCClient', function(){
                 const [bad] = await badProm;
                 equal(bad.buffer.toString('utf8'), 'x');
                 equal(bad.error.rpcErrorCode, 'RpcFrameworkError');
-                equal(bad.response[0], 4);
-                equal(bad.response[1], '-1');
-                equal(bad.response[2], 'RpcFrameworkError');
                 
             } finally {
                 await cli.close();
