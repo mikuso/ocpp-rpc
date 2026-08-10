@@ -1,7 +1,11 @@
-const path = require('node:path');
-const assert = require('assert');
-const errors = require('../lib/errors');
-const { createValidator } = require('../lib/validator');
+import assert from 'node:assert';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { RPCFormatViolationError } from '../lib/errors.js';
+import { createValidator } from '../lib/validator.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 describe('Validator', function(){
 
@@ -27,7 +31,7 @@ describe('Validator', function(){
 
             assert.throws(() => {
                 validator.validate(validator.getRequestId('Test'), {});
-            }, errors.RPCFormatViolationError);
+            }, RPCFormatViolationError);
 
         });
 

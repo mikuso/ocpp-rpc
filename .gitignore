@@ -1,5 +1,7 @@
 .nyc_output/
 node_modules/
 coverage/
+docs/
+types/
+assets/logo.psd
 ~$*
-docs/logo.psd

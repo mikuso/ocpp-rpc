@@ -1,0 +1,57 @@
+{
+    "entryPoints": ["./index.js"],
+    "plugin": [
+        "./docs-src/typedoc-plugin-events.mjs",
+        "./docs-src/typedoc-plugin-prop-defaults.mjs"
+    ],
+    "out": "docs",
+    "tsconfig": "./tsconfig.json",
+    "name": "ocpp-rpc",
+    "includeVersion": true,
+    "readme": "./README.md",
+    "alwaysCreateEntryPointModule": false,
+    "githubPages": true,
+    "sourceLinkTemplate": "https://github.com/mikuso/ocpp-rpc/blob/{gitRevision}/{path}#L{line}",
+    "jsDocCompatibility": true,
+    "excludeInternal": true,
+    "excludePrivate": true,
+    "searchInComments": true,
+    "hideGenerator": true,
+    "customCss": "./docs-src/custom.css",
+    "customJs": "./docs-src/custom.js",
+    "projectDocuments": [
+        "docs-src/getting-started.md",
+        "docs-src/upgrading.md",
+        "docs-src/strict-validation.md",
+        "docs-src/security.md",
+        "docs-src/state-lifecycle.md"
+    ],
+    "navigation": {
+        "includeGroups": true
+    },
+    "groupOrder": [
+        "Guides",
+        "Classes",
+        "Utilities",
+        "Symbols",
+        "Errors",
+        "Types",
+        "*"
+    ],
+    "blockTags": [
+        "@abstract", "@accessor", "@alpha", "@beta", "@callback",
+        "@category", "@categoryDescription", "@class", "@const", "@decorator",
+        "@defaultValue", "@deprecated", "@document", "@enum",
+        "@event", "@eventProperty", "@example", "@experimental",
+        "@group", "@groupDescription", "@hideconstructor",
+        "@ignore", "@inheritDoc", "@interface", "@internal",
+        "@license", "@memberof", "@module", "@overload",
+        "@override", "@packageDocumentation", "@param",
+        "@private", "@privateRemarks", "@prop", "@property",
+        "@protected", "@public", "@readonly", "@remarks",
+        "@returns", "@satisfies", "@sealed", "@see",
+        "@since", "@source", "@summary", "@template",
+        "@throws", "@type", "@typedef", "@usageNotes",
+        "@virtual"
+    ]
+}

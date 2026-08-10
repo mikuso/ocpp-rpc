@@ -1,15 +1,20 @@
-const path = require('node:path');
-const assert = require('assert/strict');
-const http = require('http');
-const { once } = require('events');
-const RPCClient = require("../lib/client");
-const { TimeoutError, RPCFrameworkError, RPCError, RPCProtocolError, RPCTypeConstraintViolationError, RPCOccurenceConstraintViolationError, RPCPropertyConstraintViolationError, RPCOccurrenceConstraintViolationError, RPCFormationViolationError } = require('../lib/errors');
-const RPCServer = require("../lib/server");
-const { setTimeout } = require('timers/promises');
-const { createValidator } = require('../lib/validator');
-const { createRPCError } = require('../lib/util');
-const { NOREPLY } = require('../lib/symbols');
+import { throws, doesNotThrow, ok, equal, rejects, doesNotReject, deepEqual, strictEqual } from 'assert/strict';
+import { createServer as _createServer } from 'http';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { once } from 'events';
+import { RPCClient } from "../lib/client.js";
+import { TimeoutError, RPCFrameworkError, RPCError, RPCProtocolError, RPCTypeConstraintViolationError, RPCOccurenceConstraintViolationError, RPCPropertyConstraintViolationError, RPCOccurrenceConstraintViolationError, RPCFormationViolationError } from '../lib/errors.js';
+import { RPCServer } from "../lib/server.js";
+import { setTimeout } from 'timers/promises';
+import { createValidator } from '../lib/validator.js';
+import { createRPCError } from '../lib/util.js';
+import { NOREPLY } from '../lib/symbols.js';
 const {CLOSING, CLOSED, CONNECTING} = RPCClient;
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 
 describe('RPCClient', function(){
     this.timeout(500);
@@ -68,7 +73,7 @@ describe('RPCClient', function(){
 
         it('should throw on missing identity', async () => {
 
-            assert.throws(() => {
+            throws(() => {
                 new RPCClient({
                     endpoint: 'ws://localhost',
                 });
@@ -78,7 +83,7 @@ describe('RPCClient', function(){
 
         it('should throw if strictMode = true and not all protocol schemas found', async () => {
 
-            assert.throws(() => {
+            throws(() => {
                 new RPCClient({
                     endpoint: 'ws://localhost',
                     identity: 'x',
@@ -87,7 +92,7 @@ describe('RPCClient', function(){
                 });
             });
 
-            assert.throws(() => {
+            throws(() => {
                 new RPCClient({
                     endpoint: 'ws://localhost',
                     identity: 'x',
@@ -96,7 +101,7 @@ describe('RPCClient', function(){
                 });
             });
 
-            assert.throws(() => {
+            throws(() => {
                 // trying to use strict mode with no protocols specified
                 new RPCClient({
                     endpoint: 'ws://localhost',
@@ -106,7 +111,7 @@ describe('RPCClient', function(){
                 });
             });
 
-            assert.throws(() => {
+            throws(() => {
                 // trying to use strict mode with no protocols specified
                 new RPCClient({
                     endpoint: 'ws://localhost',
@@ -115,7 +120,7 @@ describe('RPCClient', function(){
                 });
             });
 
-            assert.doesNotThrow(() => {
+            doesNotThrow(() => {
                 new RPCClient({
                     endpoint: 'ws://localhost',
                     identity: 'x',
@@ -125,7 +130,7 @@ describe('RPCClient', function(){
                 });
             });
 
-            assert.doesNotThrow(() => {
+            doesNotThrow(() => {
                 new RPCClient({
                     endpoint: 'ws://localhost',
                     identity: 'x',
@@ -170,12 +175,12 @@ describe('RPCClient', function(){
             await cli.close();
             await close();
 
-            assert.ok(test.in.call);
-            assert.ok(test.in.response);
-            assert.ok(test.out.call);
-            assert.ok(test.out.response);
-            assert.equal(test.in.call.payload[1], test.out.response.payload[1]);
-            assert.equal(test.out.call.payload[1], test.in.response.payload[1]);
+            ok(test.in.call);
+            ok(test.in.response);
+            ok(test.out.call);
+            ok(test.out.response);
+            equal(test.in.call.payload[1], test.out.response.payload[1]);
+            equal(test.out.call.payload[1], test.in.response.payload[1]);
 
         });
 
@@ -204,15 +209,15 @@ describe('RPCClient', function(){
             await cli.close();
             await close();
 
-            assert.equal(result.method, 'Echo');
-            assert.equal(result.outbound, true);
-            assert.equal(result.params.txt, 'Test');
-            assert.equal(result.result.txt, 'Test');
+            equal(result.method, 'Echo');
+            equal(result.outbound, true);
+            equal(result.params.txt, 'Test');
+            equal(result.result.txt, 'Test');
             
-            assert.equal(error.method, 'Reject');
-            assert.equal(error.outbound, true);
-            assert.equal(error.params.details.code, 'Test');
-            assert.equal(error.error.details.code, 'Test');
+            equal(error.method, 'Reject');
+            equal(error.outbound, true);
+            equal(error.params.details.code, 'Test');
+            equal(error.error.details.code, 'Test');
 
         });
 
@@ -259,15 +264,15 @@ describe('RPCClient', function(){
             await cli.close();
             await close();
 
-            assert.equal(result.method, 'Echo');
-            assert.equal(result.outbound, false);
-            assert.equal(result.params.txt, 'Test');
-            assert.equal(result.result.txt, 'Test');
+            equal(result.method, 'Echo');
+            equal(result.outbound, false);
+            equal(result.params.txt, 'Test');
+            equal(result.result.txt, 'Test');
             
-            assert.equal(error.method, 'Reject');
-            assert.equal(error.outbound, false);
-            assert.equal(error.params.details.code, 'Test');
-            assert.equal(error.error.details.code, 'Test');
+            equal(error.method, 'Reject');
+            equal(error.outbound, false);
+            equal(error.params.details.code, 'Test');
+            equal(error.error.details.code, 'Test');
 
         });
 
@@ -290,12 +295,12 @@ describe('RPCClient', function(){
             await close();
 
             const [call, res] = messages;
-            assert.equal(call.outbound, true);
-            assert.equal(res.outbound, false);
-            assert.equal(call.payload[0], 2);
-            assert.equal(res.payload[0], 3);
-            assert.equal(call.payload[1], res.payload[1]);
-            assert.equal(call.payload[2], 'Echo');
+            equal(call.outbound, true);
+            equal(res.outbound, false);
+            equal(call.payload[0], 2);
+            equal(res.payload[0], 3);
+            equal(call.payload[1], res.payload[1]);
+            equal(call.payload[2], 'Echo');
 
         });
 
@@ -329,12 +334,12 @@ describe('RPCClient', function(){
             await close();
 
             const [call, res] = messages;
-            assert.equal(call.outbound, false);
-            assert.equal(res.outbound, true);
-            assert.equal(call.payload[0], 2);
-            assert.equal(res.payload[0], 3);
-            assert.equal(call.payload[1], res.payload[1]);
-            assert.equal(call.payload[2], 'Echo');
+            equal(call.outbound, false);
+            equal(res.outbound, true);
+            equal(call.payload[0], 2);
+            equal(res.payload[0], 3);
+            equal(call.payload[1], res.payload[1]);
+            equal(call.payload[2], 'Echo');
 
         });
 
@@ -352,7 +357,7 @@ describe('RPCClient', function(){
             try {
                 await cli.connect();
                 const [badMsg] = await once(cli, 'badMessage');
-                assert.equal(badMsg.error.rpcErrorCode, 'RpcFrameworkError');
+                equal(badMsg.error.rpcErrorCode, 'RpcFrameworkError');
             } finally {
                 await cli.close();
                 close();
@@ -373,7 +378,7 @@ describe('RPCClient', function(){
             try {
                 await cli.connect();
                 const [badMsg] = await once(cli, 'badMessage');
-                assert.equal(badMsg.error.rpcErrorCode, 'RpcFrameworkError');
+                equal(badMsg.error.rpcErrorCode, 'RpcFrameworkError');
             } finally {
                 await cli.close();
                 close();
@@ -394,7 +399,7 @@ describe('RPCClient', function(){
             try {
                 await cli.connect();
                 const [badMsg] = await once(cli, 'badMessage');
-                assert.equal(badMsg.error.rpcErrorCode, 'RpcFrameworkError');
+                equal(badMsg.error.rpcErrorCode, 'RpcFrameworkError');
             } finally {
                 await cli.close();
                 close();
@@ -415,7 +420,7 @@ describe('RPCClient', function(){
             try {
                 await cli.connect();
                 const [badMsg] = await once(cli, 'badMessage');
-                assert.equal(badMsg.error.rpcErrorCode, 'MessageTypeNotSupported');
+                equal(badMsg.error.rpcErrorCode, 'MessageTypeNotSupported');
             } finally {
                 await cli.close();
                 close();
@@ -436,7 +441,7 @@ describe('RPCClient', function(){
             try {
                 await cli.connect();
                 const [badMsg] = await once(cli, 'badMessage');
-                assert.equal(badMsg.error.rpcErrorCode, 'RpcFrameworkError');
+                equal(badMsg.error.rpcErrorCode, 'RpcFrameworkError');
             } finally {
                 await cli.close();
                 close();
@@ -457,7 +462,7 @@ describe('RPCClient', function(){
             try {
                 await cli.connect();
                 const [badMsg] = await once(cli, 'badMessage');
-                assert.equal(badMsg.error.rpcErrorCode, 'RpcFrameworkError');
+                equal(badMsg.error.rpcErrorCode, 'RpcFrameworkError');
             } finally {
                 await cli.close();
                 close();
@@ -482,10 +487,10 @@ describe('RPCClient', function(){
                 cli.sendRaw('[2, "123", "Sleep", {"ms":20}]');
 
                 const [badMsg] = await once(cli, 'badMessage');
-                assert.equal(badMsg.error.rpcErrorCode, 'RpcFrameworkError');
-                assert.equal(badMsg.error.details.msgId, '123');
-                assert.equal(badMsg.error.details.errorCode, 'RpcFrameworkError');
-                assert.equal(badMsg.error.details.errorDescription, 'Already processing a call with message ID: 123');
+                equal(badMsg.error.rpcErrorCode, 'RpcFrameworkError');
+                equal(badMsg.error.details.msgId, '123');
+                equal(badMsg.error.details.errorCode, 'RpcFrameworkError');
+                equal(badMsg.error.details.errorDescription, 'Already processing a call with message ID: 123');
             } finally {
                 await cli.close();
                 close();
@@ -511,7 +516,7 @@ describe('RPCClient', function(){
 
         it('should reject on non-websocket server', async () => {
 
-            const httpServer = http.createServer((req, res) => {
+            const httpServer = _createServer((req, res) => {
                 res.end();
             });
             const httpServerAbort = new AbortController();
@@ -528,7 +533,7 @@ describe('RPCClient', function(){
             const cli = new RPCClient({endpoint, identity: 'X'});
 
             try {
-                await assert.rejects(cli.connect());
+                await rejects(cli.connect());
             } finally {
                 await cli.close();
                 httpServerAbort.abort();
@@ -545,7 +550,7 @@ describe('RPCClient', function(){
             });
 
             try {
-                await assert.rejects(cli.connect());
+                await rejects(cli.connect());
             } finally {
                 await cli.close();
                 close();
@@ -562,7 +567,7 @@ describe('RPCClient', function(){
             });
 
             try {
-                await assert.rejects(cli.connect());
+                await rejects(cli.connect());
             } finally {
                 await cli.close();
                 close();
@@ -579,7 +584,7 @@ describe('RPCClient', function(){
             });
 
             try {
-                await assert.rejects(cli.connect());
+                await rejects(cli.connect());
             } finally {
                 await cli.close();
                 close();
@@ -597,7 +602,7 @@ describe('RPCClient', function(){
             });
 
             try {
-                await assert.rejects(cli.connect());
+                await rejects(cli.connect());
             } finally {
                 await cli.close();
                 close();
@@ -616,7 +621,7 @@ describe('RPCClient', function(){
 
             try {
                 await cli.connect();
-                assert.equal(cli.protocol, 'three');
+                equal(cli.protocol, 'three');
             } finally {
                 await cli.close();
                 close();
@@ -646,8 +651,8 @@ describe('RPCClient', function(){
             try {
                 await cli.connect();
                 const query = new URLSearchParams(await cli.call('GetQuery'));
-                assert.equal(query.get('x-test'), 'abc');
-                assert.equal(shake.query.get('?='), '123');
+                equal(query.get('x-test'), 'abc');
+                equal(shake.query.get('?='), '123');
 
             } finally {
                 cli.close();
@@ -672,7 +677,7 @@ describe('RPCClient', function(){
 
             try {
                 await cli.connect();
-                assert.equal(shake.query.get('x-test'), 'abc');
+                equal(shake.query.get('x-test'), 'abc');
 
             } finally {
                 cli.close();
@@ -705,8 +710,8 @@ describe('RPCClient', function(){
             try {
                 await cli.connect();
                 const headers = await cli.call('GetHeaders');
-                assert.equal(headers['x-test'], 'abc');
-                assert.equal(shake.headers['x-test2'], 'Token xxx');
+                equal(headers['x-test'], 'abc');
+                equal(shake.headers['x-test2'], 'Token xxx');
 
             } finally {
                 cli.close();
@@ -745,12 +750,12 @@ describe('RPCClient', function(){
             try {
                 await cli.connect();
                 const headers = await cli.call('GetHeaders');
-                assert.equal(headers['x-test'], 'abc');
-                assert.equal(headers['x-test2'], 'Token xxx');
-                assert.equal(headers['x-test3'], 'Token zzz');
-                assert.equal(shake.headers['x-test'], 'abc');
-                assert.equal(shake.headers['x-test2'], 'Token xxx');
-                assert.equal(shake.headers['x-test3'], 'Token zzz');
+                equal(headers['x-test'], 'abc');
+                equal(headers['x-test2'], 'Token xxx');
+                equal(headers['x-test3'], 'Token zzz');
+                equal(shake.headers['x-test'], 'abc');
+                equal(shake.headers['x-test2'], 'Token xxx');
+                equal(shake.headers['x-test3'], 'Token zzz');
 
             } finally {
                 cli.close();
@@ -776,9 +781,9 @@ describe('RPCClient', function(){
                     cli.connect(),
                 ]);
 
-                assert.equal(call.status, 'fulfilled');
-                assert.equal(closed.status, 'fulfilled');
-                assert.equal(connected.status, 'rejected');
+                equal(call.status, 'fulfilled');
+                equal(closed.status, 'fulfilled');
+                equal(connected.status, 'rejected');
 
             } finally {
                 cli.close();
@@ -796,8 +801,8 @@ describe('RPCClient', function(){
             });
 
             try {
-                await assert.doesNotReject(cli.connect());
-                await assert.doesNotReject(cli.connect());
+                await doesNotReject(cli.connect());
+                await doesNotReject(cli.connect());
             } finally {
                 cli.close();
                 close();
@@ -819,7 +824,7 @@ describe('RPCClient', function(){
 
                 const [r1, r2] = await Promise.all([c1, c2]);
 
-                assert.strictEqual(r1, r2);
+                strictEqual(r1, r2);
 
             } finally {
                 cli.close();
@@ -846,7 +851,7 @@ describe('RPCClient', function(){
 
             try {
                 await cli.connect();
-                assert.equal(password, recPass.toString('utf8'));
+                equal(password, recPass.toString('utf8'));
 
             } finally {
                 cli.close();
@@ -878,7 +883,7 @@ describe('RPCClient', function(){
             try {
                 await cli.connect();
                 // console.log(Buffer.from(recPass, 'ascii'));
-                assert.equal(password.toString('hex'), recPass.toString('hex'));
+                equal(password.toString('hex'), recPass.toString('hex'));
 
             } finally {
                 cli.close();
@@ -903,8 +908,8 @@ describe('RPCClient', function(){
                 const serverClosePromise = once(serverClient, 'close');
                 await cli.close({code: 4001, reason: 'TEST'});
                 const [serverClose] = await serverClosePromise;
-                assert.equal(serverClose.code, 4001);
-                assert.equal(serverClose.reason, 'TEST');
+                equal(serverClose.code, 4001);
+                equal(serverClose.reason, 'TEST');
 
             } finally {
                 close();
@@ -927,7 +932,7 @@ describe('RPCClient', function(){
                     const serverClosePromise = once(serverClient, 'close');
                     await cli.close({code: testCode});
                     const [serverClose] = await serverClosePromise;
-                    assert.equal(serverClose.code, 1000);
+                    equal(serverClose.code, 1000);
                 }
 
             } finally {
@@ -946,13 +951,13 @@ describe('RPCClient', function(){
                 const p1 = cli.close({code: 4001, reason: 'FIRST'});
                 const p2 = cli.close({code: 4002, reason: 'SECOND'});
                 const [v1, v2] = await Promise.all([p1, p2]);
-                assert.equal(v1.code, 4001);
-                assert.equal(v1.reason, 'FIRST');
-                assert.equal(v2.code, 4001);
-                assert.equal(v2.reason, 'FIRST');
+                equal(v1.code, 4001);
+                equal(v1.reason, 'FIRST');
+                equal(v2.code, 4001);
+                equal(v2.reason, 'FIRST');
                 const v3 = await cli.close({code: 4003, reason: 'THIRD'});
-                assert.equal(v3.code, 4001);
-                assert.equal(v3.reason, 'FIRST');
+                equal(v3.code, 4001);
+                equal(v3.reason, 'FIRST');
 
             } finally {
                 close();
@@ -969,10 +974,10 @@ describe('RPCClient', function(){
                 const connPromise = cli.connect();
                 const closePromise = cli.close({code: 4001}); // 4001 should be ignored
                 const [connResult, closeResult] = await Promise.allSettled([connPromise, closePromise]);
-                assert.equal(connResult.status, 'rejected');
-                assert.equal(connResult.reason.name, 'AbortError');
-                assert.equal(closeResult.status, 'fulfilled');
-                assert.equal(closeResult.value?.code, 1001);
+                equal(connResult.status, 'rejected');
+                equal(connResult.reason.name, 'AbortError');
+                equal(closeResult.status, 'fulfilled');
+                equal(closeResult.value?.code, 1001);
             } finally {
                 close();
             }
@@ -987,7 +992,7 @@ describe('RPCClient', function(){
             try {
                 await cli.connect();
                 await cli.close();
-                await assert.doesNotReject(cli.close());
+                await doesNotReject(cli.close());
             } finally {
                 close();
             }
@@ -1005,8 +1010,8 @@ describe('RPCClient', function(){
                     cli.call('Sleep', {ms: 100}),
                     cli.close({awaitPending: false})
                 ]);
-                assert.equal(callResult.status, 'rejected');
-                assert.equal(closeResult.status, 'fulfilled');
+                equal(callResult.status, 'rejected');
+                equal(closeResult.status, 'fulfilled');
 
             } finally {
                 close();
@@ -1035,8 +1040,8 @@ describe('RPCClient', function(){
                     serverInitiatedCall,
                     cli.close({awaitPending: false})
                 ]);
-                assert.equal(callResult.status, 'rejected');
-                assert.equal(closeResult.status, 'fulfilled');
+                equal(callResult.status, 'rejected');
+                equal(closeResult.status, 'fulfilled');
 
             } finally {
                 close();
@@ -1057,10 +1062,10 @@ describe('RPCClient', function(){
                     cli.close({awaitPending: true})
                 ]);
 
-                assert.equal(rejectResult.status, 'rejected');
-                assert.equal(rejectResult.reason.details.code, 'TEST');
-                assert.equal(sleepResult.status, 'fulfilled');
-                assert.equal(closeResult.status, 'fulfilled');
+                equal(rejectResult.status, 'rejected');
+                equal(rejectResult.reason.details.code, 'TEST');
+                equal(sleepResult.status, 'fulfilled');
+                equal(closeResult.status, 'fulfilled');
 
             } finally {
                 close();
@@ -1092,9 +1097,9 @@ describe('RPCClient', function(){
                     setTimeout(1).then(() => cli.close({awaitPending: true})),
                 ]);
                 
-                assert.equal(callResult.status, 'fulfilled');
-                assert.equal(callResult.value, echoVal);
-                assert.equal(closeResult.status, 'fulfilled');
+                equal(callResult.status, 'fulfilled');
+                equal(callResult.value, echoVal);
+                equal(closeResult.status, 'fulfilled');
 
             } finally {
                 close();
@@ -1111,7 +1116,7 @@ describe('RPCClient', function(){
                 await cli.connect();
                 cli.close({code: 4000, force: true});
                 const [dc] = await once(cli, 'close');
-                assert.equal(dc.code, 1006);
+                equal(dc.code, 1006);
 
             } finally {
                 close();
@@ -1141,11 +1146,11 @@ describe('RPCClient', function(){
                 cli.close({code: 4000, force: true});
                 const dcp = once(cli, 'close');
 
-                await assert.rejects(clientInitiatedCall);
-                await assert.rejects(serverInitiatedCall);
+                await rejects(clientInitiatedCall);
+                await rejects(serverInitiatedCall);
                 
                 const [dc] = await dcp;
-                assert.equal(dc.code, 1006);
+                equal(dc.code, 1006);
                 
 
             } finally {
@@ -1176,8 +1181,8 @@ describe('RPCClient', function(){
             try {
                 await cli.connect();
                 const dc = await cli.close({code: 4000});
-                assert.equal(dc.code, 4000);
-                assert.equal(connectCount, 1);
+                equal(dc.code, 4000);
+                equal(connectCount, 1);
 
             } finally {
                 close();
@@ -1212,14 +1217,14 @@ describe('RPCClient', function(){
                     cli.call('Unknown'),
                 ]);
 
-                assert.equal(c1.status, 'fulfilled');
-                assert.equal(c1.value.val, '123');
-                assert.equal(c2.status, 'rejected');
-                assert.ok(c2.reason instanceof RPCTypeConstraintViolationError);
-                assert.equal(c2.reason.rpcErrorCode, 'TypeConstraintViolation');
-                assert.equal(c3.status, 'rejected');
-                assert.ok(c3.reason instanceof RPCProtocolError);
-                assert.equal(c3.reason.rpcErrorCode, 'ProtocolError');
+                equal(c1.status, 'fulfilled');
+                equal(c1.value.val, '123');
+                equal(c2.status, 'rejected');
+                ok(c2.reason instanceof RPCTypeConstraintViolationError);
+                equal(c2.reason.rpcErrorCode, 'TypeConstraintViolation');
+                equal(c3.status, 'rejected');
+                ok(c3.reason instanceof RPCProtocolError);
+                equal(c3.reason.rpcErrorCode, 'ProtocolError');
 
             } finally {
                 await cli.close();
@@ -1251,15 +1256,15 @@ describe('RPCClient', function(){
                     cli.call('UpdateFirmware', {location: "a", retrieveDate: "a"}),
                 ]);
 
-                assert.equal(c1.status, 'rejected');
-                assert.equal(c1.reason.rpcErrorCode, 'OccurrenceConstraintViolation');
-                assert.ok(c1.reason instanceof RPCOccurrenceConstraintViolationError);
-                assert.equal(c2.status, 'rejected');
-                assert.equal(c2.reason.rpcErrorCode, 'PropertyConstraintViolation');
-                assert.ok(c2.reason instanceof RPCPropertyConstraintViolationError);
-                assert.equal(c3.status, 'rejected');
-                assert.equal(c3.reason.rpcErrorCode, 'FormationViolation');
-                assert.ok(c3.reason instanceof RPCFormationViolationError);
+                equal(c1.status, 'rejected');
+                equal(c1.reason.rpcErrorCode, 'OccurrenceConstraintViolation');
+                ok(c1.reason instanceof RPCOccurrenceConstraintViolationError);
+                equal(c2.status, 'rejected');
+                equal(c2.reason.rpcErrorCode, 'PropertyConstraintViolation');
+                ok(c2.reason instanceof RPCPropertyConstraintViolationError);
+                equal(c3.status, 'rejected');
+                equal(c3.reason.rpcErrorCode, 'FormationViolation');
+                ok(c3.reason instanceof RPCFormationViolationError);
 
             } finally {
                 await cli.close();
@@ -1302,16 +1307,16 @@ describe('RPCClient', function(){
                     cli.call('Echo', {val: '5'}),
                 ]);
 
-                assert.equal(c1.status, 'rejected');
-                assert.ok(c1.reason instanceof RPCOccurenceConstraintViolationError);
-                assert.equal(c2.status, 'rejected');
-                assert.ok(c2.reason instanceof RPCTypeConstraintViolationError);
-                assert.equal(c3.status, 'rejected');
-                assert.ok(c3.reason instanceof RPCTypeConstraintViolationError);
-                assert.equal(c4.status, 'rejected');
-                assert.ok(c4.reason instanceof RPCTypeConstraintViolationError);
-                assert.equal(c5.status, 'fulfilled');
-                assert.equal(c5.value.val, '5');
+                equal(c1.status, 'rejected');
+                ok(c1.reason instanceof RPCOccurenceConstraintViolationError);
+                equal(c2.status, 'rejected');
+                ok(c2.reason instanceof RPCTypeConstraintViolationError);
+                equal(c3.status, 'rejected');
+                ok(c3.reason instanceof RPCTypeConstraintViolationError);
+                equal(c4.status, 'rejected');
+                ok(c4.reason instanceof RPCTypeConstraintViolationError);
+                equal(c5.status, 'fulfilled');
+                equal(c5.value.val, '5');
 
             } finally {
                 await cli.close();
@@ -1353,13 +1358,13 @@ describe('RPCClient', function(){
                 const [c2] = await once(cli, 'strictValidationFailure');
                 const [c3] = await once(cli, 'strictValidationFailure');
 
-                assert.equal(c1.error.rpcErrorCode, 'OccurenceConstraintViolation');
-                assert.equal(c2.error.rpcErrorCode, 'TypeConstraintViolation');
-                assert.equal(c3.error.rpcErrorCode, 'ProtocolError');
+                equal(c1.error.rpcErrorCode, 'OccurenceConstraintViolation');
+                equal(c2.error.rpcErrorCode, 'TypeConstraintViolation');
+                equal(c3.error.rpcErrorCode, 'ProtocolError');
 
-                assert.equal(calls, 3);
-                assert.equal(responses, 3);
-                assert.equal(uks, 0); // 'Unknown' handler should not be called
+                equal(calls, 3);
+                equal(responses, 3);
+                equal(uks, 0); // 'Unknown' handler should not be called
 
 
             } finally {
@@ -1403,16 +1408,16 @@ describe('RPCClient', function(){
                     cli.call('Echo', {val: '5'}),
                 ]);
 
-                assert.equal(c1.status, 'rejected');
-                assert.ok(c1.reason instanceof RPCOccurenceConstraintViolationError);
-                assert.equal(c2.status, 'rejected');
-                assert.ok(c2.reason instanceof RPCTypeConstraintViolationError);
-                assert.equal(c3.status, 'rejected');
-                assert.ok(c3.reason instanceof RPCTypeConstraintViolationError);
-                assert.equal(c4.status, 'rejected');
-                assert.ok(c4.reason instanceof RPCTypeConstraintViolationError);
-                assert.equal(c5.status, 'fulfilled');
-                assert.equal(c5.value.val, '5');
+                equal(c1.status, 'rejected');
+                ok(c1.reason instanceof RPCOccurenceConstraintViolationError);
+                equal(c2.status, 'rejected');
+                ok(c2.reason instanceof RPCTypeConstraintViolationError);
+                equal(c3.status, 'rejected');
+                ok(c3.reason instanceof RPCTypeConstraintViolationError);
+                equal(c4.status, 'rejected');
+                ok(c4.reason instanceof RPCTypeConstraintViolationError);
+                equal(c5.status, 'fulfilled');
+                equal(c5.value.val, '5');
 
             } finally {
                 await cli.close();
@@ -1445,17 +1450,17 @@ describe('RPCClient', function(){
                     cli.call('TestTenth', { val: 57.3 / 3 }),
                 ]);
 
-                assert.equal(c1.status, 'fulfilled');
-                assert.equal(c1.value.val, 1/10);
-                assert.equal(c2.status, 'fulfilled');
-                assert.equal(c2.value.val, 0.1/10);
-                assert.equal(c3.status, 'fulfilled');
-                assert.equal(c3.value.val, 9.1/10);
-                assert.equal(c4.status, 'rejected');
-                assert.ok(c4.reason instanceof RPCOccurenceConstraintViolationError);
-                assert.equal(c4.reason.details.errors[0].keyword, 'multipleOf');
-                assert.equal(c5.status, 'fulfilled');
-                assert.equal(c5.value.val, 57.3/3/10);
+                equal(c1.status, 'fulfilled');
+                equal(c1.value.val, 1/10);
+                equal(c2.status, 'fulfilled');
+                equal(c2.value.val, 0.1/10);
+                equal(c3.status, 'fulfilled');
+                equal(c3.value.val, 9.1/10);
+                equal(c4.status, 'rejected');
+                ok(c4.reason instanceof RPCOccurenceConstraintViolationError);
+                equal(c4.reason.details.errors[0].keyword, 'multipleOf');
+                equal(c5.status, 'fulfilled');
+                equal(c5.value.val, 57.3/3/10);
 
             } finally {
                 await cli.close();
@@ -1486,12 +1491,12 @@ describe('RPCClient', function(){
                     cli.call('Heartbeat', 1),
                 ]);
 
-                assert.equal(c1.status, 'fulfilled');
-                assert.ok('currentTime' in c1.value);
-                assert.equal(c2.status, 'rejected');
-                assert.ok(c2.reason instanceof RPCPropertyConstraintViolationError);
-                assert.equal(c3.status, 'rejected');
-                assert.ok(c3.reason instanceof RPCTypeConstraintViolationError);
+                equal(c1.status, 'fulfilled');
+                ok('currentTime' in c1.value);
+                equal(c2.status, 'rejected');
+                ok(c2.reason instanceof RPCPropertyConstraintViolationError);
+                equal(c3.status, 'rejected');
+                ok(c3.reason instanceof RPCTypeConstraintViolationError);
 
             } finally {
                 await cli.close();
@@ -1522,12 +1527,12 @@ describe('RPCClient', function(){
                     cli.call('Heartbeat', 1),
                 ]);
 
-                assert.equal(c1.status, 'fulfilled');
-                assert.ok('currentTime' in c1.value);
-                assert.equal(c2.status, 'rejected');
-                assert.ok(c2.reason instanceof RPCPropertyConstraintViolationError);
-                assert.equal(c3.status, 'rejected');
-                assert.ok(c3.reason instanceof RPCTypeConstraintViolationError);
+                equal(c1.status, 'fulfilled');
+                ok('currentTime' in c1.value);
+                equal(c2.status, 'rejected');
+                ok(c2.reason instanceof RPCPropertyConstraintViolationError);
+                equal(c3.status, 'rejected');
+                ok(c3.reason instanceof RPCTypeConstraintViolationError);
 
             } finally {
                 await cli.close();
@@ -1558,12 +1563,12 @@ describe('RPCClient', function(){
                     cli.call('Heartbeat', 1),
                 ]);
                 
-                assert.equal(c1.status, 'fulfilled');
-                assert.ok('currentTime' in c1.value);
-                assert.equal(c2.status, 'rejected');
-                assert.ok(c2.reason instanceof RPCPropertyConstraintViolationError);
-                assert.equal(c3.status, 'rejected');
-                assert.ok(c3.reason instanceof RPCTypeConstraintViolationError);
+                equal(c1.status, 'fulfilled');
+                ok('currentTime' in c1.value);
+                equal(c2.status, 'rejected');
+                ok(c2.reason instanceof RPCPropertyConstraintViolationError);
+                equal(c3.status, 'rejected');
+                ok(c3.reason instanceof RPCTypeConstraintViolationError);
 
             } finally {
                 await cli.close();
@@ -1596,8 +1601,8 @@ describe('RPCClient', function(){
                     cli.call('Heartbeat', {}),
                 ]);
                 
-                assert.equal(c1.status, 'rejected');
-                assert.equal(c1.reason.rpcErrorCode, 'FormationViolation');
+                equal(c1.status, 'rejected');
+                equal(c1.reason.rpcErrorCode, 'FormationViolation');
 
             } finally {
                 await cli.close();
@@ -1617,12 +1622,12 @@ describe('RPCClient', function(){
             try {
                 await cli.connect();
 
-                await assert.rejects(cli.call(1));
-                await assert.rejects(cli.call([]));
-                await assert.rejects(cli.call({}));
+                await rejects(cli.call(1));
+                await rejects(cli.call([]));
+                await rejects(cli.call({}));
 
                 const err = await cli.call(1).catch(e=>e);
-                assert.ok(err instanceof RPCFrameworkError);
+                ok(err instanceof RPCFrameworkError);
 
             } finally {
                 await cli.close();
@@ -1642,7 +1647,7 @@ describe('RPCClient', function(){
 
             try {
                 await cli.connect();
-                await assert.rejects(cli.call('Sleep', {ms: 50}), TimeoutError);
+                await rejects(cli.call('Sleep', {ms: 50}), TimeoutError);
             } finally {
                 await cli.close();
                 close();
@@ -1661,7 +1666,7 @@ describe('RPCClient', function(){
 
             try {
                 await cli.connect();
-                await assert.doesNotReject(cli.call('Sleep', {ms: 50}, {callTimeoutMs: 100}));
+                await doesNotReject(cli.call('Sleep', {ms: 50}, {callTimeoutMs: 100}));
             } finally {
                 await cli.close();
                 close();
@@ -1680,12 +1685,12 @@ describe('RPCClient', function(){
                 const promClose = cli.close({awaitPending: true});
                 const promSleep2 = cli.call('Sleep', {ms: 1000});
 
-                assert.equal(cli.state, CLOSING);
+                equal(cli.state, CLOSING);
 
                 await Promise.all([
-                    assert.doesNotReject(promClose),
-                    assert.doesNotReject(promSleep1),
-                    assert.rejects(promSleep2),
+                    doesNotReject(promClose),
+                    doesNotReject(promSleep1),
+                    rejects(promSleep2),
                 ]);
 
             } finally {
@@ -1704,8 +1709,8 @@ describe('RPCClient', function(){
                 cli.close();
                 const callPromise = cli.call('Sleep', {ms: 1000});
 
-                await assert.rejects(callPromise);
-                assert.equal(cli.state, CLOSING);
+                await rejects(callPromise);
+                equal(cli.state, CLOSING);
 
             } finally {
                 close();
@@ -1721,8 +1726,8 @@ describe('RPCClient', function(){
             try {
                 const callPromise = cli.call('Sleep', {ms: 1000});
 
-                await assert.rejects(callPromise);
-                assert.equal(cli.state, CLOSED);
+                await rejects(callPromise);
+                equal(cli.state, CLOSED);
 
             } finally {
                 close();
@@ -1739,9 +1744,9 @@ describe('RPCClient', function(){
                 cli.connect();
                 const resPromise = cli.call('Echo', 'TEST');
 
-                assert.equal(cli.state, CONNECTING);
-                await assert.doesNotReject(resPromise);
-                await assert.equal(await resPromise, 'TEST');
+                equal(cli.state, CONNECTING);
+                await doesNotReject(resPromise);
+                await equal(await resPromise, 'TEST');
 
             } finally {
                 await cli.close();
@@ -1762,12 +1767,12 @@ describe('RPCClient', function(){
                 
                 const callProm = cli.call('Sleep', {ms: 5000}, {signal: ac.signal});
                 ac.abort(reason);
-                await assert.rejects(callProm);
+                await rejects(callProm);
                 const abortedReason = await callProm.catch(err => err);
                 if (abortedReason.message !== '') {
                     // nodejs < 17.2.0 always sets AbortError message to ''
                     // because AbortController#abort(reason) did not exist at the time.
-                    assert.equal(reason, abortedReason.message);
+                    equal(reason, abortedReason.message);
                 }
 
             } finally {
@@ -1808,8 +1813,8 @@ describe('RPCClient', function(){
                     cli.call('Conc'),
                 ]);
 
-                assert.equal(mostConcurrent, 1);
-                assert.equal(totalCalls, 2);
+                equal(mostConcurrent, 1);
+                equal(totalCalls, 2);
 
             } finally {
                 await cli.close();
@@ -1852,8 +1857,8 @@ describe('RPCClient', function(){
                     cli.call('Conc'),
                 ]);
 
-                assert.equal(mostConcurrent, 3);
-                assert.equal(totalCalls, 5);
+                equal(mostConcurrent, 3);
+                equal(totalCalls, 5);
 
             } finally {
                 await cli.close();
@@ -1879,9 +1884,9 @@ describe('RPCClient', function(){
                 
                 const [mType, mId, mVal] = JSON.parse(bad.buffer.toString('utf8'));
 
-                assert.equal(mType, 3);
-                assert.deepEqual(mVal, echoPayload);
-                assert.equal(res, undefined);
+                equal(mType, 3);
+                deepEqual(mVal, echoPayload);
+                equal(res, undefined);
 
             } finally {
                 await cli.close();
@@ -1902,7 +1907,7 @@ describe('RPCClient', function(){
                 await cli.connect();
                 
                 const res = await cli.call('UnrecognisedMethod', 1, {noReply: true});
-                assert.equal(res, undefined);
+                equal(res, undefined);
 
             } finally {
                 await cli.close();
@@ -1924,7 +1929,7 @@ describe('RPCClient', function(){
             await cli.connect();
             close({code: 4050});
             const [dc] = await once(cli, 'close');
-            assert.equal(dc.code, 4050);
+            equal(dc.code, 4050);
 
         });
 
@@ -1940,9 +1945,9 @@ describe('RPCClient', function(){
             try {
                 const closePromise = once(cli, 'close');
                 await cli.connect();
-                await assert.rejects(cli.call('Sleep', {ms: 1000}));
+                await rejects(cli.call('Sleep', {ms: 1000}));
                 const [closeResult] = await closePromise;
-                assert.equal(closeResult.code, 4001);
+                equal(closeResult.code, 4001);
                 
             } finally {
                 await cli.close();
@@ -1978,11 +1983,11 @@ describe('RPCClient', function(){
                 const test1 = cli.call('Sleep', {ms: 1000});
                 const [dc1] = await once(cli, 'disconnect');
 
-                assert.equal(dc1.code, 4010);
-                await assert.rejects(test1);
+                equal(dc1.code, 4010);
+                await rejects(test1);
                 
                 const test2 = await cli.call('Echo', 'TEST2');
-                assert.equal(test2, 'TEST2');
+                equal(test2, 'TEST2');
 
             } finally {
                 await cli.close();
@@ -2021,11 +2026,11 @@ describe('RPCClient', function(){
                 const test1 = cli.call('Sleep', {ms: 1000});
                 const [dc1] = await once(cli, 'disconnect');
 
-                assert.equal(dc1.code, 4010);
-                await assert.rejects(test1);
+                equal(dc1.code, 4010);
+                await rejects(test1);
                 
                 const test2 = await cli.call('Echo', 'TEST2');
-                assert.equal(test2, 'TEST2');
+                equal(test2, 'TEST2');
 
             } finally {
                 await cli.close();
@@ -2056,7 +2061,7 @@ describe('RPCClient', function(){
             close();
 
             await once(cli, 'close');
-            assert.equal(reconCount, maxReconnects);
+            equal(reconCount, maxReconnects);
 
         });
 
@@ -2090,11 +2095,11 @@ describe('RPCClient', function(){
             try {
 
                 await cli.connect();
-                assert.equal(cli.protocol, 'a');
+                equal(cli.protocol, 'a');
                 const call1Prom = cli.call('Switcheroo');
-                await assert.rejects(call1Prom);
+                await rejects(call1Prom);
                 await once(cli, 'open');
-                assert.equal(cli.protocol, 'a');
+                equal(cli.protocol, 'a');
 
             } finally {
                 await cli.close();
@@ -2133,11 +2138,11 @@ describe('RPCClient', function(){
             try {
                 await cli.connect();
                 const call1Prom = cli.call('Switcheroo');
-                await assert.rejects(call1Prom);
+                await rejects(call1Prom);
                 
                 await once(cli, 'connecting');
                 const [dc] = await once(cli, 'close');
-                assert.equal(dc.code, 1001);
+                equal(dc.code, 1001);
 
             } finally {
                 server2.close();
@@ -2169,9 +2174,9 @@ describe('RPCClient', function(){
             close({code: 4060});
 
             const [closed] = await once(cli, 'close');
-            assert.equal(closed.code, 1001);
-            assert.equal(timesOpened, 1);
-            assert.equal(timesConnecting, 4); // original + 3 reconnects
+            equal(closed.code, 1001);
+            equal(timesOpened, 1);
+            equal(timesConnecting, 4); // original + 3 reconnects
 
         });
 
@@ -2199,7 +2204,7 @@ describe('RPCClient', function(){
             try {
                 await cli.connect();
                 const [closed] = await once(cli, 'close');
-                assert.equal(closed.code, 1002);
+                equal(closed.code, 1002);
 
             } finally {
                 await cli.close();
@@ -2237,7 +2242,7 @@ describe('RPCClient', function(){
                 await prom;
                 cli.close({code: 4060});
                 const [closed] = await once(cli, 'close');
-                assert.equal(closed.code, 4060);
+                equal(closed.code, 4060);
 
             } finally {
                 await cli.close();
@@ -2267,12 +2272,12 @@ describe('RPCClient', function(){
                     });
 
                     await cli.connect();
-                    assert.equal(cli.protocol, 'b');
+                    equal(cli.protocol, 'b');
                     cli.handle('Test', resolve);
                 });
 
-                assert.equal(res.method, 'Test');
-                assert.equal(res.params.val, 123);
+                equal(res.method, 'Test');
+                equal(res.params.val, 123);
 
             } finally {
                 await cli.close();
@@ -2303,7 +2308,7 @@ describe('RPCClient', function(){
                     once(cli, 'close').then(resolve);
                 });
 
-                assert.equal(dc.code, 4050);
+                equal(dc.code, 4050);
 
             } finally {
                 await cli.close();
@@ -2330,7 +2335,7 @@ describe('RPCClient', function(){
             try {
                 await cli.connect();
                 
-                await assert.rejects(cli.call('NoReply', 123, {callTimeoutMs: 50}), TimeoutError);
+                await rejects(cli.call('NoReply', 123, {callTimeoutMs: 50}), TimeoutError);
 
             } finally {
                 await cli.close();
@@ -2366,10 +2371,10 @@ describe('RPCClient', function(){
                 const {messageId} = await cli.call('Manual');
                 const [callOut] = await callOutProm;
                 
-                assert.equal(callOut.outbound, true);
-                assert.equal(callOut.payload[0], 2);
-                assert.equal(callOut.payload[1], messageId);
-                assert.equal(callOut.payload[2], 'Manual');
+                equal(callOut.outbound, true);
+                equal(callOut.payload[0], 2);
+                equal(callOut.payload[1], messageId);
+                equal(callOut.payload[2], 'Manual');
 
             } finally {
                 await cli.close();
@@ -2409,11 +2414,11 @@ describe('RPCClient', function(){
             try {
                 await cli.connect();
 
-                assert.equal(await cli.call('ResolveEarly'), "early");
+                equal(await cli.call('ResolveEarly'), "early");
                 const err = await cli.call('RejectEarly').catch(e=>e);
-                assert.equal(err.message, "early");
-                await assert.rejects(cli.call('RejectBeforeReturn'));
-                assert.equal(await cli.call("ResolveBeforeThrow"), "early");
+                equal(err.message, "early");
+                await rejects(cli.call('RejectBeforeReturn'));
+                equal(await cli.call("ResolveBeforeThrow"), "early");
 
             } finally {
                 await cli.close();
@@ -2449,10 +2454,10 @@ describe('RPCClient', function(){
                     cli.call('Any3'),
                 ]);
 
-                assert.equal(runs, 1);
-                assert.equal(res[0].value, 'Any1');
-                assert.equal(res[1].reason.rpcErrorCode, 'NotImplemented');
-                assert.equal(res[2].reason.rpcErrorCode, 'NotImplemented');
+                equal(runs, 1);
+                equal(res[0].value, 'Any1');
+                equal(res[1].reason.rpcErrorCode, 'NotImplemented');
+                equal(res[2].reason.rpcErrorCode, 'NotImplemented');
                 
             } finally {
                 await cli.close();
@@ -2483,10 +2488,10 @@ describe('RPCClient', function(){
                     cli.call('Echo', 'TEST'),
                 ]);
 
-                assert.equal(runs, 1);
-                assert.equal(res[0].value, 1);
-                assert.equal(res[1].reason.rpcErrorCode, 'NotImplemented');
-                assert.equal(res[2].value, 'TEST');
+                equal(runs, 1);
+                equal(res[0].value, 1);
+                equal(res[1].reason.rpcErrorCode, 'NotImplemented');
+                equal(res[2].value, 'TEST');
                 
             } finally {
                 await cli.close();
@@ -2526,11 +2531,11 @@ describe('RPCClient', function(){
                     cli.call('Unknown'),
                 ]);
 
-                assert.equal(runs, 1);
-                assert.equal(res[0].value, 1);
-                assert.equal(res[1].reason.rpcErrorCode, 'NotImplemented');
-                assert.equal(res[2].reason.rpcErrorCode, 'NotImplemented');
-                assert.equal(res[3].reason.rpcErrorCode, 'NotImplemented');
+                equal(runs, 1);
+                equal(res[0].value, 1);
+                equal(res[1].reason.rpcErrorCode, 'NotImplemented');
+                equal(res[2].reason.rpcErrorCode, 'NotImplemented');
+                equal(res[3].reason.rpcErrorCode, 'NotImplemented');
                 
             } finally {
                 await cli.close();
@@ -2560,8 +2565,8 @@ describe('RPCClient', function(){
                 await once(cli, 'ping');
                 const fin = Date.now() - start;
                 const {code} = await cli.close({code: 4050});
-                assert.ok((fin >= pingIntervalMs) && (fin <= pingIntervalMs * 2), `Ping arrived after ${fin}ms instead of ${pingIntervalMs}ms as expected`);
-                assert.equal(code, 4050);
+                ok((fin >= pingIntervalMs) && (fin <= pingIntervalMs * 2), `Ping arrived after ${fin}ms instead of ${pingIntervalMs}ms as expected`);
+                equal(code, 4050);
 
             } finally {
                 close();
@@ -2588,7 +2593,7 @@ describe('RPCClient', function(){
 
                 await cli.connect();
                 const [dc] = await once(cli, 'close');
-                assert.equal(dc.code, 1006);
+                equal(dc.code, 1006);
 
             } finally {
                 close();
@@ -2623,7 +2628,7 @@ describe('RPCClient', function(){
 
                 await cli.connect();
                 const [dc] = await once(cli, 'disconnect');
-                assert.equal(dc.code, 1006);
+                equal(dc.code, 1006);
                 await once(cli, 'open');
                 await once(cli, 'ping');
 
@@ -2666,7 +2671,7 @@ describe('RPCClient', function(){
                 await cli.connect();
                 await once(cli, 'close');
                 // we shouldn't have pinged, because of the activity sent from the server
-                assert.equal(pings, 0);
+                equal(pings, 0);
             } finally {
                 await cli.close();
                 close();
@@ -2704,7 +2709,7 @@ describe('RPCClient', function(){
                 await cli.connect();
                 await once(cli, 'close');
                 // we should have pinged multiple times, despite the activity sent from the server
-                assert.ok(pings > 0);
+                ok(pings > 0);
             } finally {
                 await cli.close();
                 close();
@@ -2740,7 +2745,7 @@ describe('RPCClient', function(){
                 await cli.connect();
                 await once(cli, 'close');
                 // we shouldn't have pinged, because of the activity sent from the server
-                assert.equal(pings, 0);
+                equal(pings, 0);
             } finally {
                 await cli.close();
                 close();
@@ -2775,7 +2780,7 @@ describe('RPCClient', function(){
                 await cli.connect();
                 await once(cli, 'close');
                 // we should have pinged multiple times, despite the activity sent from the server
-                assert.ok(pings > 0);
+                ok(pings > 0);
             } finally {
                 await cli.close();
                 close();
@@ -2803,11 +2808,11 @@ describe('RPCClient', function(){
                 const badProm = once(cli, 'badMessage');
                 await cli.connect();
                 const [bad] = await badProm;
-                assert.equal(bad.buffer.toString('utf8'), 'x');
-                assert.equal(bad.error.rpcErrorCode, 'RpcFrameworkError');
-                assert.equal(bad.response[0], 4);
-                assert.equal(bad.response[1], '-1');
-                assert.equal(bad.response[2], 'RpcFrameworkError');
+                equal(bad.buffer.toString('utf8'), 'x');
+                equal(bad.error.rpcErrorCode, 'RpcFrameworkError');
+                equal(bad.response[0], 4);
+                equal(bad.response[1], '-1');
+                equal(bad.response[2], 'RpcFrameworkError');
                 
             } finally {
                 await cli.close();
@@ -2839,12 +2844,12 @@ describe('RPCClient', function(){
 
             try {
                 await cli.connect();
-                assert.equal(await cli.call('GetID'), 'X');
+                equal(await cli.call('GetID'), 'X');
 
                 cli.reconfigure({identity: 'Y'});
                 await cli.call('Drop').catch(()=>{});
                 
-                assert.equal(await cli.call('GetID'), 'X');
+                equal(await cli.call('GetID'), 'X');
 
             } finally {
                 await cli.close();
@@ -2868,13 +2873,13 @@ describe('RPCClient', function(){
 
             try {
                 await cli.connect();
-                assert.equal(await cli.call('GetID'), 'X');
+                equal(await cli.call('GetID'), 'X');
 
                 cli.reconfigure({identity: 'Y'});
                 await cli.close();
                 await cli.connect();
                 
-                assert.equal(await cli.call('GetID'), 'Y');
+                equal(await cli.call('GetID'), 'Y');
 
             } finally {
                 await cli.close();
@@ -2910,8 +2915,8 @@ describe('RPCClient', function(){
                 cli.reconfigure({callConcurrency: 3});
                 const cc3 = await Promise.all(arr.map(x => cli.call('Max')));
 
-                assert.equal(Math.max(...cc1), 1);
-                assert.equal(Math.max(...cc3), 3);
+                equal(Math.max(...cc1), 1);
+                equal(Math.max(...cc3), 3);
 
             } finally {
                 await cli.close();
@@ -2956,8 +2961,8 @@ describe('RPCClient', function(){
                 await once(cli, 'open');
                 const r2 = Date.now() - t2;
                 
-                assert.ok(r1 < 20);
-                assert.ok(r2 > 20);
+                ok(r1 < 20);
+                ok(r2 > 20);
 
             } finally {
                 await cli.close();
@@ -2989,8 +2994,8 @@ describe('RPCClient', function(){
                 await once(cli, 'ping');
                 const r2 = Date.now() - t2;
 
-                assert.ok(r1 > 20);
-                assert.ok(r2 < 20);
+                ok(r1 > 20);
+                ok(r2 < 20);
 
             } finally {
                 await cli.close();

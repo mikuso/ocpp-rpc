@@ -1,0 +1,20 @@
+/* Always expand navigation group accordions, regardless of open attribute or localStorage state */
+nav.tsd-navigation details.tsd-accordion > div.tsd-accordion-details {
+    display: block !important;
+}
+
+/* Override UA stylesheet which hides details:not([open]) > :not(summary) */
+nav.tsd-navigation details.tsd-accordion:not([open]) > div.tsd-accordion-details {
+    display: block !important;
+}
+
+/* Hide the toggle chevron arrows since groups are always open */
+nav.tsd-navigation details.tsd-accordion > summary svg {
+    display: none;
+}
+
+/* Remove the summary cursor/hover affordance since it's no longer interactive */
+nav.tsd-navigation details.tsd-accordion > summary {
+    pointer-events: none;
+    cursor: default;
+}
