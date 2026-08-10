@@ -4,8 +4,8 @@
   "main": "index.js",
   "types": "./types/index.d.ts",
   "scripts": {
-    "test": "mocha",
-    "coverage": "c8 --reporter=lcov --reporter=text mocha",
+    "test": "mocha --parallel",
+    "coverage": "c8 --reporter=lcov --reporter=text mocha --parallel",
     "build": "npm run build:types",
     "build:types": "tsc -p tsconfig.json",
     "docs": "npm run build:types && typedoc"

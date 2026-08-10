@@ -427,6 +427,22 @@ describe('RPCServer', function(){
 
         });
 
+        it('should disconnect client if auth throws', async () => {
+
+            const {endpoint, close, server} = await createServer();
+            server.auth((accept, reject) => {
+                throw Error("Auth throws");
+            });
+            const cli = new RPCClient({endpoint, identity: 'X'});
+    
+            const err = await cli.connect().catch(e=>e);
+            ok(err instanceof UnexpectedHttpResponse);
+            equal(err.code, 500);
+
+            close();
+
+        });
+
         it("should disconnect client if server closes during auth", async () => {
 
             const {endpoint, close, server} = await createServer();
@@ -801,7 +817,7 @@ describe('RPCServer', function(){
 
         it('should automatically ping clients', async () => {
             
-            const pingIntervalMs = 40;
+            const pingIntervalMs = 75;
             let pingResolve;
             let pingPromise = new Promise(r => {pingResolve = r;})
 
