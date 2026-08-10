@@ -1,6 +1,9 @@
 {
     "entryPoints": ["./index.js"],
-    "plugin": ["./docs-src/typedoc-plugin-events.mjs"],
+    "plugin": [
+        "./docs-src/typedoc-plugin-events.mjs",
+        "./docs-src/typedoc-plugin-prop-defaults.mjs"
+    ],
     "out": "docs",
     "tsconfig": "./tsconfig.json",
     "name": "ocpp-rpc",

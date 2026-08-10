@@ -6,17 +6,13 @@ export * from './lib/symbols.js';
 export { createRPCError } from './lib/util.js';
 export { createValidator } from './lib/validator.js';
 
-/** @typedef {import('./lib/client.js').ConnectionState} ConnectionState
- * @group Types */
-
-/** @typedef {import('./lib/client.js').RPCClientOptions} RPCClientOptions
- * @group Types */
-
-/** @typedef {import('./lib/server-client.js').Handshake} Handshake
- * @group Types */
-
-/** @typedef {import('./lib/server.js').AuthCallback} AuthCallback
- * @group Types */
-
-/** @typedef {import('./lib/server.js').RPCServerOptions} RPCServerOptions
- * @group Types */
+/** @typedef {import('./lib/client.js').ConnectionState} ConnectionState */
+/** @typedef {import('./lib/client.js').RPCClientOptions} RPCClientOptions */
+/** @typedef {import('./lib/client.js').MsgCall} MsgCall */
+/** @typedef {import('./lib/client.js').MsgCallResult} MsgCallResult */
+/** @typedef {import('./lib/client.js').MsgCallError} MsgCallError */
+/** @typedef {import('./lib/server-client.js').Handshake} Handshake */
+/** @typedef {import('./lib/server.js').AuthCallback} AuthCallback */
+/** @typedef {import('./lib/server.js').ClientAcceptCallback} ClientAcceptCallback */
+/** @typedef {import('./lib/server.js').ClientRejectCallback} ClientRejectCallback */
+/** @typedef {import('./lib/server.js').RPCServerOptions} RPCServerOptions */
