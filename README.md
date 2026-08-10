@@ -41,13 +41,17 @@ npm install ocpp-rpc
 
 ## Usage Examples
 
-See the **[Getting Started](https://mikuso.github.io/ocpp-rpc/Getting_Started.html)** guide in the API docs.
+See the **[Getting Started](https://mikuso.github.io/ocpp-rpc/documents/Getting_Started.html)** guide in the API docs.
 
 ## API Docs
 
-Full **[API documentation and guides](https://mikuso.github.io/ocpp-rpc/)** are available.
+Full **[API documentation and guides](https://mikuso.github.io/ocpp-rpc/modules.html)** are available.
+
+## Upgrading from an older version?
+
+See the **[Upgrade guide](https://mikuso.github.io/ocpp-rpc/documents/Upgrading_previous_versions.html)**.
 
 ## Licenses
 
 - **ocpp-rpc:** Licensed under the [MIT License](./LICENSE.md)
-- **OCPP schemas:** Licensed from the Open Charge Alliance under [Creative Commons Attribution-NoDerivatives 4.0 International (CC BY-ND 4.0)](./schemas/openchargealliance/LICENSE.md).
+- **OCPP 1.6, OCPP 2.0.1 & OCPP 2.1 JSON schemas:** Licensed from the Open Charge Alliance under [Creative Commons Attribution-NoDerivatives 4.0 International (CC BY-ND 4.0)](./schemas/openchargealliance/LICENSE.md).

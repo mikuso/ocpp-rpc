@@ -25,12 +25,14 @@ const server = new RPCServer({
 You can also limit strict mode to specific protocols:
 
 ```js
-// Only validate ocpp1.6; allow 'proprietary0.1' through without validation
+// Only validate ocpp1.6; allow 'proprietary0.1' without validation
 const server = new RPCServer({
     protocols: ['ocpp1.6', 'proprietary0.1'],
     strictMode: ['ocpp1.6'],
 });
 ```
+
+The schema used for validation is determined by whichever subprotocol is agreed between client and server.
 
 ## Effects of Strict Mode
 
@@ -57,8 +59,11 @@ The following subprotocols are validated out of the box:
 
 ## Adding Custom Schemas
 
-Use `createValidator()` to create a validator for a subprotocol not in the table above, then pass
-it via `strictModeValidators`:
+If you want to use `strictMode` with a subprotocol which is not included in the list above, you will need to add the appropriate schemas yourself.
+To do this, you must create a `Validator` for each subprotocol and pass them to the RPC constructor using the `strictModeValidators` option.
+(It is also possible to override the built-in validators this way.)
+
+To create a Validator, you should pass the name of the subprotocol and a well-formed json schema to `createValidator()`:
 
 ```js
 import { RPCServer, createValidator } from 'ocpp-rpc';
@@ -67,7 +72,7 @@ import { RPCServer, createValidator } from 'ocpp-rpc';
 const echoValidator = createValidator('echo1.0', [
     {
         $schema: "http://json-schema.org/draft-07/schema",
-        $id: "urn:Echo.req",
+        $id: "urn:ocpp-rpc:Echo.req",
         type: "object",
         properties: { val: { type: "string" } },
         additionalProperties: false,
@@ -75,7 +80,7 @@ const echoValidator = createValidator('echo1.0', [
     },
     {
         $schema: "http://json-schema.org/draft-07/schema",
-        $id: "urn:Echo.conf",
+        $id: "urn:ocpp-rpc:Echo.conf",
         type: "object",
         properties: { val: { type: "string" } },
         additionalProperties: false,
@@ -89,8 +94,12 @@ const server = new RPCServer({
     strictMode: true,
 });
 
-// client.call('Echo', {val: 'foo'}); // returns {val: 'foo'}
-// client.call('Echo', ['bar']);       // throws RPCError (array is invalid)
+client.handle('Echo', async ({params}) => {
+    return params; // return the input back to the caller
+});
+
+// await client.call('Echo', {val: 'foo'}); // returns {val: 'foo'}
+// await client.call('Echo', ['bar']);      // throws RPCError (array is invalid)
 ```
 
 Once created, a `Validator` instance is immutable and can be reused across multiple servers or clients.

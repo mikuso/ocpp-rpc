@@ -7,7 +7,9 @@ group: Guides
 ## From 2.X to 3.0
 
 Breaking changes:
-* Custom schemas made for version 2.X no longer work for 3.0.0. The urn of each JSON Schema `$id` now requires an nid component (as per spec, and enforced by Ajv >= 8.16). This has always been a requirement that was ignored by ocpp-rpc. See examples of working schema urns in `schemas/test/` and refer to the new options for [`createValidator()`](../functions/createValidator.html) to specify the nid you wish to use.
+* This module now requires Nodejs >= 20.
+* This module now uses ESM instead of the CJS module system. (This should not affect your project if you are using Nodejs >= 20.19.0).
+* Custom schemas made for version 2.X no longer work for 3.0.0. The urn of each JSON Schema `$id` now requires an nid component (as per spec, and enforced by Ajv >= 8.16). This has always been a requirement that was ignored by ocpp-rpc. See examples of working schema urns in `schemas/test/` and refer to the new options for [`createValidator()`](../functions/createValidator.html) to specify the nid you wish to use. Standard OCPP schemas should continue to work as before.
 
 ## From 1.X to 2.0
 

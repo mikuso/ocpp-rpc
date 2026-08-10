@@ -12,7 +12,7 @@ npm install ocpp-rpc
 
 ## Barebones OCPP1.6J Server
 
-A minimal server that accepts OCPP1.6J clients, validates their requests with strict mode, and handles the core message types:
+A minimal server that accepts OCPP1.6J clients, validates their requests with strict mode, and handles some core message types:
 
 ```js
 import { RPCServer, createRPCError } from 'ocpp-rpc';
