@@ -19,6 +19,12 @@ const __dirname = path.dirname(__filename);
 describe('RPCClient', function(){
     this.timeout(500);
 
+    /**
+     * 
+     * @param {import('../lib/server.js').RPCServerOptions} options 
+     * @param {*} extra 
+     * @returns 
+     */
     async function createServer(options = {}, extra = {}) {
         const server = new RPCServer(options);
         const httpServer = await server.listen(0);
@@ -1214,10 +1220,90 @@ describe('RPCClient', function(){
 
     });
 
+    describe('#send', function() {
+
+        it("should reject with 'RPCError' after sending invalid payload with client strictMode", async () => {
+            
+            const {endpoint, close, server} = await createServer({
+                protocols: ['echo1.0']
+            });
+            const cli = new RPCClient({
+                endpoint,
+                identity: 'X',
+                protocols: ['echo1.0'],
+                strictModeValidators: [getEchoValidator()],
+                strictMode: true,
+            });
+
+            try {
+                await cli.connect();
+
+                const [c1, c2, c3] = await Promise.allSettled([
+                    cli.send('Echo', {val: '123'}),
+                    cli.send('Echo', {val: 123}),
+                    cli.send('Unknown'),
+                ]);
+
+                equal(c1.status, 'fulfilled');
+                equal(c1.value, undefined);
+
+                equal(c2.status, 'rejected');
+                ok(c2.reason instanceof RPCTypeConstraintViolationError);
+                equal(c2.reason.rpcErrorCode, 'TypeConstraintViolation');
+                
+                equal(c3.status, 'rejected');
+                ok(c3.reason instanceof RPCProtocolError);
+                equal(c3.reason.rpcErrorCode, 'ProtocolError');
+
+            } finally {
+                await cli.close();
+                close();
+            }
+
+        });
+
+        it("should not be blocked by outstanding calls", async () => {
+            
+            let sendArrivedBeforeBlockResolved = false;
+            const {endpoint, close, server} = await createServer({
+                callConcurrency: 1
+            }, {
+                withClient: (client) => {
+                    client.handle('Block', async ({params}) => {
+                        await setTimeout(params.ms);
+                        return sendArrivedBeforeBlockResolved;
+                    });
+                    client.handle('First', () => {
+                        sendArrivedBeforeBlockResolved = true;
+                    });
+                }
+            });
+            const cli = new RPCClient({
+                endpoint,
+                identity: 'X',
+            });
+
+            try {
+                await cli.connect();
+
+                const c1 = cli.call('Block', {ms: 50});
+                cli.send('First', {});
+                const res = await c1;
+
+                equal(res, true); // SEND arrived before Block resolved
+
+            } finally {
+                await cli.close();
+                close();
+            }
+
+        });
+
+    });
 
     describe('#call', function() {
 
-        it("should reject with 'RPCError' after invalid payload with client strictMode", async () => {
+        it("should reject with 'RPCError' after sending invalid payload with client strictMode", async () => {
             
             const {endpoint, close, server} = await createServer({
                 protocols: ['echo1.0']
@@ -1353,7 +1439,7 @@ describe('RPCClient', function(){
                 protocols: ['echo1.0']
             }, {withClient: async (cli) => {
                 await cli.call('Echo', {bad: true}).catch(()=>{});
-                await cli.call('Echo').catch(()=>{});
+                await cli.call('Echo', {val: null}).catch(()=>{});
                 await cli.call('Unknown').catch(()=>{});
             }});
             const cli = new RPCClient({
