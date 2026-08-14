@@ -703,7 +703,7 @@ describe('RPCServer', function(){
             try {
                 
                 await cli1.connect();
-                const callP = cli1.call('Test');
+                const callP = cli1.call('Test', {});
                 await callReceivedPromise;
                 close({awaitPending: true});
                 const [callResult, connResult] = await Promise.allSettled([

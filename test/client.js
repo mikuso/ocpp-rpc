@@ -4,7 +4,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { once } from 'events';
 import { RPCClient } from "../lib/client.js";
-import { TimeoutError, RPCFrameworkError, RPCError, RPCProtocolError, RPCTypeConstraintViolationError, RPCOccurenceConstraintViolationError, RPCPropertyConstraintViolationError, RPCOccurrenceConstraintViolationError, RPCFormationViolationError } from '../lib/errors.js';
+import { TimeoutError, RPCFrameworkError, RPCError, RPCProtocolError, RPCTypeConstraintViolationError, RPCOccurenceConstraintViolationError, RPCPropertyConstraintViolationError, RPCOccurrenceConstraintViolationError, RPCFormationViolationError, RPCInternalError, RPCNotImplementedError } from '../lib/errors.js';
 import { RPCServer } from "../lib/server.js";
 import { setTimeout } from 'timers/promises';
 import { createValidator } from '../lib/validator.js';
@@ -412,10 +412,11 @@ describe('RPCClient', function(){
             }
         });
 
-        it("should emit 'badMessage' with 'MessageTypeNotSupported' when message type unrecognised", async () => {
+        it("should drop messages with unrecognised message type", async () => {
+            const rawPayload = '[0, "123", "Echo", {}]';
             const {endpoint, close, server} = await createServer({}, {
                 withClient: cli => {
-                    cli.sendRaw('[0, "123", "Echo", {}]');
+                    cli.sendRaw(rawPayload);
                 }
             });
             const cli = new RPCClient({
@@ -425,8 +426,31 @@ describe('RPCClient', function(){
 
             try {
                 await cli.connect();
-                const [badMsg] = await once(cli, 'badMessage');
-                equal(badMsg.error.rpcErrorCode, 'MessageTypeNotSupported');
+                const timeout = AbortSignal.timeout(100);
+
+                const [message, handleErr, badMsg, call, callErr, res] = await Promise.allSettled([
+                    once(cli, 'message', {signal: timeout}),
+                    once(cli, 'messageHandlingError', {signal: timeout}),
+                    once(cli, 'badMessage', {signal: timeout}),
+                    once(cli, 'call', {signal: timeout}),
+                    once(cli, 'callError', {signal: timeout}),
+                    once(cli, 'response', {signal: timeout}),
+                ]);
+                
+                equal(message.status, 'fulfilled');
+                equal(message.value[0].outbound, false);
+                equal(message.value[0].message, rawPayload);
+                equal(handleErr.status, 'fulfilled');
+                equal(handleErr.value[0].rpcErrorCode, 'MessageTypeNotSupported');
+                equal(badMsg.status, 'rejected');
+                equal(badMsg.reason.name, 'AbortError');
+                equal(call.status, 'rejected');
+                equal(call.reason.name, 'AbortError');
+                equal(callErr.status, 'rejected');
+                equal(callErr.reason.name, 'AbortError');
+                equal(res.status, 'rejected');
+                equal(res.reason.name, 'AbortError');
+
             } finally {
                 await cli.close();
                 close();
@@ -476,10 +500,8 @@ describe('RPCClient', function(){
         });
 
         it("should emit 'badMessage' with 'RpcFrameworkError' when message ID is repeated", async () => {
-            const {endpoint, close, server} = await createServer({}, {
-                withClient: cli => {
-
-                }
+            const {endpoint, close, server} = await createServer({
+                callConcurrency: Infinity,
             });
             const cli = new RPCClient({
                 endpoint,
@@ -489,19 +511,51 @@ describe('RPCClient', function(){
             try {
                 await cli.connect();
                 
-                cli.sendRaw('[2, "123", "Sleep", {"ms":20}]');
-                cli.sendRaw('[2, "123", "Sleep", {"ms":20}]');
-
-                const [badMsg] = await once(cli, 'badMessage');
+                cli.sendRaw('[2, "123", "Sleep", {"ms":500}]');
+                cli.sendRaw('[2, "123", "Sleep", {"ms":500}]');
+                
+                const [badMsg] = await once(cli, 'badMessage', {signal: AbortSignal.timeout(100)});
                 equal(badMsg.error.rpcErrorCode, 'RpcFrameworkError');
                 equal(badMsg.error.details.msgId, '123');
                 equal(badMsg.error.details.errorCode, 'RpcFrameworkError');
                 equal(badMsg.error.details.errorDescription, 'Already processing a message with message ID: 123');
+
             } finally {
                 await cli.close();
                 close();
             }
         });
+
+
+        it("should emit 'error' event if a message handler throws", async () => {
+            const {endpoint, close, server} = await createServer({});
+            const cli = new RPCClient({
+                endpoint,
+                identity: 'X',
+            });
+
+            try {
+                await cli.connect();
+
+                const errorMessage = "Message handler threw";
+                
+                cli.on('message', () => {
+                    throw Error(errorMessage);
+                });
+
+                const [caughtErr, echoRes] = await Promise.allSettled([
+                    once(cli, 'error', {signal: AbortSignal.timeout(100)}),
+                    cli.call('Echo', {val: 'Hello'}),
+                ]);
+
+                equal(caughtErr.value[0].cause.message, errorMessage);
+
+            } finally {
+                await cli.close();
+                close();
+            }
+        });
+
     });
 
     describe('#connect', function(){
@@ -1077,7 +1131,7 @@ describe('RPCClient', function(){
 
         });
 
-        it('should wait for all outbound calls to settle when {awaitPending: true}', async () => {
+        it('should wait for all outbound calls to settle when closing with {awaitPending: true}', async () => {
 
             const {endpoint, close, server} = await createServer({respondWithDetailedErrors: true});
             const cli = new RPCClient({endpoint, identity: 'X', callConcurrency: 2});
@@ -1101,7 +1155,7 @@ describe('RPCClient', function(){
 
         });
 
-        it('should wait for all inbound calls to settle when {awaitPending: true}', async () => {
+        it('should wait for all inbound calls to settle when closing with {awaitPending: true}', async () => {
             
             const echoVal = 'TEST123';
             let serverInitiatedCall = null;
@@ -1222,46 +1276,6 @@ describe('RPCClient', function(){
 
     describe('#send', function() {
 
-        it("should reject with 'RPCError' after sending invalid payload with client strictMode", async () => {
-            
-            const {endpoint, close, server} = await createServer({
-                protocols: ['echo1.0']
-            });
-            const cli = new RPCClient({
-                endpoint,
-                identity: 'X',
-                protocols: ['echo1.0'],
-                strictModeValidators: [getEchoValidator()],
-                strictMode: true,
-            });
-
-            try {
-                await cli.connect();
-
-                const [c1, c2, c3] = await Promise.allSettled([
-                    cli.send('Echo', {val: '123'}),
-                    cli.send('Echo', {val: 123}),
-                    cli.send('Unknown'),
-                ]);
-
-                equal(c1.status, 'fulfilled');
-                equal(c1.value, undefined);
-
-                equal(c2.status, 'rejected');
-                ok(c2.reason instanceof RPCTypeConstraintViolationError);
-                equal(c2.reason.rpcErrorCode, 'TypeConstraintViolation');
-                
-                equal(c3.status, 'rejected');
-                ok(c3.reason instanceof RPCProtocolError);
-                equal(c3.reason.rpcErrorCode, 'ProtocolError');
-
-            } finally {
-                await cli.close();
-                close();
-            }
-
-        });
-
         it("should not be blocked by outstanding calls", async () => {
             
             let sendArrivedBeforeBlockResolved = false;
@@ -1299,11 +1313,186 @@ describe('RPCClient', function(){
 
         });
 
+        it("should throw with 'RPCError' after sending invalid payload with client strictMode", async () => {
+            
+            const {endpoint, close, server} = await createServer({
+                protocols: ['echo1.0']
+            });
+            const cli = new RPCClient({
+                endpoint,
+                identity: 'X',
+                protocols: ['echo1.0'],
+                strictModeValidators: [getEchoValidator()],
+                strictMode: true,
+            });
+
+            try {
+                await cli.connect();
+
+                doesNotThrow(() => {
+                    cli.send('Send', {val: '123'});
+                });
+                throws(() => {
+                    cli.send('Send', {val: 123});
+                });
+
+                try {
+                    cli.send('Unknown', {});
+                } catch (err) {
+                    ok(err instanceof RPCProtocolError);
+                    equal(err.message, "Schema 'urn:ocpp-rpc:Unknown' is missing from subprotocol schema 'echo1.0'");
+                }
+                
+            } finally {
+                await cli.close();
+                close();
+            }
+
+        });
+
+        it("should emit 'strictValidationFailure' when incoming send is rejected by strictMode", async () => {
+            // If an incoming send fails validation, then we should emit a strictValidationFailure.
+            // The call handler should not be triggered.
+            const {endpoint, close, server} = await createServer({
+                protocols: ['echo1.0'],
+                strictMode: false,
+            }, {withClient: async (cli) => {
+                cli.handle('Echo', ({params, reply}) => {
+                    reply(params);
+                    switch (params.val) {
+                        case '1': cli.send('Send', {bad: true}); break;
+                        case '2': cli.send('Send', {val: null}); break;
+                    }
+                });
+            }});
+            const cli = new RPCClient({
+                endpoint,
+                identity: 'X',
+                protocols: ['echo1.0'],
+                strictModeValidators: [getEchoValidator()],
+                strictMode: true,
+            });
+
+            try {
+                const timeoutSignal = AbortSignal.timeout(200);
+
+                cli.handle('Send', ({params}) => {});
+                await cli.connect();
+
+                const [svf1, c1] = await Promise.allSettled([
+                    once(cli, 'strictValidationFailure', {signal: timeoutSignal}),
+                    cli.call('Echo', {val: '1'}),
+                ]);
+
+                equal(svf1.status, 'fulfilled');
+                equal(svf1.value[0].outbound, false); // failure was an inbound SEND
+                equal(svf1.value[0].method, 'Send'); // This is definitely a validation error from sending 'Send' from the server side.
+                equal(svf1.value[0].isCall, true); // TODO: change this to something like msgType === MSG_SEND
+                ok(svf1.value[0].error instanceof RPCOccurrenceConstraintViolationError);
+
+
+                const [svf2, c2] = await Promise.allSettled([
+                    once(cli, 'strictValidationFailure', {signal: timeoutSignal}),
+                    cli.call('Echo', {val: '2'}),
+                ]);
+
+                equal(svf2.status, 'fulfilled');
+                equal(svf2.value[0].outbound, false); // failure was an inbound SEND
+                equal(svf2.value[0].method, 'Send'); // This is definitely a validation error from sending 'Send' from the server side.
+                equal(svf2.value[0].isCall, true); // TODO: change this to something like msgType === MSG_SEND
+                ok(svf2.value[0].error instanceof RPCTypeConstraintViolationError);
+
+            } finally {
+                await cli.close();
+                close();
+            }
+
+        });
+
+        it("should emit 'messageHandlingError' when incoming send has no configured handler", async () => {
+            const {endpoint, close, server} = await createServer({
+
+            }, {withClient: async (cli) => {
+                cli.handle('SendMe', ({params, reply}) => {
+                    cli.send('Unknown', {});
+                });
+            }});
+            const cli = new RPCClient({
+                endpoint,
+                identity: 'X',
+            });
+
+            try {
+                const timeoutSignal = AbortSignal.timeout(200);
+
+                let uks = 0;
+                await cli.connect();
+
+                const [err, res] = await Promise.allSettled([
+                    once(cli, 'messageHandlingError', {signal: timeoutSignal}),
+                    cli.call('SendMe', {val: '3'}),
+                ]);
+
+                equal(err.status, 'fulfilled');
+                equal(err.value[0].details.method, 'Unknown');
+                ok(err.value[0] instanceof RPCNotImplementedError);
+
+                equal(uks, 0); // 'Unknown' handler should never be called
+
+            } finally {
+                await cli.close();
+                close();
+            }
+        });
+
+        it("should verify against a non-req/conf schema ID in strictMode", async () => {
+            
+            const {endpoint, close, server} = await createServer({
+                protocols: ['ocpp2.1'],
+                strictMode: false,
+            });
+            const cli = new RPCClient({
+                endpoint,
+                identity: 'X',
+                protocols: ['ocpp2.1'],
+                strictMode: true,
+            });
+
+            try {
+                await cli.connect();
+
+                doesNotThrow(() => {
+                    cli.send('NotifyPeriodicEventStream', {
+                        id: 1,
+                        pending: 0,
+                        basetime: new Date().toISOString(),
+                        data: [{
+                            t: 1,
+                            v: 'x',
+                        }],
+                    });
+                });
+                throws(() => {
+                    cli.send('NotifyPeriodicEventStream', {
+                        id: 1,
+                        pending: 0,
+                        basetime: new Date().toISOString(),
+                        data: [], // missing data entry
+                    });
+                });
+
+            } finally {
+                await cli.close();
+                close();
+            }
+
+        });
+
     });
 
     describe('#call', function() {
 
-        it("should reject with 'RPCError' after sending invalid payload with client strictMode", async () => {
+        it("should reject with RPCError after sending invalid payload with client strictMode", async () => {
             
             const {endpoint, close, server} = await createServer({
                 protocols: ['echo1.0']
@@ -1341,7 +1530,7 @@ describe('RPCClient', function(){
 
         });
 
-        it("should reject with 'RPCError' after invalid payload with server strictMode", async () => {
+        it("should reject with RPCError after invalid payload with server strictMode", async () => {
             
             const {endpoint, close, server} = await createServer({
                 protocols: ['ocpp1.6'],
@@ -1358,31 +1547,56 @@ describe('RPCClient', function(){
             try {
                 await cli.connect();
 
-                const [c1, c2, c3] = await Promise.allSettled([
-                    cli.call('UpdateFirmware', {}),
+                const [c1] = await Promise.allSettled([
                     cli.call('Heartbeat', {a:123}),
-                    cli.call('UpdateFirmware', {location: "a", retrieveDate: "a"}),
                 ]);
 
                 equal(c1.status, 'rejected');
-                equal(c1.reason.rpcErrorCode, 'OccurrenceConstraintViolation');
-                ok(c1.reason instanceof RPCOccurrenceConstraintViolationError);
-                equal(c2.status, 'rejected');
-                equal(c2.reason.rpcErrorCode, 'PropertyConstraintViolation');
-                ok(c2.reason instanceof RPCPropertyConstraintViolationError);
-                equal(c3.status, 'rejected');
-                equal(c3.reason.rpcErrorCode, 'FormationViolation');
-                ok(c3.reason instanceof RPCFormationViolationError);
+                equal(c1.reason.rpcErrorCode, 'PropertyConstraintViolation');
+                ok(c1.reason instanceof RPCPropertyConstraintViolationError);
 
             } finally {
                 await cli.close();
                 close();
             }
-
         });
 
-        
-        it("should reject with 'RPCProtocolError' after invalid response with strictMode", async () => {
+        it("should reject with deprecated error codes after invalid payload with server in ocpp1.6 strictMode", async () => {
+            
+            const {endpoint, close, server} = await createServer({
+                protocols: ['ocpp1.6'],
+                strictMode: true,
+            }, {withClient: cli => {
+                cli.handle(() => {});
+            }});
+            const cli = new RPCClient({
+                endpoint,
+                identity: 'X',
+                protocols: ['ocpp1.6'],
+            });
+
+            try {
+                await cli.connect();
+
+                const [c1, c2] = await Promise.allSettled([
+                    cli.call('UpdateFirmware', {}),
+                    cli.call('UpdateFirmware', {location: "a", retrieveDate: "a"}),
+                ]);
+
+                equal(c1.status, 'rejected');
+                equal(c1.reason.rpcErrorCode, 'OccurenceConstraintViolation');
+                ok(c1.reason instanceof RPCOccurenceConstraintViolationError);
+                equal(c2.status, 'rejected');
+                equal(c2.reason.rpcErrorCode, 'FormationViolation');
+                ok(c2.reason instanceof RPCFormationViolationError);
+
+            } finally {
+                await cli.close();
+                close();
+            }
+        });
+
+        it("should reject with RPCProtocolError after invalid response with strictMode", async () => {
             const {endpoint, close, server} = await createServer({
                 protocols: ['echo1.0']
             }, {withClient: cli => {
@@ -1416,7 +1630,7 @@ describe('RPCClient', function(){
                 ]);
 
                 equal(c1.status, 'rejected');
-                ok(c1.reason instanceof RPCOccurenceConstraintViolationError);
+                ok(c1.reason instanceof RPCOccurrenceConstraintViolationError);
                 equal(c2.status, 'rejected');
                 ok(c2.reason instanceof RPCTypeConstraintViolationError);
                 equal(c3.status, 'rejected');
@@ -1434,7 +1648,8 @@ describe('RPCClient', function(){
 
         
         it("should emit 'strictValidationFailure' when incoming call is rejected by strictMode", async () => {
-            
+            // If an incoming call fails validation, then we should emit a strictValidationFailure.
+            // The call handler should not be triggered.
             const {endpoint, close, server} = await createServer({
                 protocols: ['echo1.0']
             }, {withClient: async (cli) => {
@@ -1451,6 +1666,7 @@ describe('RPCClient', function(){
             });
 
             try {
+                const timeoutSignal = AbortSignal.timeout(100);
                 let uks = 0;
                 cli.handle('Echo', ({params}) => params);
                 cli.handle('Unknown', () => ++uks);
@@ -1462,17 +1678,18 @@ describe('RPCClient', function(){
                 cli.on('call', () => calls++);
                 cli.on('response', () => responses++);
 
-                const [c1] = await once(cli, 'strictValidationFailure');
-                const [c2] = await once(cli, 'strictValidationFailure');
-                const [c3] = await once(cli, 'strictValidationFailure');
+                const [c1] = await once(cli, 'strictValidationFailure', {signal: timeoutSignal});
+                const [c2] = await once(cli, 'strictValidationFailure', {signal: timeoutSignal});
+                const [c3] = await once(cli, 'strictValidationFailure', {signal: timeoutSignal});
 
-                equal(c1.error.rpcErrorCode, 'OccurenceConstraintViolation');
+                equal(c1.outbound, false); // this is an inbound validation error
+                equal(c1.error.rpcErrorCode, 'OccurrenceConstraintViolation');
                 equal(c2.error.rpcErrorCode, 'TypeConstraintViolation');
                 equal(c3.error.rpcErrorCode, 'ProtocolError');
 
                 equal(calls, 3);
                 equal(responses, 3);
-                equal(uks, 0); // 'Unknown' handler should not be called
+                equal(uks, 0); // 'Unknown' handler should not be triggered
 
 
             } finally {
@@ -1484,18 +1701,40 @@ describe('RPCClient', function(){
 
         
         it("should emit 'strictValidationFailure' when outgoing response is discarded by strictMode", async () => {
+            // If our response to an incoming call is invalid, and our client is running in strict mode,
+            // our client should emit 'strictValidationFailure' and respond with a callerror instead
+            // of a response with the value returned from the handler.
             const {endpoint, close, server} = await createServer({
-                protocols: ['echo1.0']
+                protocols: ['echo1.0'],
+                strictModeValidators: [getEchoValidator()],
+                strictMode: true,
             }, {withClient: cli => {
-                cli.handle('Echo', async ({params}) => {
+
+                cli.handle('Echo', async ({params, reply}) => {
+                    let shouldEmitSvf = true;
+                    let expectedErrorType = null;
+                    const svfPromise = once(cli, 'strictValidationFailure', {signal: AbortSignal.timeout(50)});
+
                     switch (params.val) {
-                        case '1': return {bad: true};
-                        case '2': return 123;
-                        case '3': return [1,2,3];
-                        case '4': return null;
-                        case '5': return {val: params.val};
+                        case '1': expectedErrorType = RPCOccurrenceConstraintViolationError; reply({bad: true}); break;
+                        case '2': expectedErrorType = RPCTypeConstraintViolationError; reply(123); break;
+                        case '3': expectedErrorType = RPCTypeConstraintViolationError; reply([1,2,3]); break;
+                        case '4': expectedErrorType = RPCTypeConstraintViolationError; reply(null); break;
+                        case '5': shouldEmitSvf = false; reply({val: params.val}); break;
+                    }
+
+                    if (shouldEmitSvf) {
+                        const [svf] = await svfPromise;
+                        ok(svf.error instanceof expectedErrorType);
+                        equal(svf.outbound, true); // this is a validation error with an outbound response
+                    } else {
+                        await rejects(svfPromise); // should time out, as strictValidationFailure is not expected for a valid response
+                        await svfPromise.catch(err => {
+                            equal(err.name, 'AbortError');
+                        });
                     }
                 });
+                
             }});
             const cli = new RPCClient({
                 endpoint,
@@ -1517,15 +1756,108 @@ describe('RPCClient', function(){
                 ]);
 
                 equal(c1.status, 'rejected');
-                ok(c1.reason instanceof RPCOccurenceConstraintViolationError);
+                ok(c1.reason instanceof RPCInternalError);
                 equal(c2.status, 'rejected');
-                ok(c2.reason instanceof RPCTypeConstraintViolationError);
+                ok(c2.reason instanceof RPCInternalError);
                 equal(c3.status, 'rejected');
-                ok(c3.reason instanceof RPCTypeConstraintViolationError);
+                ok(c3.reason instanceof RPCInternalError);
                 equal(c4.status, 'rejected');
-                ok(c4.reason instanceof RPCTypeConstraintViolationError);
+                ok(c4.reason instanceof RPCInternalError);
                 equal(c5.status, 'fulfilled');
                 equal(c5.value.val, '5');
+
+            } finally {
+                await cli.close();
+                close();
+            }
+        });
+
+
+        it("should emit 'strictValidationFailure' when incoming response is discarded by strictMode", async () => {
+            // If the incoming response from a call is invalid, then our client should emit 'strictValidationFailure'
+            // and the pending call's Promise should be rejected with an RPCError.
+            // The content of the response should only be available within the strictValidationFailure event,
+            // as the call was rejected with an error.
+            // The strictValidationFailure event should contain a copy of the rejection error.
+
+            const {endpoint, close, server} = await createServer({
+                protocols: ['echo1.0'],
+                strictMode: false,
+            }, {withClient: async (cli) => {
+                cli.handle('Echo', async ({params, reply}) => {
+                    switch (params.val) {
+                        case '1': reply({bad: true}); break;
+                        case '2': reply({val: params.val}); break;
+                    }
+                });
+            }});
+            const cli = new RPCClient({
+                endpoint,
+                identity: 'X',
+                protocols: ['echo1.0'],
+                strictModeValidators: [getEchoValidator()],
+                strictMode: true,
+            });
+
+            try {
+                await cli.connect();
+
+                const [svf1, c1] = await Promise.allSettled([
+                    once(cli, 'strictValidationFailure', {signal: AbortSignal.timeout(50)}),
+                    cli.call('Echo', {val: '1'}),
+                ]);
+
+                equal(svf1.status, 'fulfilled'); // got a strictValidationFailure event
+                equal(c1.status, 'rejected'); // call failed, as planned
+                equal(svf1.error, c1.error); // strictValidationFailure exposes the call rejection error
+                equal(svf1.value[0].outbound, false); // this is an inbound validation failure
+
+                const [svf2, c2] = await Promise.allSettled([
+                    once(cli, 'strictValidationFailure', {signal: AbortSignal.timeout(50)}),
+                    cli.call('Echo', {val: '2'}),
+                ]);
+
+                equal(svf2.status, 'rejected'); // strictValidationFailure should not be emitted. expecting abortsignal timeout
+                equal(svf2.reason.name, 'AbortError');
+                equal(c2.status, 'fulfilled'); // call succeeded, as planned
+
+
+            } finally {
+                await cli.close();
+                close();
+            }
+
+        });
+
+        it("should emit 'messageHandlingError' when incoming call has no configured handler", async () => {
+            const {endpoint, close, server} = await createServer({
+
+            }, {withClient: async (cli) => {
+                cli.handle('SendMe', ({params, reply}) => {
+                    cli.call('Unknown', {});
+                });
+            }});
+            const cli = new RPCClient({
+                endpoint,
+                identity: 'X',
+            });
+
+            try {
+                const timeoutSignal = AbortSignal.timeout(200);
+
+                let uks = 0;
+                await cli.connect();
+
+                const [err, res] = await Promise.allSettled([
+                    once(cli, 'messageHandlingError', {signal: timeoutSignal}),
+                    cli.call('SendMe', {val: '3'}),
+                ]);
+
+                equal(err.status, 'fulfilled');
+                equal(err.value[0].details.method, 'Unknown');
+                ok(err.value[0] instanceof RPCNotImplementedError);
+
+                equal(uks, 0); // 'Unknown' handler should never be called
 
             } finally {
                 await cli.close();
@@ -1565,7 +1897,7 @@ describe('RPCClient', function(){
                 equal(c3.status, 'fulfilled');
                 equal(c3.value.val, 9.1/10);
                 equal(c4.status, 'rejected');
-                ok(c4.reason instanceof RPCOccurenceConstraintViolationError);
+                ok(c4.reason instanceof RPCOccurrenceConstraintViolationError);
                 equal(c4.reason.details.errors[0].keyword, 'multipleOf');
                 equal(c5.status, 'fulfilled');
                 equal(c5.value.val, 57.3/3/10);
@@ -1677,40 +2009,6 @@ describe('RPCClient', function(){
                 ok(c2.reason instanceof RPCPropertyConstraintViolationError);
                 equal(c3.status, 'rejected');
                 ok(c3.reason instanceof RPCTypeConstraintViolationError);
-
-            } finally {
-                await cli.close();
-                close();
-            }
-
-        });
-
-        it("should reject call validation failure with FormationViolation on ocpp1.6", async () => {
-            
-            const {endpoint, close, server} = await createServer({
-                protocols: ['ocpp1.6'],
-                strictMode: true,
-            }, {withClient: cli => {
-                cli.handle('Heartbeat', () => {
-                    throw createRPCError("FormatViolation");
-                });
-            }});
-            const cli = new RPCClient({
-                endpoint,
-                identity: 'X',
-                protocols: ['ocpp1.6'],
-                strictMode: true,
-            });
-
-            try {
-                await cli.connect();
-
-                const [c1] = await Promise.allSettled([
-                    cli.call('Heartbeat', {}),
-                ]);
-                
-                equal(c1.status, 'rejected');
-                equal(c1.reason.rpcErrorCode, 'FormationViolation');
 
             } finally {
                 await cli.close();
@@ -1987,14 +2285,18 @@ describe('RPCClient', function(){
             try {
                 await cli.connect();
                 
-                const res = await cli.call('Echo', echoPayload, {noReply: true});
-                const [bad] = await once(cli, 'badMessage');
+                const [bad, res] = await Promise.allSettled([
+                    once(cli, 'badMessage', {signal: AbortSignal.timeout(100)}),
+                    cli.call('Echo', echoPayload, {noReply: true}),
+                ]);
+
+                equal(bad.status, 'fulfilled');
                 
-                const [mType, mId, mVal] = JSON.parse(bad.buffer.toString('utf8'));
+                const [mType, mId, mVal] = JSON.parse(bad.value[0].buffer.toString('utf8'));
 
                 equal(mType, 3);
                 deepEqual(mVal, echoPayload);
-                equal(res, undefined);
+                equal(res.value, undefined);
 
             } finally {
                 await cli.close();
@@ -2325,12 +2627,14 @@ describe('RPCClient', function(){
             
             const {endpoint, close, server} = await createServer({}, {
                 withClient: async (client) => {
-                    client.sendRaw('x');
-                    client.sendRaw('x');
-                    client.call('Ok');
-                    client.sendRaw('x');
-                    client.sendRaw('x');
-                    client.call('Done');
+                    try {
+                        client.sendRaw('x');
+                        client.sendRaw('x');
+                        await client.call('Ok');
+                        client.sendRaw('x');
+                        client.sendRaw('x');
+                        await client.call('Done');
+                    } catch (err) {}
                 }
             });
             const cli = new RPCClient({
@@ -2341,11 +2645,12 @@ describe('RPCClient', function(){
             });
 
             try {
+                /** @type {Function} */
                 let resolve;
                 let prom = new Promise(r => {resolve = r;});
 
                 cli.handle('Ok', () => {});
-                cli.handle('Done', resolve);
+                cli.handle('Done', () => { resolve(); });
                 await cli.connect();
                 await prom;
                 cli.close({code: 4060});
@@ -2398,7 +2703,7 @@ describe('RPCClient', function(){
         it('should not invoke handler if client closes fast', async () => {
             
             const {endpoint, close, server} = await createServer({protocols: ['b', 'c']}, {
-                withClient: client => {
+                withClient: (client) => {
                     client.call('Test', {val: 123});
                 }
             });
@@ -2410,9 +2715,10 @@ describe('RPCClient', function(){
                         reject(Error("Wildcard handler called for method: "+method));
                     });
 
-                    await cli.connect();
-                    cli.close({code: 4050});
+                    await cli.connect(); // awaits until OPEN state
+                    cli.close({code: 4050}); // immediately transition to CLOSING state.
 
+                    // expect no inbound calls during CLOSING state
                     once(cli, 'close').then(resolve);
                 });
 

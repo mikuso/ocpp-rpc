@@ -10,6 +10,10 @@ Breaking changes:
 * This module now requires Nodejs >= 20.
 * This module now uses ESM instead of the CJS module system. (This should not affect your project if you are using Nodejs >= 20.19.0).
 * Custom schemas made for version 2.X no longer work for 3.0.0. The urn of each JSON Schema `$id` now requires an nid component (as per spec, and enforced by Ajv >= 8.16). This has always been a requirement that was ignored by ocpp-rpc. See examples of working schema urns in `schemas/test/` and refer to the new options for [`createValidator()`](../functions/createValidator.html) to specify the nid you wish to use. Standard OCPP schemas should continue to work as before.
+* Messages received with an unknown message type ID are now dropped/ignored in line with the removal of the 'Extension fallback mechanism' from OCPP-J specs. Previously, they would trigger the `'badMessage'` event. The only ways to now be notified of these messages is if you listen for the general `'message'` event, or the new `'messageHandlingError'` event.
+* RPCClients now emit an `'error'` event to expose low-level errors which are not directly related to the handling of OCPP messages.
+* OCPP1.6 deprecated error messages now use the same class as their corrected counterparts (rather than being their own distinct class). See the [guide to error handling](./error-handling.md) for more information about these changes.
+* Fixed an error where `RPCOccurenceConstraintViolation` and `RPCOccurrenceConstraintViolation` errors were mixed up.
 
 ## From 1.X to 2.0
 

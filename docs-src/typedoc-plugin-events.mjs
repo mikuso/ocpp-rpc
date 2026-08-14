@@ -67,8 +67,12 @@ export function load(app) {
                 // Copy the description from the overload signature
                 if (sig.comment) {
                     const summary = sig.comment.summary ?? [];
+                    // Preserve all block tags from the original signature (e.g. @deprecated),
+                    // excluding any existing @group tag since we always set our own.
+                    const inheritedTags = (sig.comment.blockTags ?? []).filter(t => t.tag !== '@group');
                     const blockTags = [
                         new CommentTag('@group', [{ kind: 'text', text: 'Events' }]),
+                        ...inheritedTags,
                     ];
                     eventRefl.comment = new Comment(summary, blockTags);
                 }
