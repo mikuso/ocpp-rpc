@@ -1,12 +1,11 @@
-export { RPCClient } from './lib/client.js';
+export { RPCClient, MessageType } from './lib/client.js';
 export { RPCServer } from './lib/server.js';
 export { RPCServerClient } from './lib/server-client.js';
 export * from './lib/errors.js';
 export * from './lib/symbols.js';
-export { createRPCError } from './lib/util.js';
+export { ConnectionState, createRPCError } from './lib/util.js';
 export { createValidator } from './lib/validator.js';
 
-/** @typedef {import('./lib/client.js').ConnectionState} ConnectionState */
 /** @typedef {import('./lib/client.js').RPCClientOptions} RPCClientOptions */
 /** @typedef {import('./lib/client.js').MsgCall} MsgCall */
 /** @typedef {import('./lib/client.js').MsgCallResult} MsgCallResult */

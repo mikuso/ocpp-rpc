@@ -8,10 +8,9 @@ import { TimeoutError, RPCFrameworkError, RPCError, RPCProtocolError, RPCTypeCon
 import { RPCServer } from "../lib/server.js";
 import { setTimeout } from 'timers/promises';
 import { createValidator } from '../lib/validator.js';
-import { createRPCError } from '../lib/util.js';
+import { ConnectionState, createRPCError } from '../lib/util.js';
 import { NOREPLY } from '../lib/symbols.js';
 import EventEmitter from 'node:events';
-const {CLOSING, CLOSED, CONNECTING} = RPCClient;
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -2135,7 +2134,7 @@ describe('RPCClient', function(){
 
         });
 
-        it('should reject when state === CLOSING with {awaitPending: true}', async () => {
+        it('should reject when state === ConnectionState.CLOSING with {awaitPending: true}', async () => {
 
             const {endpoint, close, server} = await createServer();
             const cli = new RPCClient({endpoint, identity: 'X'});
@@ -2146,7 +2145,7 @@ describe('RPCClient', function(){
                 const promClose = cli.close({awaitPending: true});
                 const promSleep2 = cli.call('Sleep', {ms: 1000});
 
-                equal(cli.state, CLOSING);
+                equal(cli.state, ConnectionState.CLOSING);
 
                 await Promise.all([
                     doesNotReject(promClose),
@@ -2160,7 +2159,7 @@ describe('RPCClient', function(){
 
         });
 
-        it('should reject when state === CLOSING', async () => {
+        it('should reject when state === ConnectionState.CLOSING', async () => {
 
             const {endpoint, close, server} = await createServer();
             const cli = new RPCClient({endpoint, identity: 'X'});
@@ -2171,7 +2170,7 @@ describe('RPCClient', function(){
                 const callPromise = cli.call('Sleep', {ms: 1000});
 
                 await rejects(callPromise);
-                equal(cli.state, CLOSING);
+                equal(cli.state, ConnectionState.CLOSING);
 
             } finally {
                 close();
@@ -2179,7 +2178,7 @@ describe('RPCClient', function(){
 
         });
 
-        it('should reject when state === CLOSED', async () => {
+        it('should reject when state === ConnectionState.CLOSED', async () => {
 
             const {endpoint, close, server} = await createServer();
             const cli = new RPCClient({endpoint, identity: 'X'});
@@ -2188,7 +2187,7 @@ describe('RPCClient', function(){
                 const callPromise = cli.call('Sleep', {ms: 1000});
 
                 await rejects(callPromise);
-                equal(cli.state, CLOSED);
+                equal(cli.state, ConnectionState.CLOSED);
 
             } finally {
                 close();
@@ -2196,7 +2195,7 @@ describe('RPCClient', function(){
 
         });
 
-        it('should queue when state === CONNECTING', async () => {
+        it('should queue when state === ConnectionState.CONNECTING', async () => {
 
             const {endpoint, close, server} = await createServer();
             const cli = new RPCClient({endpoint, identity: 'X'});
@@ -2205,7 +2204,7 @@ describe('RPCClient', function(){
                 cli.connect();
                 const resPromise = cli.call('Echo', 'TEST');
 
-                equal(cli.state, CONNECTING);
+                equal(cli.state, ConnectionState.CONNECTING);
                 await doesNotReject(resPromise);
                 await equal(await resPromise, 'TEST');
 
