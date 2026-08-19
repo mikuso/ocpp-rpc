@@ -10,6 +10,7 @@ import { setTimeout } from 'timers/promises';
 import { createValidator } from '../lib/validator.js';
 import { createRPCError } from '../lib/util.js';
 import { NOREPLY } from '../lib/symbols.js';
+import EventEmitter from 'node:events';
 const {CLOSING, CLOSED, CONNECTING} = RPCClient;
 
 const __filename = fileURLToPath(import.meta.url);
@@ -973,6 +974,60 @@ describe('RPCClient', function(){
             }
         });
 
+    });
+
+
+    describe('#with', function() {
+        it('should call the callback when the negotiated protocol matches', async () => {
+
+            const {server, endpoint, close} = await createServer({
+                protocols: ['ocpp1.6']
+            });
+            
+            const cli = new RPCClient({endpoint, identity: 'X', protocols: ['ocpp1.6', 'ocpp2.1']});
+
+            try {
+
+                const ee16 = new EventEmitter();
+                const ee21 = new EventEmitter();
+
+                cli.with('ocpp1.6', cli => ee16.emit('cli', cli));
+                cli.with('ocpp2.1', cli => ee21.emit('cli', cli));
+
+                const timeoutSignal1 = AbortSignal.timeout(75);
+
+                const test1 = await Promise.allSettled([
+                    once(ee16, 'cli', {signal: timeoutSignal1}),
+                    once(ee21, 'cli', {signal: timeoutSignal1}),
+                    once(cli, 'open', {signal: timeoutSignal1}),
+                    cli.connect()
+                ]);
+
+                await cli.close();
+                equal(test1[0].status, 'fulfilled');
+                equal(test1[1].status, 'rejected');
+                equal(test1[1].reason.name, 'AbortError');
+
+                server.reconfigure({protocols: ['ocpp2.1', 'ocpp1.6']});
+
+                const timeoutSignal2 = AbortSignal.timeout(75);
+
+                const test2 = await Promise.allSettled([
+                    once(ee16, 'cli', {signal: timeoutSignal2}),
+                    once(ee21, 'cli', {signal: timeoutSignal2}),
+                    once(cli, 'open', {signal: timeoutSignal2}),
+                    cli.connect()
+                ]);
+
+                await cli.close();
+                equal(test2[0].status, 'rejected');
+                equal(test2[0].reason.name, 'AbortError');
+                equal(test2[1].status, 'fulfilled');
+
+            } finally {
+                close();
+            }
+        });
     });
 
 
