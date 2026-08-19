@@ -93,11 +93,11 @@ await cli.connect();
 
 // send a BootNotification request and await the response
 const bootResponse = await cli.call('BootNotification', {
-    chargePointVendor: "ocpp-rpc",
-    chargePointModel: "ocpp-rpc",
+    chargePointModel: 'OCPP 1.6 charger',
+    chargePointVendor: 'ocpp-rpc co.'
 });
 
-// check that the server accepted the client
+// check that the server's registration status of the client is accepted before proceeding
 if (bootResponse.status === 'Accepted') {
 
     // send a Heartbeat request and await the response
@@ -112,6 +112,99 @@ if (bootResponse.status === 'Accepted') {
         status: "Available",
     });
 }
+```
+
+## An RPCServer supporting multiple protocols
+
+You can use the `RPCServer`'s `with()` method to listen for a client which matches the given protocol.
+
+```js
+import { RPCServer } from 'ocpp-rpc';
+
+const server = new RPCServer({
+    strictMode: true,
+    protocols: [
+        // Your preferred protocol should be at the front of the list.
+        'ocpp2.1',
+        'ocpp1.6',
+    ]
+});
+
+server.with('ocpp2.1', async (cli) => {
+    cli.handle('BootNotification', ({params}) => {
+        console.log(`OCPP 2.1 client booted: ${params.chargingStation.model}`);
+
+        return {
+            currentTime: new Date().toISOString(),
+            interval: 60,
+            status: 'Accepted',
+        };
+    });
+});
+
+server.with('ocpp1.6', async (cli) => {
+    cli.handle('BootNotification', ({params}) => {
+        console.log(`OCPP 1.6 client booted: ${params.chargePointModel}`);
+
+        return {
+            currentTime: new Date().toISOString(),
+            interval: 60,
+            status: 'Accepted',
+        };
+    });
+});
+
+await server.listen(3000);
+```
+
+## An RPCClient supporting multiple protocols
+
+As with the `RPCServer` example above, the `RPCClient`'s `with()` method allows you to decide how to use the client based on the agreed protocol version:
+
+```js
+import { RPCClient } from 'ocpp-rpc';
+
+const client = new RPCClient({
+    endpoint: 'ws://localhost:3000',
+    identity: 'CP101',
+    strictMode: true,
+    protocols: [
+        // The client can indicate protocol preference by placing
+        // your preferred protocol at the top of the list.
+        // Ultimately though, the server is responsible for
+        // deciding which of these protocols to use:
+        'ocpp2.1',
+        'ocpp1.6',
+    ]
+});
+
+client.with('ocpp1.6', async (cli) => {
+    console.log('Client connected to an OCPP 1.6 server');
+
+    const res = await cli.call('BootNotification', {
+        chargePointModel: 'OCPP 1.6 charger',
+        chargePointVendor: 'ocpp-rpc co.'
+    });
+
+    console.log(`Sent BootNotification. Registration ${res.status}`);
+});
+
+client.with('ocpp2.1', async (cli) => {
+    console.log('Client connected to an OCPP 2.1 server');
+
+    const res = await cli.call('BootNotification', {
+        reason: 'PowerUp',
+        chargingStation: {
+            model: 'OCPP 2.1 charger',
+            vendorName: 'ocpp-rpc co.'
+        }
+    });
+
+    console.log(`Sent BootNotification. Registration ${res.status}`);
+});
+
+
+await client.connect();
 ```
 
 ## Using with Express.js
@@ -131,7 +224,7 @@ httpServer.on('upgrade', rpcServer.handleUpgrade);
 
 rpcServer.on('client', client => {
     // RPC client connected
-    client.call('Say', `Hello, ${client.identity}!`);
+    client.call('Say', {message: `Hello, ${client.identity}!`});
 });
 
 // create a simple client to connect to the server
@@ -141,7 +234,7 @@ const cli = new RPCClient({
 });
 
 cli.handle('Say', ({params}) => {
-    console.log('Server said:', params);
+    console.log('Server said:', params.message);
 });
 
 await cli.connect();
