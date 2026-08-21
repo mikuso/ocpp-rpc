@@ -3,14 +3,15 @@ import { createServer as _createServer } from 'http';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { once } from 'events';
-import { RPCClient } from "../lib/client.js";
-import { TimeoutError, RPCFrameworkError, RPCError, RPCProtocolError, RPCTypeConstraintViolationError, RPCOccurenceConstraintViolationError, RPCPropertyConstraintViolationError, RPCOccurrenceConstraintViolationError, RPCFormationViolationError, RPCInternalError, RPCNotImplementedError } from '../lib/errors.js';
+import { MessageType, RPCClient } from "../lib/client.js";
+import { TimeoutError, RPCFrameworkError, RPCError, RPCProtocolError, RPCTypeConstraintViolationError, RPCOccurenceConstraintViolationError, RPCPropertyConstraintViolationError, RPCOccurrenceConstraintViolationError, RPCFormationViolationError, RPCInternalError, RPCNotImplementedError, RPCFormatViolationError } from '../lib/errors.js';
 import { RPCServer } from "../lib/server.js";
 import { setTimeout } from 'timers/promises';
 import { createValidator } from '../lib/validator.js';
 import { ConnectionState, createRPCError } from '../lib/util.js';
 import { NOREPLY } from '../lib/symbols.js';
 import EventEmitter from 'node:events';
+import { RPCServerClient } from '../lib/server-client.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -79,10 +80,24 @@ describe('RPCClient', function(){
 
         it('should throw on missing identity', async () => {
 
-            throws(() => {
-                new RPCClient({
+            rejects(async () => {
+                const cli = new RPCClient({
                     endpoint: 'ws://localhost',
                 });
+
+                await cli.connect();
+            });
+
+        });
+
+        it('should throw on missing endpoint', async () => {
+
+            rejects(async () => {
+                const cli = new RPCClient({
+                    identity: 'X',
+                });
+
+                await cli.connect();
             });
 
         });
@@ -558,6 +573,102 @@ describe('RPCClient', function(){
 
     });
 
+
+    describe('errors', function() {
+        it('should use ocpp1.6 deprecated error codes when using ocpp1.6', async () => {
+
+            /** @type {RPCError[]} */
+            const returnedErrors = [];
+
+            const {endpoint, close, server} = await createServer({
+                protocols: ['ocpp1.6', 'ocpp2.1'],
+            }, {withClient: cli => {
+                cli.on('callError', ({error}) => {
+                    returnedErrors.push(error);
+                });
+                cli.handle("FVError2", () => {
+                    throw createRPCError("FormatViolation");
+                });
+                cli.handle("FVError16", () => {
+                    throw createRPCError("FormationViolation");
+                });
+                cli.handle("OVError2", () => {
+                    throw createRPCError("OccurrenceConstraintViolation");
+                });
+                cli.handle("OVError16", () => {
+                    throw createRPCError("OccurenceConstraintViolation");
+                });
+            }});
+            const cli = new RPCClient({
+                endpoint,
+                identity: 'X',
+            });
+
+            try {
+
+                const testUsingProto = async (
+                    /** @type {string} */ proto,
+                    /** @type {string} */ expectedCode1,
+                    /** @type {string} */ expectedCode2,
+                ) => {
+                    try {
+                        cli.reconfigure({protocols: [proto]});
+                        await cli.connect();
+
+                        const [fv16, fv2, ov16, ov2] = await Promise.allSettled([
+                            cli.call('FVError16', {}),
+                            cli.call('FVError2', {}),
+                            cli.call('OVError16', {}),
+                            cli.call('OVError2', {}),
+                        ]);
+
+                        equal(fv16.status, 'rejected');
+                        ok(fv16.reason instanceof RPCFormatViolationError);
+                        equal(fv16.reason.rpcErrorCode, expectedCode1);
+                        equal(fv2.status, 'rejected');
+                        ok(fv2.reason instanceof RPCFormatViolationError);
+                        equal(fv2.reason.rpcErrorCode, expectedCode1);
+
+                        equal(ov16.status, 'rejected');
+                        ok(ov16.reason instanceof RPCOccurrenceConstraintViolationError);
+                        equal(ov16.reason.rpcErrorCode, expectedCode2);
+                        equal(ov2.status, 'rejected');
+                        ok(ov2.reason instanceof RPCOccurrenceConstraintViolationError);
+                        equal(ov2.reason.rpcErrorCode, expectedCode2);
+                    } finally {
+                        await cli.close();
+                    }
+                };
+
+                await testUsingProto('ocpp1.6', 'FormationViolation', 'OccurenceConstraintViolation');
+                await testUsingProto('ocpp2.1', 'FormatViolation', 'OccurrenceConstraintViolation');
+
+                equal(returnedErrors[0].rpcErrorCode, 'FormationViolation');
+                equal(returnedErrors[1].rpcErrorCode, 'FormationViolation');
+                equal(returnedErrors[2].rpcErrorCode, 'OccurenceConstraintViolation');
+                equal(returnedErrors[3].rpcErrorCode, 'OccurenceConstraintViolation');
+                equal(returnedErrors[4].rpcErrorCode, 'FormatViolation');
+                equal(returnedErrors[5].rpcErrorCode, 'FormatViolation');
+                equal(returnedErrors[6].rpcErrorCode, 'OccurrenceConstraintViolation');
+                equal(returnedErrors[7].rpcErrorCode, 'OccurrenceConstraintViolation');
+                
+                ok(returnedErrors[0] instanceof RPCFormatViolationError);
+                ok(returnedErrors[1] instanceof RPCFormatViolationError);
+                ok(returnedErrors[2] instanceof RPCOccurrenceConstraintViolationError);
+                ok(returnedErrors[3] instanceof RPCOccurrenceConstraintViolationError);
+                ok(returnedErrors[4] instanceof RPCFormatViolationError);
+                ok(returnedErrors[5] instanceof RPCFormatViolationError);
+                ok(returnedErrors[6] instanceof RPCOccurrenceConstraintViolationError);
+                ok(returnedErrors[7] instanceof RPCOccurrenceConstraintViolationError);
+
+            } finally {
+                close();
+            }
+
+        });
+    });
+
+
     describe('#connect', function(){
 
         it('should connect to an RPCServer', async () => {
@@ -671,6 +782,32 @@ describe('RPCClient', function(){
                 await cli.close();
                 close();
             }
+
+        });
+
+        it('should override constructor identity and endpoint', async () => {
+
+            const {endpoint, server, close} = await createServer();
+            server.auth(async (accept, reject, handshake, signal) => {
+                try {
+                    equal(handshake.endpoint, '/good/');
+                    equal(handshake.identity, 'good');
+                    equal(handshake.query.get('q'), 'good');
+                    accept();
+                } catch (err) {
+                    reject(1001, err.message);
+                }
+            });
+            const cli = new RPCClient({
+                endpoint: 'ws://0.0.0.0/bad/',
+                identity: 'bad',
+                query: {q:'bad'}
+            });
+
+            // override the endpoint, identity and query
+            await cli.connect(endpoint + '/good/', 'good', {q:'good'});
+            await cli.close();
+            close();
 
         });
 
@@ -1441,7 +1578,7 @@ describe('RPCClient', function(){
                 equal(svf1.status, 'fulfilled');
                 equal(svf1.value[0].outbound, false); // failure was an inbound SEND
                 equal(svf1.value[0].method, 'Send'); // This is definitely a validation error from sending 'Send' from the server side.
-                equal(svf1.value[0].isCall, true); // TODO: change this to something like msgType === MSG_SEND
+                equal(svf1.value[0].typeId, MessageType.MSG_SEND);
                 ok(svf1.value[0].error instanceof RPCOccurrenceConstraintViolationError);
 
 
@@ -1453,7 +1590,7 @@ describe('RPCClient', function(){
                 equal(svf2.status, 'fulfilled');
                 equal(svf2.value[0].outbound, false); // failure was an inbound SEND
                 equal(svf2.value[0].method, 'Send'); // This is definitely a validation error from sending 'Send' from the server side.
-                equal(svf2.value[0].isCall, true); // TODO: change this to something like msgType === MSG_SEND
+                equal(svf2.value[0].typeId, MessageType.MSG_SEND);
                 ok(svf2.value[0].error instanceof RPCTypeConstraintViolationError);
 
             } finally {
@@ -1738,8 +1875,11 @@ describe('RPCClient', function(){
 
                 equal(c1.outbound, false); // this is an inbound validation error
                 equal(c1.error.rpcErrorCode, 'OccurrenceConstraintViolation');
+                equal(c1.typeId, MessageType.MSG_CALL);
                 equal(c2.error.rpcErrorCode, 'TypeConstraintViolation');
+                equal(c2.typeId, MessageType.MSG_CALL);
                 equal(c3.error.rpcErrorCode, 'ProtocolError');
+                equal(c3.typeId, MessageType.MSG_CALL);
 
                 equal(calls, 3);
                 equal(responses, 3);
@@ -1862,6 +2002,7 @@ describe('RPCClient', function(){
                 ]);
 
                 equal(svf1.status, 'fulfilled'); // got a strictValidationFailure event
+                equal(svf1.value[0].typeId, MessageType.MSG_CALLRESULT);
                 equal(c1.status, 'rejected'); // call failed, as planned
                 equal(svf1.error, c1.error); // strictValidationFailure exposes the call rejection error
                 equal(svf1.value[0].outbound, false); // this is an inbound validation failure
