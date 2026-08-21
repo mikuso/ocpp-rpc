@@ -4,8 +4,8 @@
   "main": "index.js",
   "types": "./types/index.d.ts",
   "scripts": {
-    "test": "mocha",
-    "coverage": "c8 --reporter=lcov --reporter=text mocha",
+    "test": "mocha --parallel",
+    "coverage": "c8 --reporter=lcov --reporter=text mocha --parallel",
     "build": "npm run build:types",
     "build:types": "tsc -p tsconfig.json",
     "docs": "npm run build:types && typedoc"
@@ -44,20 +44,21 @@
   "homepage": "https://github.com/mikuso/ocpp-rpc#readme",
   "license": "MIT",
   "dependencies": {
+    "@types/node": ">=20",
     "ajv": "^8.20.0",
     "ajv-draft-04": "^1.0.0",
-    "ajv-formats": "^2.1.1",
+    "ajv-formats": "^3.0.1",
     "backoff": "^2.5.0",
     "ws": "^8.5.0"
   },
   "devDependencies": {
     "@types/backoff": "^2.5.5",
-    "@types/node": "^26.1.2",
+    "@types/node": "^20.19.43",
     "@types/ws": "^8.18.1",
     "c8": "^12.0.0",
-    "mocha": "^11.7.5",
+    "mocha": "^11.3.0",
     "typedoc": "^0.28.20",
-    "typescript": "^5.9.3"
+    "typescript": "^6.0.3"
   },
   "type": "module"
 }

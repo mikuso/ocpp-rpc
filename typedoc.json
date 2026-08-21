@@ -21,10 +21,11 @@
     "customJs": "./docs-src/custom.js",
     "projectDocuments": [
         "docs-src/getting-started.md",
-        "docs-src/upgrading.md",
         "docs-src/strict-validation.md",
         "docs-src/security.md",
-        "docs-src/state-lifecycle.md"
+        "docs-src/error-handling.md",
+        "docs-src/state-lifecycle.md",
+        "docs-src/upgrading.md"
     ],
     "navigation": {
         "includeGroups": true

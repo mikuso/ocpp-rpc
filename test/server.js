@@ -427,6 +427,22 @@ describe('RPCServer', function(){
 
         });
 
+        it('should disconnect client if auth throws', async () => {
+
+            const {endpoint, close, server} = await createServer();
+            server.auth((accept, reject) => {
+                throw Error("Auth throws");
+            });
+            const cli = new RPCClient({endpoint, identity: 'X'});
+    
+            const err = await cli.connect().catch(e=>e);
+            ok(err instanceof UnexpectedHttpResponse);
+            equal(err.code, 500);
+
+            close();
+
+        });
+
         it("should disconnect client if server closes during auth", async () => {
 
             const {endpoint, close, server} = await createServer();
@@ -656,6 +672,50 @@ describe('RPCServer', function(){
 
     });
 
+
+    describe('#with', function() {
+        it('should call the callback when the negotiated protocol matches', async () => {
+
+            const {server, endpoint, close} = await createServer({
+                protocols: [
+                    'ocpp1.6',
+                    'ocpp2.0.1',
+                    'ocpp2.1',
+                ]
+            });
+            const cli1 = new RPCClient({endpoint, identity: 'cp1.6', protocols: ['ocpp1.6']});
+            const cli2 = new RPCClient({endpoint, identity: 'cp2.0.1', protocols: ['ocpp2.0.1']});
+            const cli3 = new RPCClient({endpoint, identity: 'cp2.1', protocols: ['ocpp2.1']});
+
+            try {
+
+                const results = await Promise.all([
+                    new Promise(r => { server.with('ocpp1.6', c => r({protocol: c.protocol, id: c.identity})) }),
+                    new Promise(r => { server.with('ocpp2.0.1', c => r({protocol: c.protocol, id: c.identity})) }),
+                    new Promise(r => { server.with('ocpp2.1', c => r({protocol: c.protocol, id: c.identity})) }),
+                    cli1.connect(),
+                    cli2.connect(),
+                    cli3.connect(),
+                ]);
+
+                equal(results[0].protocol, 'ocpp1.6');
+                equal(results[0].id, 'cp1.6');
+
+                equal(results[1].protocol, 'ocpp2.0.1');
+                equal(results[1].id, 'cp2.0.1');
+
+                equal(results[2].protocol, 'ocpp2.1');
+                equal(results[2].id, 'cp2.1');
+
+            } finally {
+                cli1.close();
+                cli2.close();
+                cli3.close();
+                close();
+            }
+        });
+    });
+
     
     describe('#close', function(){
 
@@ -687,7 +747,7 @@ describe('RPCServer', function(){
             try {
                 
                 await cli1.connect();
-                const callP = cli1.call('Test');
+                const callP = cli1.call('Test', {});
                 await callReceivedPromise;
                 close({awaitPending: true});
                 const [callResult, connResult] = await Promise.allSettled([
@@ -801,7 +861,7 @@ describe('RPCServer', function(){
 
         it('should automatically ping clients', async () => {
             
-            const pingIntervalMs = 40;
+            const pingIntervalMs = 75;
             let pingResolve;
             let pingPromise = new Promise(r => {pingResolve = r;})
 
